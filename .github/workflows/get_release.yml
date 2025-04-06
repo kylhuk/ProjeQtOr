@@ -62,25 +62,52 @@ jobs:
         if: env.RELEASE_EXISTS == 'false'
         run: |
           mkdir -p release-download
-          cd release-download
           
           # Download ZIP file
           echo "Downloading from ${{ env.DOWNLOAD_URL }}"
           curl -L "${{ env.DOWNLOAD_URL }}" -o release.zip
           
-          # Extract ZIP file
-          unzip release.zip
+          # Print zip contents for debugging
+          echo "ZIP file contents:"
+          unzip -l release.zip | head -20
           
-          # In case the ZIP contains a nested directory, find the actual application files
-          # (Look for index.php as indicator of root directory)
-          APP_DIR=$(find . -name "index.php" -exec dirname {} \; | head -1)
-          if [ -z "$APP_DIR" ] || [ "$APP_DIR" = "." ]; then
-            # No nested directory or index.php is in current dir
-            APP_DIR="."
+          # Create a clean directory for extraction
+          mkdir -p extracted
+          
+          # Extract ZIP file to the extraction directory
+          unzip -q release.zip -d extracted
+          
+          # List the contents of the extracted directory
+          echo "Extracted contents:"
+          ls -la extracted
+          
+          # Find the actual application root directory
+          APP_DIR=$(find extracted -name "index.php" | sort | head -1 | xargs dirname)
+          
+          if [ -z "$APP_DIR" ]; then
+            echo "ERROR: Could not find ProjeQtOr root directory (no index.php found)"
+            exit 1
           fi
           
+          echo "Found ProjeQtOr root at: $APP_DIR"
           echo "APP_DIR=$APP_DIR" >> $GITHUB_ENV
-          echo "Application files found in: $APP_DIR"
+          
+          # Count files for verification
+          FILE_COUNT=$(find "$APP_DIR" -type f | wc -l)
+          echo "Found $FILE_COUNT files in ProjeQtOr directory"
+          
+          # List some key directories to verify
+          if [ -d "$APP_DIR/model" ]; then
+            echo "model directory found with $(find "$APP_DIR/model" -type f | wc -l) files"
+          else
+            echo "WARNING: model directory not found"
+          fi
+          
+          if [ -d "$APP_DIR/view" ]; then
+            echo "view directory found with $(find "$APP_DIR/view" -type f | wc -l) files"
+          else
+            echo "WARNING: view directory not found"
+          fi
       
       - name: Create release branch and tag
         if: env.RELEASE_EXISTS == 'false'
@@ -95,11 +122,19 @@ jobs:
           mkdir -p projeqtor
           rm -rf projeqtor/*
           
-          # Copy release content to projeqtor directory
-          cp -r release-download/${{ env.APP_DIR }}/* projeqtor/
+          # Copy ALL files from the app directory to projeqtor directory
+          echo "Copying files from ${{ env.APP_DIR }} to projeqtor/"
+          cp -R "${{ env.APP_DIR }}/." projeqtor/
           
-          # Clean up download directory
-          rm -rf release-download
+          # Verify the copy
+          echo "Files copied to projeqtor directory: $(find projeqtor -type f | wc -l)"
+          
+          # List top-level directories for verification
+          echo "Top-level directories in projeqtor:"
+          find projeqtor -maxdepth 1 -type d | sort
+          
+          # Clean up extraction directory
+          rm -rf extracted release.zip
           
           # Add all changes
           git add projeqtor
@@ -108,8 +143,13 @@ jobs:
           # Create and push tag
           git tag "v${{ env.CLEAN_VERSION }}"
           
+          # Set repository URL with token for authentication
+          git remote set-url origin https://x-access-token:${GITHUB_TOKEN}@github.com/${GITHUB_REPOSITORY}.git
+          
           # Push branch and tag
           git push origin "release-${{ env.CLEAN_VERSION }}"
           git push origin "v${{ env.CLEAN_VERSION }}"
           
           echo "Created and pushed release-${{ env.CLEAN_VERSION }} branch and v${{ env.CLEAN_VERSION }} tag"
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
