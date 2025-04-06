@@ -14,8 +14,8 @@ This repository automatically syncs with the official ProjeQtOr releases from So
 
 1. Clone the repository:
    ```bash
-   git clone https://github.com/YOUR_USERNAME/YOUR_REPO.git
-   cd YOUR_REPO
+   git clone https://github.com/kylhuk/projeqtor.git
+   cd projeqtor
    ```
 
 2. Configure your settings:
@@ -89,10 +89,10 @@ The Docker images are tagged with ProjeQtOr version numbers:
 
 ```bash
 # Use a specific version
-docker pull ghcr.io/yourusername/projeqtor:12.1.0
+docker pull ghcr.io/kylhuk/projeqtor:12.1.0
 
 # Use the latest version
-docker pull ghcr.io/yourusername/projeqtor:latest
+docker pull ghcr.io/kylhuk/projeqtor:latest
 ```
 
 ## Manual Deployment
