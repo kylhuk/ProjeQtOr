@@ -1,0 +1,72 @@
+name: SVN to GitHub Sync
+
+on:
+  schedule:
+    # Run daily at midnight UTC
+    - cron: '0 0 * * *'
+  workflow_dispatch:
+    # Allow manual trigger
+
+jobs:
+  sync-svn:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+      
+      - name: Set up SVN
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y subversion
+      
+      - name: Get SVN latest version
+        id: svn-info
+        run: |
+          SVN_VERSION=$(svn info --show-item revision https://svn.code.sf.net/p/projectorria/code/)
+          echo "SVN_VERSION=$SVN_VERSION" >> $GITHUB_ENV
+          echo "SVN version is $SVN_VERSION"
+      
+      - name: Check if branch exists
+        id: check-branch
+        run: |
+          if git ls-remote --heads origin "svn-r${{ env.SVN_VERSION }}" | grep -q "svn-r${{ env.SVN_VERSION }}"; then
+            echo "Branch svn-r${{ env.SVN_VERSION }} already exists"
+            echo "BRANCH_EXISTS=true" >> $GITHUB_ENV
+          else
+            echo "Branch svn-r${{ env.SVN_VERSION }} does not exist"
+            echo "BRANCH_EXISTS=false" >> $GITHUB_ENV
+          fi
+      
+      - name: Export SVN repository
+        if: env.BRANCH_EXISTS == 'false'
+        run: |
+          mkdir -p svn-export
+          svn export https://svn.code.sf.net/p/projectorria/code/ svn-export --force
+      
+      - name: Create new branch with SVN content
+        if: env.BRANCH_EXISTS == 'false'
+        run: |
+          git config --global user.name "GitHub Action Bot"
+          git config --global user.email "action@github.com"
+          
+          # Create a new branch based on SVN revision
+          git checkout -b "svn-r${{ env.SVN_VERSION }}"
+          
+          # Remove everything except .git directory and svn-export
+          find . -maxdepth 1 -not -path "./svn-export" -not -path "./.git" -not -path "." -exec rm -rf {} \;
+          
+          # Copy SVN content to root
+          cp -r svn-export/* .
+          rm -rf svn-export
+          
+          # Add all changes
+          git add .
+          git commit -m "Sync SVN revision ${{ env.SVN_VERSION }}"
+          
+          # Push the new branch
+          git push origin "svn-r${{ env.SVN_VERSION }}"
+          
+          echo "Created and pushed branch svn-r${{ env.SVN_VERSION }}"
