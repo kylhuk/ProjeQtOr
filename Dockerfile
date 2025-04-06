@@ -1,5 +1,6 @@
 FROM php:8.0-fpm
 
+# Install dependencies
 RUN apt-get update && apt-get install -y \
     libpq-dev \
     libpng-dev \
@@ -20,7 +21,7 @@ RUN pkg-config --modversion oniguruma || echo "oniguruma package config not foun
 RUN find /usr -name "onig*" || echo "No onig files found"
 RUN ls -la /usr/include/ | grep onig || echo "No onig headers found"
 
-# Try to install each extension with debug output
+# Install PHP extensions
 RUN set -x && \
     echo "PHP includes:" && php -i | grep include_path && \
     echo "Installing mbstring..." && \
@@ -42,3 +43,9 @@ RUN set -x && \
 
 # Verify installations
 RUN php -m
+
+# Copy ProjeQtOr files
+COPY ./projeqtor/ /var/www/html/
+
+# Set the correct permissions
+RUN chown -R www-data:www-data /var/www/html
