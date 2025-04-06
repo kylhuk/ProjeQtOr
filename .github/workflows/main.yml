@@ -55,11 +55,14 @@ jobs:
           # Create a new branch based on SVN revision
           git checkout -b "svn-r${{ env.SVN_VERSION }}"
           
-          # Remove everything except .git directory and svn-export
-          find . -maxdepth 1 -not -path "./svn-export" -not -path "./.git" -not -path "." -exec rm -rf {} \;
+          # Create svn directory if it doesn't exist
+          mkdir -p svn
           
-          # Copy SVN content to root
-          cp -r svn-export/* .
+          # Clear the svn directory but keep the directory itself
+          find ./svn -mindepth 1 -delete
+          
+          # Copy SVN content to svn directory
+          cp -r svn-export/* ./svn/
           rm -rf svn-export
           
           # Add all changes
