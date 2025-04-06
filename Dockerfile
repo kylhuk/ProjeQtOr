@@ -1,8 +1,6 @@
 FROM php:8.0-fpm
 
-# Install Nginx and dependencies
 RUN apt-get update && apt-get install -y \
-    nginx \
     libpq-dev \
     libpng-dev \
     libjpeg-dev \
@@ -12,89 +10,35 @@ RUN apt-get update && apt-get install -y \
     libc-client-dev \
     libkrb5-dev \
     libonig-dev \
-    zip \
-    unzip \
-    git \
+    libcurl4-openssl-dev \
+    pkg-config \
+    curl \
     && rm -rf /var/lib/apt/lists/*
 
-# Configure and install GD extension
-RUN docker-php-ext-configure gd --with-freetype --with-jpeg \
-    && docker-php-ext-install -j$(nproc) gd
+# Debug package configuration for mbstring
+RUN pkg-config --modversion oniguruma || echo "oniguruma package config not found"
+RUN find /usr -name "onig*" || echo "No onig files found"
+RUN ls -la /usr/include/ | grep onig || echo "No onig headers found"
 
-# Configure and install IMAP extension
-RUN docker-php-ext-configure imap --with-kerberos --with-imap-ssl \
-    && docker-php-ext-install -j$(nproc) imap
+# Try to install each extension with debug output
+RUN set -x && \
+    echo "PHP includes:" && php -i | grep include_path && \
+    echo "Installing mbstring..." && \
+    docker-php-ext-install mbstring || (echo "FAILED: mbstring" && false) && \
+    echo "Installing mysqli..." && \
+    docker-php-ext-install mysqli || (echo "FAILED: mysqli" && false) && \
+    echo "Installing pdo..." && \
+    docker-php-ext-install pdo || (echo "FAILED: pdo" && false) && \
+    echo "Installing pdo_mysql..." && \
+    docker-php-ext-install pdo_mysql || (echo "FAILED: pdo_mysql" && false) && \
+    echo "Installing pdo_pgsql..." && \
+    docker-php-ext-install pdo_pgsql || (echo "FAILED: pdo_pgsql" && false) && \
+    echo "Installing pgsql..." && \
+    docker-php-ext-install pgsql || (echo "FAILED: pgsql" && false) && \
+    echo "Installing xml..." && \
+    docker-php-ext-install xml || (echo "FAILED: xml" && false) && \
+    echo "Installing zip..." && \
+    docker-php-ext-install zip || (echo "FAILED: zip" && false)
 
-# Install other required PHP extensions
-RUN docker-php-ext-install \
-    mbstring \
-    mysqli \
-    pdo \
-    pdo_mysql \
-    pdo_pgsql \
-    pgsql \
-    xml \
-    zip
-
-# Configure PHP
-RUN { \
-    echo 'max_input_vars = 4000'; \
-    echo 'request_terminate_timeout = 0'; \
-    echo 'max_execution_time = 120'; \
-    echo 'memory_limit = 512M'; \
-    echo 'file_uploads = On'; \
-    echo 'post_max_size = 100M'; \
-    echo 'upload_max_filesize = 100M'; \
-    echo 'error_reporting = E_ALL & ~E_DEPRECATED & ~E_STRICT'; \
-    } > /usr/local/etc/php/conf.d/projeqtor-recommended.ini
-
-# Set working directory
-WORKDIR /var/www/html
-
-# Copy ProjeQtOr files
-COPY ./projeqtor/ /var/www/html/
-
-# Configure Nginx
-RUN echo 'server {\n\
-    listen 80;\n\
-    server_name localhost;\n\
-    root /var/www/html;\n\
-    index index.php index.html;\n\
-\n\
-    location / {\n\
-        try_files $uri $uri/ /index.php?$query_string;\n\
-    }\n\
-\n\
-    location ~ \.php$ {\n\
-        fastcgi_pass 127.0.0.1:9000;\n\
-        fastcgi_index index.php;\n\
-        fastcgi_param SCRIPT_FILENAME $document_root$fastcgi_script_name;\n\
-        include fastcgi_params;\n\
-    }\n\
-}' > /etc/nginx/sites-available/default
-
-# Create entrypoint script
-RUN echo '#!/bin/bash\n\
-set -e\n\
-\n\
-# Start PHP-FPM\n\
-php-fpm -D\n\
-\n\
-# Start Nginx\n\
-nginx -g "daemon off;"\n\
-' > /usr/local/bin/docker-entrypoint.sh
-
-# Make entrypoint executable
-RUN chmod +x /usr/local/bin/docker-entrypoint.sh
-
-# Set permissions
-RUN chown -R www-data:www-data /var/www/html
-
-# Verify PHP extensions are installed
+# Verify installations
 RUN php -m
-
-# Expose port
-EXPOSE 80
-
-# Use the entrypoint script
-ENTRYPOINT ["/usr/local/bin/docker-entrypoint.sh"]
