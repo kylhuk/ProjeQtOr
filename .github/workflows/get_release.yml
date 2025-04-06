@@ -2,10 +2,8 @@ name: SourceForge Release to GitHub Sync
 
 on:
   schedule:
-    # Run daily at midnight UTC
     - cron: '0 0 * * *'
   workflow_dispatch:
-    # Allow manual trigger
 
 jobs:
   sync-release:
@@ -18,138 +16,58 @@ jobs:
           fetch-depth: 0
       
       - name: Get latest release info from SourceForge
-        id: get-latest-release
         run: |
-          # Install necessary tools
-          sudo apt-get update
-          sudo apt-get install -y curl jq
-          
-          # Get the list of files from SourceForge API
-          SF_API_URL="https://sourceforge.net/projects/projectorria/best_release.json"
-          RELEASE_INFO=$(curl -s "$SF_API_URL")
-          
-          # Parse the latest release URL and version
-          DOWNLOAD_URL=$(echo "$RELEASE_INFO" | jq -r '.platform_releases.linux.url')
-          RELEASE_FILENAME=$(echo "$RELEASE_INFO" | jq -r '.platform_releases.linux.filename')
-          
-          # Extract version from filename (assuming format like V9.4.0.zip or ProjeQtOr_V9.4.0.zip)
-          VERSION=$(echo "$RELEASE_FILENAME" | grep -o -E 'V[0-9]+\.[0-9]+\.[0-9]+' | head -1)
-          if [ -z "$VERSION" ]; then
-            echo "Could not extract version from filename: $RELEASE_FILENAME"
-            exit 1
-          fi
-          
-          # Clean version (remove V prefix for tagging)
+          curl -s "https://sourceforge.net/projects/projectorria/best_release.json" > release.json
+          DOWNLOAD_URL=$(jq -r '.platform_releases.linux.url' release.json)
+          FILENAME=$(jq -r '.platform_releases.linux.filename' release.json)
+          VERSION=$(echo "$FILENAME" | grep -o -E 'V[0-9]+\.[0-9]+\.[0-9]+' | head -1)
           CLEAN_VERSION=$(echo "$VERSION" | sed 's/^V//')
           
           echo "DOWNLOAD_URL=$DOWNLOAD_URL" >> $GITHUB_ENV
           echo "VERSION=$VERSION" >> $GITHUB_ENV
           echo "CLEAN_VERSION=$CLEAN_VERSION" >> $GITHUB_ENV
-          echo "Found latest release: $VERSION ($DOWNLOAD_URL)"
       
-      - name: Check if release already exists
-        id: check-release
+      - name: Download and extract ZIP
         run: |
-          if git ls-remote --tags origin "v${{ env.CLEAN_VERSION }}" | grep -q "v${{ env.CLEAN_VERSION }}"; then
-            echo "Release v${{ env.CLEAN_VERSION }} already exists"
-            echo "RELEASE_EXISTS=true" >> $GITHUB_ENV
-          else
-            echo "Release v${{ env.CLEAN_VERSION }} does not exist"
-            echo "RELEASE_EXISTS=false" >> $GITHUB_ENV
-          fi
+          # Create clean working directory
+          rm -rf temp_extract
+          mkdir -p temp_extract
+          cd temp_extract
+          
+          # Download the ZIP file
+          curl -L "${{ env.DOWNLOAD_URL }}" -o projeqtor.zip
+          
+          # Extract everything
+          unzip -q projeqtor.zip
+          
+          # Find what directories were created
+          echo "Directories created by extraction:"
+          ls -la
+          
+          # Create projeqtor directory in repo root
+          cd ..
+          rm -rf projeqtor
+          mkdir -p projeqtor
+          
+          # Copy EVERYTHING from the extraction to projeqtor
+          cp -R temp_extract/. projeqtor/
+          
+          # Show what we've got
+          echo "Files in projeqtor directory:"
+          find projeqtor -type f | wc -l
+          echo "Top-level items in projeqtor:"
+          ls -la projeqtor
       
-      - name: Download and extract release
-        if: env.RELEASE_EXISTS == 'false'
-        run: |
-          mkdir -p release-download
-          
-          # Download ZIP file
-          echo "Downloading from ${{ env.DOWNLOAD_URL }}"
-          curl -L "${{ env.DOWNLOAD_URL }}" -o release.zip
-          
-          # Print zip contents for debugging
-          echo "ZIP file contents:"
-          unzip -l release.zip | head -20
-          
-          # Create a clean directory for extraction
-          mkdir -p extracted
-          
-          # Extract ZIP file to the extraction directory
-          unzip -q release.zip -d extracted
-          
-          # List the contents of the extracted directory
-          echo "Extracted contents:"
-          ls -la extracted
-          
-          # Find the actual application root directory
-          APP_DIR=$(find extracted -name "index.php" | sort | head -1 | xargs dirname)
-          
-          if [ -z "$APP_DIR" ]; then
-            echo "ERROR: Could not find ProjeQtOr root directory (no index.php found)"
-            exit 1
-          fi
-          
-          echo "Found ProjeQtOr root at: $APP_DIR"
-          echo "APP_DIR=$APP_DIR" >> $GITHUB_ENV
-          
-          # Count files for verification
-          FILE_COUNT=$(find "$APP_DIR" -type f | wc -l)
-          echo "Found $FILE_COUNT files in ProjeQtOr directory"
-          
-          # List some key directories to verify
-          if [ -d "$APP_DIR/model" ]; then
-            echo "model directory found with $(find "$APP_DIR/model" -type f | wc -l) files"
-          else
-            echo "WARNING: model directory not found"
-          fi
-          
-          if [ -d "$APP_DIR/view" ]; then
-            echo "view directory found with $(find "$APP_DIR/view" -type f | wc -l) files"
-          else
-            echo "WARNING: view directory not found"
-          fi
-      
-      - name: Create release branch and tag
-        if: env.RELEASE_EXISTS == 'false'
+      - name: Commit and push
         run: |
           git config --global user.name "GitHub Action Bot"
           git config --global user.email "action@github.com"
           
-          # Create a release branch
-          git checkout -b "release-${{ env.CLEAN_VERSION }}"
-          
-          # Clear the projeqtor directory if it exists, create it if it doesn't
-          mkdir -p projeqtor
-          rm -rf projeqtor/*
-          
-          # Copy ALL files from the app directory to projeqtor directory
-          echo "Copying files from ${{ env.APP_DIR }} to projeqtor/"
-          cp -R "${{ env.APP_DIR }}/." projeqtor/
-          
-          # Verify the copy
-          echo "Files copied to projeqtor directory: $(find projeqtor -type f | wc -l)"
-          
-          # List top-level directories for verification
-          echo "Top-level directories in projeqtor:"
-          find projeqtor -maxdepth 1 -type d | sort
-          
-          # Clean up extraction directory
-          rm -rf extracted release.zip
-          
-          # Add all changes
           git add projeqtor
-          git commit -m "Add ProjeQtOr release ${{ env.VERSION }}"
-          
-          # Create and push tag
+          git commit -m "Update ProjeQtOr to ${{ env.VERSION }}"
           git tag "v${{ env.CLEAN_VERSION }}"
           
-          # Set repository URL with token for authentication
-          git remote set-url origin https://x-access-token:${GITHUB_TOKEN}@github.com/${GITHUB_REPOSITORY}.git
-          
-          # Push branch and tag
-          git push origin "release-${{ env.CLEAN_VERSION }}"
+          git push origin main
           git push origin "v${{ env.CLEAN_VERSION }}"
-          
-          echo "Created and pushed release-${{ env.CLEAN_VERSION }} branch and v${{ env.CLEAN_VERSION }} tag"
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
