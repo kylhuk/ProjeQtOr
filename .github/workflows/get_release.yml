@@ -1,0 +1,115 @@
+name: SourceForge Release to GitHub Sync
+
+on:
+  schedule:
+    # Run daily at midnight UTC
+    - cron: '0 0 * * *'
+  workflow_dispatch:
+    # Allow manual trigger
+
+jobs:
+  sync-release:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+      
+      - name: Get latest release info from SourceForge
+        id: get-latest-release
+        run: |
+          # Install necessary tools
+          sudo apt-get update
+          sudo apt-get install -y curl jq
+          
+          # Get the list of files from SourceForge API
+          SF_API_URL="https://sourceforge.net/projects/projectorria/best_release.json"
+          RELEASE_INFO=$(curl -s "$SF_API_URL")
+          
+          # Parse the latest release URL and version
+          DOWNLOAD_URL=$(echo "$RELEASE_INFO" | jq -r '.platform_releases.linux.url')
+          RELEASE_FILENAME=$(echo "$RELEASE_INFO" | jq -r '.platform_releases.linux.filename')
+          
+          # Extract version from filename (assuming format like V9.4.0.zip or ProjeQtOr_V9.4.0.zip)
+          VERSION=$(echo "$RELEASE_FILENAME" | grep -o -E 'V[0-9]+\.[0-9]+\.[0-9]+' | head -1)
+          if [ -z "$VERSION" ]; then
+            echo "Could not extract version from filename: $RELEASE_FILENAME"
+            exit 1
+          fi
+          
+          # Clean version (remove V prefix for tagging)
+          CLEAN_VERSION=$(echo "$VERSION" | sed 's/^V//')
+          
+          echo "DOWNLOAD_URL=$DOWNLOAD_URL" >> $GITHUB_ENV
+          echo "VERSION=$VERSION" >> $GITHUB_ENV
+          echo "CLEAN_VERSION=$CLEAN_VERSION" >> $GITHUB_ENV
+          echo "Found latest release: $VERSION ($DOWNLOAD_URL)"
+      
+      - name: Check if release already exists
+        id: check-release
+        run: |
+          if git ls-remote --tags origin "v${{ env.CLEAN_VERSION }}" | grep -q "v${{ env.CLEAN_VERSION }}"; then
+            echo "Release v${{ env.CLEAN_VERSION }} already exists"
+            echo "RELEASE_EXISTS=true" >> $GITHUB_ENV
+          else
+            echo "Release v${{ env.CLEAN_VERSION }} does not exist"
+            echo "RELEASE_EXISTS=false" >> $GITHUB_ENV
+          fi
+      
+      - name: Download and extract release
+        if: env.RELEASE_EXISTS == 'false'
+        run: |
+          mkdir -p release-download
+          cd release-download
+          
+          # Download ZIP file
+          echo "Downloading from ${{ env.DOWNLOAD_URL }}"
+          curl -L "${{ env.DOWNLOAD_URL }}" -o release.zip
+          
+          # Extract ZIP file
+          unzip release.zip
+          
+          # In case the ZIP contains a nested directory, find the actual application files
+          # (Look for index.php as indicator of root directory)
+          APP_DIR=$(find . -name "index.php" -exec dirname {} \; | head -1)
+          if [ -z "$APP_DIR" ] || [ "$APP_DIR" = "." ]; then
+            # No nested directory or index.php is in current dir
+            APP_DIR="."
+          fi
+          
+          echo "APP_DIR=$APP_DIR" >> $GITHUB_ENV
+          echo "Application files found in: $APP_DIR"
+      
+      - name: Create release branch and tag
+        if: env.RELEASE_EXISTS == 'false'
+        run: |
+          git config --global user.name "GitHub Action Bot"
+          git config --global user.email "action@github.com"
+          
+          # Create a release branch
+          git checkout -b "release-${{ env.CLEAN_VERSION }}"
+          
+          # Clear the projeqtor directory if it exists, create it if it doesn't
+          mkdir -p projeqtor
+          rm -rf projeqtor/*
+          
+          # Copy release content to projeqtor directory
+          cp -r release-download/${{ env.APP_DIR }}/* projeqtor/
+          
+          # Clean up download directory
+          rm -rf release-download
+          
+          # Add all changes
+          git add projeqtor
+          git commit -m "Add ProjeQtOr release ${{ env.VERSION }}"
+          
+          # Create and push tag
+          git tag "v${{ env.CLEAN_VERSION }}"
+          
+          # Push branch and tag
+          git push origin "release-${{ env.CLEAN_VERSION }}"
+          git push origin "v${{ env.CLEAN_VERSION }}"
+          
+          echo "Created and pushed release-${{ env.CLEAN_VERSION }} branch and v${{ env.CLEAN_VERSION }} tag"
