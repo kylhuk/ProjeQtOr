@@ -7,6 +7,11 @@ on:
       - 'release-*'
     tags:
       - 'v*.*.*'
+  # Run after Release Sync workflow completes
+  workflow_run:
+    workflows: ["SourceForge Release to GitHub Sync"]
+    types:
+      - completed
   # Allow manual trigger
   workflow_dispatch:
     inputs:
@@ -20,30 +25,46 @@ jobs:
     runs-on: ubuntu-latest
     
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v3
-        with:
-          fetch-depth: 0
-      
-      - name: Set version from input or branch/tag
+      - name: Set version from input, branch/tag, or workflow run
         id: set-version
         run: |
           if [[ "${{ github.event_name }}" == "workflow_dispatch" && -n "${{ github.event.inputs.version }}" ]]; then
             # Get version from manual input
             VERSION="${{ github.event.inputs.version }}"
-            git checkout "release-$VERSION" || git checkout main
+            echo "VERSION=$VERSION" >> $GITHUB_ENV
+            echo "Using manually specified version: $VERSION"
+          elif [[ "${{ github.event_name }}" == "workflow_run" ]]; then
+            # Try to get the latest tag created by the previous workflow
+            git fetch --tags
+            LATEST_TAG=$(git tag -l "v*.*.*" --sort=-v:refname | head -n 1)
+            if [ -n "$LATEST_TAG" ]; then
+              VERSION="${LATEST_TAG#v}"
+              echo "VERSION=$VERSION" >> $GITHUB_ENV
+              echo "Using version from latest tag: $VERSION (from $LATEST_TAG)"
+            else
+              echo "No version tag found from previous workflow"
+              echo "VERSION=latest" >> $GITHUB_ENV
+            fi
           elif [[ "${{ github.ref }}" == refs/tags/* ]]; then
             # Extract version from tag (v9.4.0 -> 9.4.0)
             VERSION="${{ github.ref_name }}"
             VERSION="${VERSION#v}"
+            echo "VERSION=$VERSION" >> $GITHUB_ENV
+            echo "Using version from tag: $VERSION"
           else
             # Extract version from branch name (release-9.4.0 -> 9.4.0)
             VERSION="${{ github.ref_name }}"
             VERSION="${VERSION#release-}"
+            echo "VERSION=$VERSION" >> $GITHUB_ENV
+            echo "Using version from branch: $VERSION"
           fi
-          
-          echo "VERSION=$VERSION" >> $GITHUB_ENV
-          echo "Building for version: $VERSION"
+      
+      - name: Checkout repository
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+          # If triggered by workflow_run, we need to check out the appropriate tag/branch
+          ref: ${{ github.event_name == 'workflow_run' && format('v{0}', env.VERSION) || github.ref }}
       
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v2
