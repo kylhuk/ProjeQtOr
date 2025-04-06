@@ -1,0 +1,34 @@
+version: '3.8'
+
+services:
+  projeqtor:
+    image: ghcr.io/${GITHUB_REPOSITORY_OWNER:-yourusername}/projeqtor:latest
+    container_name: projeqtor
+    ports:
+      - "80:80"
+    volumes:
+      - projeqtor_data:/var/www/html/files
+    environment:
+      - TZ=UTC
+    depends_on:
+      - postgres
+    restart: unless-stopped
+
+  postgres:
+    image: postgres:14
+    container_name: projeqtor_postgres
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    environment:
+      - POSTGRES_DB=projeqtor
+      - POSTGRES_USER=projeqtor
+      - POSTGRES_PASSWORD=projeqtor_password
+      - TZ=UTC
+    command: postgres -c 'max_connections=200'
+    restart: unless-stopped
+
+volumes:
+  projeqtor_data:
+  postgres_data:
