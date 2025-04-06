@@ -44,8 +44,11 @@ RUN set -x && \
 # Verify installations
 RUN php -m
 
+# Create directory for ProjeQtOr files
+RUN mkdir -p /var/www/html
+
 # Copy ProjeQtOr files
 COPY ./projeqtor/ /var/www/html/
 
-# Set the correct permissions
+# Set proper permissions
 RUN chown -R www-data:www-data /var/www/html
