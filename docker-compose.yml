@@ -24,7 +24,7 @@ services:
     restart: unless-stopped
 
   projeqtor:
-    image: ghcr.io/${GITHUB_REPOSITORY_OWNER:-yourusername}/projeqtor:${PROJEQTOR_VERSION:-latest}
+    image: ghcr.io/kylhuk/projeqtor:${PROJEQTOR_VERSION:-latest}
     container_name: projeqtor
     volumes:
       - projeqtor_data:/var/www/html/files
@@ -76,15 +76,10 @@ services:
 
 networks:
   frontend:
-    name: projeqtor_frontend
   backend:
-    name: projeqtor_backend
     internal: true
 
 volumes:
   projeqtor_data:
-    name: projeqtor_data
   postgres_data:
-    name: projeqtor_postgres_data
   traefik_data:
-    name: traefik_data
