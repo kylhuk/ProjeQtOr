@@ -46,13 +46,9 @@ services:
 
 networks:
   frontend:
-    name: projeqtor_dev_frontend
   backend:
-    name: projeqtor_dev_backend
     internal: true
 
 volumes:
   projeqtor_data:
-    name: projeqtor_dev_data
   postgres_data:
-    name: projeqtor_dev_postgres_data
