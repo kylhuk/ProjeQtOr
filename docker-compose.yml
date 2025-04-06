@@ -1,34 +1,90 @@
-version: '3.8'
+name: projeqtor
 
 services:
-  projeqtor:
-    image: ghcr.io/${GITHUB_REPOSITORY_OWNER:-yourusername}/projeqtor:latest
-    container_name: projeqtor
+  traefik:
+    image: traefik:v2.9
+    container_name: traefik
+    command:
+      - "--api.insecure=false"
+      - "--providers.docker=true"
+      - "--providers.docker.exposedbydefault=false"
+      - "--entrypoints.web.address=:80"
+      - "--entrypoints.websecure.address=:443"
+      - "--certificatesresolvers.letsencrypt.acme.tlschallenge=true"
+      - "--certificatesresolvers.letsencrypt.acme.email=${ACME_EMAIL}"
+      - "--certificatesresolvers.letsencrypt.acme.storage=/letsencrypt/acme.json"
     ports:
-      - "80:80"
+      - "${HTTP_PORT:-80}:80"
+      - "${HTTPS_PORT:-443}:443"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - traefik_data:/letsencrypt
+    networks:
+      - frontend
+    restart: unless-stopped
+
+  projeqtor:
+    image: ghcr.io/${GITHUB_REPOSITORY_OWNER:-yourusername}/projeqtor:${PROJEQTOR_VERSION:-latest}
+    container_name: projeqtor
     volumes:
       - projeqtor_data:/var/www/html/files
     environment:
-      - TZ=UTC
+      - TZ=${TIMEZONE:-UTC}
     depends_on:
       - postgres
+    networks:
+      - frontend
+      - backend
     restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost/"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.projeqtor.rule=Host(`${DOMAIN_NAME}`)"
+      - "traefik.http.routers.projeqtor.entrypoints=websecure"
+      - "traefik.http.routers.projeqtor.tls.certresolver=letsencrypt"
+      - "traefik.http.services.projeqtor.loadbalancer.server.port=80"
+      - "traefik.http.routers.projeqtor-http.rule=Host(`${DOMAIN_NAME}`)"
+      - "traefik.http.routers.projeqtor-http.entrypoints=web"
+      - "traefik.http.routers.projeqtor-http.middlewares=redirect-to-https"
+      - "traefik.http.middlewares.redirect-to-https.redirectscheme.scheme=https"
 
   postgres:
     image: postgres:14
     container_name: projeqtor_postgres
-    ports:
-      - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
     environment:
-      - POSTGRES_DB=projeqtor
-      - POSTGRES_USER=projeqtor
-      - POSTGRES_PASSWORD=projeqtor_password
-      - TZ=UTC
+      - POSTGRES_DB=${DB_NAME:-projeqtor}
+      - POSTGRES_USER=${DB_USER:-projeqtor}
+      - POSTGRES_PASSWORD=${DB_PASSWORD:-projeqtor_password}
+      - TZ=${TIMEZONE:-UTC}
     command: postgres -c 'max_connections=200'
     restart: unless-stopped
+    networks:
+      - backend
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-projeqtor}"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+
+networks:
+  frontend:
+    name: projeqtor_frontend
+  backend:
+    name: projeqtor_backend
+    internal: true
 
 volumes:
   projeqtor_data:
+    name: projeqtor_data
   postgres_data:
+    name: projeqtor_postgres_data
+  traefik_data:
+    name: traefik_data
