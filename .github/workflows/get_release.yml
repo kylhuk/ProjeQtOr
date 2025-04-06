@@ -27,7 +27,18 @@ jobs:
           echo "VERSION=$VERSION" >> $GITHUB_ENV
           echo "CLEAN_VERSION=$CLEAN_VERSION" >> $GITHUB_ENV
       
+      - name: Check if release already exists
+        run: |
+          if git ls-remote --tags origin "v${{ env.CLEAN_VERSION }}" | grep -q "v${{ env.CLEAN_VERSION }}"; then
+            echo "Release v${{ env.CLEAN_VERSION }} already exists"
+            echo "RELEASE_EXISTS=true" >> $GITHUB_ENV
+          else
+            echo "Release v${{ env.CLEAN_VERSION }} does not exist"
+            echo "RELEASE_EXISTS=false" >> $GITHUB_ENV
+          fi
+      
       - name: Download and extract ZIP
+        if: env.RELEASE_EXISTS == 'false'
         run: |
           # Create clean working directory
           rm -rf temp_extract
@@ -40,17 +51,36 @@ jobs:
           # Extract everything
           unzip -q projeqtor.zip
           
-          # Find what directories were created
-          echo "Directories created by extraction:"
-          ls -la
+          # Find the correct directory that contains the ProjeQtOr files
+          # Usually the root folder inside the ZIP or a subfolder named "projeqtor"
+          # First check if index.php exists in the current directory
+          if [ -f "index.php" ]; then
+            SOURCE_DIR="."
+          else
+            # Try to find it in subdirectories
+            SOURCE_DIR=$(find . -name "index.php" | head -1 | xargs dirname)
+          fi
           
-          # Create projeqtor directory in repo root
+          if [ -z "$SOURCE_DIR" ]; then
+            echo "ERROR: Could not find ProjeQtOr files"
+            exit 1
+          fi
+          
+          echo "Source directory: $SOURCE_DIR"
+          
+          # Go back to repository root
           cd ..
-          rm -rf projeqtor
-          mkdir -p projeqtor
           
-          # Copy EVERYTHING from the extraction to projeqtor
-          cp -R temp_extract/. projeqtor/
+          # Create or clean projeqtor directory
+          mkdir -p projeqtor
+          rm -rf projeqtor/*
+          
+          # Copy files from the correct source directory to projeqtor
+          # Use /* to copy the contents, not the directory itself
+          cp -R "temp_extract/$SOURCE_DIR/"* projeqtor/
+          
+          # Clean up temporary files
+          rm -rf temp_extract
           
           # Show what we've got
           echo "Files in projeqtor directory:"
@@ -58,16 +88,29 @@ jobs:
           echo "Top-level items in projeqtor:"
           ls -la projeqtor
       
-      - name: Commit and push
+      - name: Create release branch and tag
+        if: env.RELEASE_EXISTS == 'false'
         run: |
           git config --global user.name "GitHub Action Bot"
           git config --global user.email "action@github.com"
           
+          # Create a release branch
+          git checkout -b "release-${{ env.CLEAN_VERSION }}"
+          
+          # Add all changes
           git add projeqtor
-          git commit -m "Update ProjeQtOr to ${{ env.VERSION }}"
+          git commit -m "Add ProjeQtOr release ${{ env.VERSION }}"
+          
+          # Create tag
           git tag "v${{ env.CLEAN_VERSION }}"
           
-          git push origin main
+          # Set repository URL with token for authentication
+          git remote set-url origin https://x-access-token:${GITHUB_TOKEN}@github.com/${GITHUB_REPOSITORY}.git
+          
+          # Push branch and tag
+          git push origin "release-${{ env.CLEAN_VERSION }}"
           git push origin "v${{ env.CLEAN_VERSION }}"
+          
+          echo "Created and pushed release-${{ env.CLEAN_VERSION }} branch and v${{ env.CLEAN_VERSION }} tag"
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
