@@ -74,6 +74,15 @@ jobs:
           # List contents of the current directory for debugging
           echo "Current directory contents:"
           ls -la
+
+          MAJOR="${VERSION%%.*}"
+          MAJOR_MINOR="${VERSION%.*}"
+
+          echo "Major: $MAJOR"
+          echo "Major.Minor: $MAJOR_MINOR"
+
+          echo "MAJOR=$MAJOR" >> $GITHUB_ENV
+          echo "MAJOR_MINOR=$MAJOR_MINOR" >> $GITHUB_ENV
       
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v3
@@ -104,7 +113,7 @@ jobs:
         with:
           context: .
           file: ./Dockerfile
-          platforms: linux/amd64,linux/arm64
+          platforms: linux/arm64/v8,linux/arm64,windows/amd64,linux/arm/v7
           push: true
           tags: |
             ghcr.io/${{ github.repository_owner }}/projeqtor:${{ env.VERSION }}
@@ -124,6 +133,8 @@ jobs:
             
             Docker images available at:
             - `ghcr.io/${{ github.repository_owner }}/projeqtor:${{ env.VERSION }}`
+            - `ghcr.io/${{ github.repository_owner }}/projeqtor:${{ env.MAJOR }}`
+            - `ghcr.io/${{ github.repository_owner }}/projeqtor:${{ env.MAJOR_MINOR }}`
             - `ghcr.io/${{ github.repository_owner }}/projeqtor:latest`
             
             To run with Docker Compose:
