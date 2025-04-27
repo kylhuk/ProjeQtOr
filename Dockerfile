@@ -1,6 +1,6 @@
-FROM php:8.0-fpm
+FROM php:8.0-apache
 
-# Install dependencies
+# Install system dependencies
 RUN apt-get update && apt-get install -y \
     libpq-dev \
     libpng-dev \
@@ -16,39 +16,25 @@ RUN apt-get update && apt-get install -y \
     curl \
     && rm -rf /var/lib/apt/lists/*
 
-# Debug package configuration for mbstring
-RUN pkg-config --modversion oniguruma || echo "oniguruma package config not found"
-RUN find /usr -name "onig*" || echo "No onig files found"
-RUN ls -la /usr/include/ | grep onig || echo "No onig headers found"
-
 # Install PHP extensions
-RUN set -x && \
-    echo "PHP includes:" && php -i | grep include_path && \
-    echo "Installing mbstring..." && \
-    docker-php-ext-install mbstring || (echo "FAILED: mbstring" && false) && \
-    echo "Installing mysqli..." && \
-    docker-php-ext-install mysqli || (echo "FAILED: mysqli" && false) && \
-    echo "Installing pdo..." && \
-    docker-php-ext-install pdo || (echo "FAILED: pdo" && false) && \
-    echo "Installing pdo_mysql..." && \
-    docker-php-ext-install pdo_mysql || (echo "FAILED: pdo_mysql" && false) && \
-    echo "Installing pdo_pgsql..." && \
-    docker-php-ext-install pdo_pgsql || (echo "FAILED: pdo_pgsql" && false) && \
-    echo "Installing pgsql..." && \
-    docker-php-ext-install pgsql || (echo "FAILED: pgsql" && false) && \
-    echo "Installing xml..." && \
-    docker-php-ext-install xml || (echo "FAILED: xml" && false) && \
-    echo "Installing zip..." && \
-    docker-php-ext-install zip || (echo "FAILED: zip" && false)
+RUN docker-php-ext-install \
+    mbstring \
+    mysqli \
+    pdo \
+    pdo_mysql \
+    pdo_pgsql \
+    pgsql \
+    xml \
+    zip
 
-# Verify installations
-RUN php -m
+# Enable Apache rewrite module (needed for clean URLs, Projeqtor needs it)
+RUN a2enmod rewrite
 
-# Create directory for ProjeQtOr files
-RUN mkdir -p /var/www/html
-
-# Copy ProjeQtOr files
+# Copy Projeqtor application
 COPY ./projeqtor/ /var/www/html/
 
-# Set proper permissions
+# Set correct permissions
 RUN chown -R www-data:www-data /var/www/html
+
+# Expose port 80 (done automatically by php:apache base, but just to be clear)
+EXPOSE 80
