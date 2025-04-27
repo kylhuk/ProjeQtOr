@@ -8,109 +8,100 @@ on:
 jobs:
   sync-release:
     runs-on: ubuntu-latest
-    
+
     steps:
       - name: Checkout repository
         uses: actions/checkout@v3
         with:
           fetch-depth: 0
-      
+
       - name: Get latest release info from SourceForge
         run: |
-          curl -s "https://sourceforge.net/projects/projectorria/best_release.json" > release.json
+          curl -s "https://sourceforge.net/projects/projectorria/best_release.json" \
+            > release.json
           DOWNLOAD_URL=$(jq -r '.platform_releases.linux.url' release.json)
           FILENAME=$(jq -r '.platform_releases.linux.filename' release.json)
-          VERSION=$(echo "$FILENAME" | grep -o -E 'V[0-9]+\.[0-9]+\.[0-9]+' | head -1)
-          CLEAN_VERSION=$(echo "$VERSION" | sed 's/^V//')
-          
-          echo "DOWNLOAD_URL=$DOWNLOAD_URL" >> $GITHUB_ENV
-          echo "VERSION=$VERSION" >> $GITHUB_ENV
-          echo "CLEAN_VERSION=$CLEAN_VERSION" >> $GITHUB_ENV
-      
+          VERSION=$(echo "$FILENAME" \
+            | grep -o -E 'V[0-9]+\.[0-9]+\.[0-9]+' \
+            | head -1)
+          CLEAN_VERSION=${VERSION#V}
+
+          echo "DOWNLOAD_URL=$DOWNLOAD_URL"     >> $GITHUB_ENV
+          echo "VERSION=$VERSION"               >> $GITHUB_ENV
+          echo "CLEAN_VERSION=$CLEAN_VERSION"   >> $GITHUB_ENV
+
       - name: Check if release already exists
         run: |
-          if git ls-remote --tags origin "v${{ env.CLEAN_VERSION }}" | grep -q "v${{ env.CLEAN_VERSION }}"; then
-            echo "Release v${{ env.CLEAN_VERSION }} already exists"
+          if git ls-remote --tags origin "v${{ env.CLEAN_VERSION }}" \
+             | grep -q .; then
             echo "RELEASE_EXISTS=true" >> $GITHUB_ENV
           else
-            echo "Release v${{ env.CLEAN_VERSION }} does not exist"
             echo "RELEASE_EXISTS=false" >> $GITHUB_ENV
           fi
-      
+
       - name: Download and extract ZIP
         if: env.RELEASE_EXISTS == 'false'
         run: |
-          # Create clean working directory
-          rm -rf temp_extract
-          mkdir -p temp_extract
-          cd temp_extract
-          
-          # Download the ZIP file
-          curl -L "${{ env.DOWNLOAD_URL }}" -o projeqtor.zip
-          
-          # Extract everything
-          unzip -q projeqtor.zip
-          
-          # Find the correct directory that contains the ProjeQtOr files
-          # Usually the root folder inside the ZIP or a subfolder named "projeqtor"
-          # First check if index.php exists in the current directory
-          if [ -f "index.php" ]; then
-            SOURCE_DIR="."
+          set -euo pipefail
+
+          # 1) Clean slate
+          rm -rf temp_extract projeqtor
+          mkdir -p temp_extract projeqtor
+
+          # 2) Grab the ZIP
+          curl -L "${{ env.DOWNLOAD_URL }}" \
+            -o temp_extract/projeqtor.zip
+
+          # 3) Unzip into temp_extract
+          unzip -q temp_extract/projeqtor.zip -d temp_extract
+
+          # 4) If there’s exactly one top-level dir, treat that as our base
+          mapfile -t TOPDIRS < <(find temp_extract -maxdepth 1 -mindepth 1 -type d)
+          if [ "${#TOPDIRS[@]}" -eq 1 ]; then
+            SRC_BASE="${TOPDIRS[0]}"
           else
-            # Try to find it in subdirectories
-            SOURCE_DIR=$(find . -name "index.php" | head -1 | xargs dirname)
+            SRC_BASE="temp_extract"
           fi
-          
-          if [ -z "$SOURCE_DIR" ]; then
-            echo "ERROR: Could not find ProjeQtOr files"
+
+          # 5) Ensure index.php sits there—or else find the first subfolder that does
+          if [ -f "$SRC_BASE/index.php" ]; then
+            SRC_DIR="$SRC_BASE"
+          else
+            SRC_DIR=$(find "$SRC_BASE" -type f -name index.php \
+                        -exec dirname {} \; \
+                      | sort \
+                      | head -n1)
+          fi
+
+          if [ -z "${SRC_DIR:-}" ] || [ ! -d "$SRC_DIR" ]; then
+            echo "❌ ERROR: Could not locate ProjeQtOr files"
             exit 1
           fi
-          
-          echo "Source directory: $SOURCE_DIR"
-          
-          # Go back to repository root
-          cd ..
-          
-          # Create or clean projeqtor directory
-          mkdir -p projeqtor
-          rm -rf projeqtor/*
-          
-          # Copy files from the correct source directory to projeqtor
-          # Use /* to copy the contents, not the directory itself
-          cp -R "temp_extract/$SOURCE_DIR/"* projeqtor/
-          
-          # Clean up temporary files
-          rm -rf temp_extract
-          
-          # Show what we've got
-          echo "Files in projeqtor directory:"
-          find projeqtor -type f | wc -l
-          echo "Top-level items in projeqtor:"
-          ls -la projeqtor
-      
+          echo "→ Using source directory: $SRC_DIR"
+
+          # 6) Copy everything (incl. dotfiles) into our repo’s projeqtor/
+          cp -a "$SRC_DIR/." projeqtor/
+
+          # 7) Quick sanity check
+          echo "Extracted $(find projeqtor -type f | wc -l) files"
+          ls -la projeqtor | head -n20
+
       - name: Create release branch and tag
         if: env.RELEASE_EXISTS == 'false'
-        run: |
-          git config --global user.name "GitHub Action Bot"
-          git config --global user.email "action@github.com"
-          
-          # Create a release branch
-          git checkout -b "release-${{ env.CLEAN_VERSION }}"
-          
-          # Add all changes
-          git add projeqtor
-          git commit -m "Add ProjeQtOr release ${{ env.VERSION }}"
-          
-          # Create tag
-          git tag "v${{ env.CLEAN_VERSION }}"
-          
-          # Set repository URL with token for authentication
-          git remote set-url origin https://x-access-token:${GITHUB_TOKEN}@github.com/${GITHUB_REPOSITORY}.git
-          
-          # Push branch and tag
-          git push origin "release-${{ env.CLEAN_VERSION }}"
-          git push origin "v${{ env.CLEAN_VERSION }}"
-          
-          echo "Created and pushed release-${{ env.CLEAN_VERSION }} branch and v${{ env.CLEAN_VERSION }} tag"
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          git config user.name  "GitHub Action Bot"
+          git config user.email "action@github.com"
+
+          git checkout -b "release-${{ env.CLEAN_VERSION }}"
+          git add projeqtor
+          git commit -m "Add ProjeQtOr release ${{ env.VERSION }}"
+          git tag "v${{ env.CLEAN_VERSION }}"
+
+          git remote set-url origin \
+            https://x-access-token:${GITHUB_TOKEN}@github.com/${GITHUB_REPOSITORY}.git
+          git push origin "release-${{ env.CLEAN_VERSION }}"
+          git push origin "v${{ env.CLEAN_VERSION }}"
+
+          echo "✅ Pushed branch and tag v${{ env.CLEAN_VERSION }}"
