@@ -96,6 +96,13 @@ jobs:
 
           git checkout -b "release-${{ env.CLEAN_VERSION }}"
           git add projeqtor
+
+          # if nothing got staged, skip commit & tag
+          if git diff --cached --quiet; then
+            echo "ℹ️  No changes in projeqtor; skipping release."
+            exit 0
+          fi
+
           git commit -m "Add ProjeQtOr release ${{ env.VERSION }}"
           git tag "v${{ env.CLEAN_VERSION }}"
 
