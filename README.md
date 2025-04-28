@@ -5,7 +5,7 @@ This repository automatically syncs with the official ProjeQtOr releases from So
 ## Features
 
 - **Automatic Releases**: Daily checks for new ProjeQtOr versions
-- **Optimized Performance**: Nginx with PHP-FPM for faster response times
+- **Optimized Performance**: Minimal Apache with PHP-FPM for faster response times
 - **SSL Support**: Traefik reverse proxy with automatic Let's Encrypt certificates
 - **Secure by Default**: Network isolation between frontend and backend
 - **Fully Configurable**: All settings easily adjustable via environment variables
