@@ -86,7 +86,7 @@ jobs:
           echo "Extracted $(find projeqtor -type f | wc -l) files"
           ls -la projeqtor | head -n20
 
-      - name: Create release branch and tag
+      - name: Create release branch, commit if needed, then tag
         if: env.RELEASE_EXISTS == 'false'
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -94,21 +94,28 @@ jobs:
           git config user.name  "GitHub Action Bot"
           git config user.email "action@github.com"
 
+          # 1) Create the release branch off of whatever HEAD is (e.g. main)
           git checkout -b "release-${{ env.CLEAN_VERSION }}"
+
+          # 2) Stage any new/updated files under projeqtor/
           git add projeqtor
 
-          # if nothing got staged, skip commit & tag
-          if git diff --cached --quiet; then
-            echo "ℹ️  No changes in projeqtor; skipping release."
-            exit 0
+          # 3) If there were staged changes, commit them
+          if ! git diff --cached --quiet; then
+            git commit -m "Add ProjeQtOr release ${{ env.VERSION }}"
+          else
+            echo "ℹ️  No changes detected in projeqtor/ — skipping commit"
           fi
 
-          git commit -m "Add ProjeQtOr release ${{ env.VERSION }}"
-          git tag "v${{ env.CLEAN_VERSION }}"
+          # 4) Annotated tag on the tip of this branch (whether it’s a new commit or not)
+          git tag -a "v${{ env.CLEAN_VERSION }}" \
+                  -m "Release v${{ env.CLEAN_VERSION }}"
 
+          # 5) Push both branch & tag
           git remote set-url origin \
             https://x-access-token:${GITHUB_TOKEN}@github.com/${GITHUB_REPOSITORY}.git
           git push origin "release-${{ env.CLEAN_VERSION }}"
           git push origin "v${{ env.CLEAN_VERSION }}"
 
-          echo "✅ Pushed branch and tag v${{ env.CLEAN_VERSION }}"
+          echo "✅ release-${{ env.CLEAN_VERSION }} → v${{ env.CLEAN_VERSION }} created/pushed"
+
