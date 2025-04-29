@@ -15,17 +15,12 @@ RUN set -eux; \
       libonig-dev \
       pkg-config \
       curl; \
+    ln -s /usr/include/c-client /usr/include/imap; \
     rm -rf /var/lib/apt/lists/*
 
 RUN set -eux; \
-    docker-php-ext-configure gd \
-      --enable-gd \
-      --with-jpeg=/usr/include \
-      --with-freetype=/usr/include/freetype2; \
-    docker-php-ext-configure imap \
-      --with-imap=/usr \
-      --with-imap-ssl \
-      --with-kerberos
+    docker-php-ext-configure gd --enable-gd --with-jpeg --with-freetype; \
+    docker-php-ext-configure imap --with-imap --with-imap-ssl --with-kerberos
 
 RUN set -eux; \
     docker-php-ext-install -j"$(nproc)" \
@@ -45,7 +40,6 @@ COPY config/custom.ini /usr/local/etc/php/conf.d/99-custom.ini
 RUN a2enmod rewrite
 
 COPY projeqtor/ /var/www/html/
-
 RUN chown -R www-data:www-data /var/www/html
 
 EXPOSE 80
