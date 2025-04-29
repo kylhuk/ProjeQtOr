@@ -1,6 +1,8 @@
 FROM php:8.0-apache
 
-RUN apt-get update && apt-get install -y \
+RUN set -eux; \
+    apt-get update; \
+    apt-get install -y --no-install-recommends \
       libpng-dev \
       libjpeg62-turbo-dev \
       libfreetype6-dev \
@@ -12,19 +14,21 @@ RUN apt-get update && apt-get install -y \
       libssl-dev \
       libonig-dev \
       pkg-config \
-      curl \
-    && rm -rf /var/lib/apt/lists/*
+      curl; \
+    rm -rf /var/lib/apt/lists/*
 
-RUN docker-php-ext-configure gd \
-        --enable-gd \
-        --with-jpeg=/usr/include \
-        --with-freetype=/usr/include/freetype2 \
-    && docker-php-ext-configure imap \
-        --with-imap=/usr \
-        --with-imap-ssl \
-        --with-kerberos
+RUN set -eux; \
+    docker-php-ext-configure gd \
+      --enable-gd \
+      --with-jpeg=/usr/include \
+      --with-freetype=/usr/include/freetype2; \
+    docker-php-ext-configure imap \
+      --with-imap=/usr \
+      --with-imap-ssl \
+      --with-kerberos
 
-RUN docker-php-ext-install -j$(nproc) \
+RUN set -eux; \
+    docker-php-ext-install -j"$(nproc)" \
       gd \
       imap \
       mbstring \
@@ -33,8 +37,8 @@ RUN docker-php-ext-install -j$(nproc) \
       pdo_pgsql \
       pgsql \
       xml \
-      zip \
-    && docker-php-ext-enable openssl
+      zip; \
+    docker-php-ext-enable openssl
 
 COPY config/custom.ini /usr/local/etc/php/conf.d/99-custom.ini
 
