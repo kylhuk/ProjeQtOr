@@ -11,7 +11,7 @@ on:
   workflow_run:
     workflows: ["SourceForge Release to GitHub Sync"]
     types:
-      - success
+      - completed
   # Allow manual trigger
   workflow_dispatch:
     inputs:
@@ -23,6 +23,8 @@ on:
 jobs:
   build-and-push:
     runs-on: ubuntu-latest
+    
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
     
     steps:
       - name: Checkout repository
