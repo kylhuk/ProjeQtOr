@@ -1,4 +1,4 @@
-[![SourceForge Release to GitHub Sync](https://github.com/kylhuk/ProjeQtOr/actions/workflows/get_release.yml/badge.svg)](https://github.com/kylhuk/ProjeQtOr/actions/workflows/get_release.yml)
+[![SourceForge Release to GitHub Sync](https://github.com/kylhuk/ProjeQtOr/actions/workflows/get_release.yml/badge.svg)](https://github.com/kylhuk/ProjeQtOr/actions/workflows/get_release.yml) [![Build and Push Docker Image](https://github.com/kylhuk/ProjeQtOr/actions/workflows/build_docker.yml/badge.svg)](https://github.com/kylhuk/ProjeQtOr/actions/workflows/build_docker.yml)
 
 # ProjeQtOr Docker Setup
 
