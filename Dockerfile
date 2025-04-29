@@ -1,4 +1,5 @@
-# 1) System deps for all extensions
+FROM php:8.0-apache
+
 RUN apt-get update && apt-get install -y \
       libpng-dev \
       libjpeg62-turbo-dev \
@@ -11,9 +12,9 @@ RUN apt-get update && apt-get install -y \
       libssl-dev \
       libonig-dev \
       pkg-config \
+      curl \
     && rm -rf /var/lib/apt/lists/*
 
-# 2) Configure GD and IMAP with explicit include paths
 RUN docker-php-ext-configure gd \
         --enable-gd \
         --with-jpeg=/usr/include \
@@ -23,7 +24,6 @@ RUN docker-php-ext-configure gd \
         --with-imap-ssl \
         --with-kerberos
 
-# 3) Build & enable all extensions
 RUN docker-php-ext-install -j$(nproc) \
       gd \
       imap \
@@ -35,3 +35,13 @@ RUN docker-php-ext-install -j$(nproc) \
       xml \
       zip \
     && docker-php-ext-enable openssl
+
+COPY config/custom.ini /usr/local/etc/php/conf.d/99-custom.ini
+
+RUN a2enmod rewrite
+
+COPY projeqtor/ /var/www/html/
+
+RUN chown -R www-data:www-data /var/www/html
+
+EXPOSE 80
