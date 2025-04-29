@@ -1,3 +1,5 @@
+[![SourceForge Release to GitHub Sync](https://github.com/kylhuk/ProjeQtOr/actions/workflows/get_release.yml/badge.svg)](https://github.com/kylhuk/ProjeQtOr/actions/workflows/get_release.yml)
+
 # ProjeQtOr Docker Setup
 
 This repository automatically syncs with the official ProjeQtOr releases from SourceForge and builds Docker images for easy deployment with SSL support.
