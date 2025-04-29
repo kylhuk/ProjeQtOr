@@ -1,39 +1,40 @@
-FROM php:8.0-apache
+FROM php:8.4-apache
 
 RUN set -eux; \
     apt-get update; \
     apt-get install -y --no-install-recommends \
-      libpng-dev \
-      libjpeg62-turbo-dev \
-      libfreetype6-dev \
-      libzip-dev \
-      libxml2-dev \
-      libpq-dev \
-      libc-client-dev \
-      libkrb5-dev \
-      libssl-dev \
-      libonig-dev \
-      pkg-config \
-      curl; \
-    ln -s /usr/include/c-client /usr/include/imap; \
-    rm -rf /var/lib/apt/lists/*
+        autoconf \
+        gcc \
+        g++ \
+        make \
+        pkg-config \
+        libpng-dev \
+        libjpeg62-turbo-dev \
+        libfreetype6-dev \
+        libzip-dev \
+        libxml2-dev \
+        libpq-dev \
+        libc-client2007e-dev \
+        libkrb5-dev \
+        libssl-dev \
+        libonig-dev \
+    && rm -rf /var/lib/apt/lists/*
 
 RUN set -eux; \
-    docker-php-ext-configure gd --enable-gd --with-jpeg --with-freetype; \
-    docker-php-ext-configure imap --with-imap --with-imap-ssl --with-kerberos
-
-RUN set -eux; \
+    docker-php-ext-configure gd --enable-gd --with-freetype --with-jpeg; \
     docker-php-ext-install -j"$(nproc)" \
-      gd \
-      imap \
-      mbstring \
-      mysqli \
-      pdo_mysql \
-      pdo_pgsql \
-      pgsql \
-      xml \
-      zip; \
-    docker-php-ext-enable openssl
+        gd \
+        mbstring \
+        mysqli \
+        pdo_mysql \
+        pdo_pgsql \
+        pgsql \
+        xml \
+        zip
+
+RUN set -eux; \
+    yes '' | pecl install imap; \
+    docker-php-ext-enable imap
 
 COPY config/custom.ini /usr/local/etc/php/conf.d/99-custom.ini
 
