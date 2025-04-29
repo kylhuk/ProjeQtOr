@@ -8,10 +8,10 @@ on:
     tags:
       - 'v*.*.*'
   # Run after Release Sync workflow completes
-  #workflow_run:
-  #  workflows: ["SourceForge Release to GitHub Sync"]
-  #  types:
-  #    - completed
+  workflow_run:
+    workflows: ["SourceForge Release to GitHub Sync"]
+    types:
+      - success
   # Allow manual trigger
   workflow_dispatch:
     inputs:
