@@ -1018,6 +1018,7 @@ class PlannedWork extends GeneralWork {
                 $regulTh=round($ass->leftWork/$delaiTh,10);
             	}
             	$delai=0; 
+            	$changeStartDate=true;
             	for($tmpDate=$currentDate; $tmpDate<=$endPlan;$tmpDate=addDaysToDate($tmpDate, 1)) {
             		if (isOffDay($tmpDate,$r->idCalendarDefinition)) continue;
             		if (isset($ress['real'][$keyElt][$tmpDate])) continue;
@@ -1053,8 +1054,10 @@ class PlannedWork extends GeneralWork {
             		} else {
             			$delai+=floor($tempCapacity/$regulTh*10)/10;
             		}
+            		if ($tempCapacity==0 and $changeStartDate) $currentDate=addDaysToDate($tmpDate, 1);
+            		else $changeStartDate=false;
             	}
-              if ($delai and $delai>0) { 
+              if ($delai and $delai>0) {
                 //$regul=round(($ass->leftWork/$delai)+0.000005,5);   
                 $regul=round(($ass->leftWork/$delai),5);
                 $regulDone=0;
@@ -2146,7 +2149,6 @@ class PlannedWork extends GeneralWork {
     $PlHist->result=$status;
     $PlHist->resultDescription=$result;
     $resPlHist=$PlHist->save();
-    
     if ($status == "OK" or $status=="NO_CHANGE" or $status=="INCOMPLETE") {
       Sql::commitTransaction ();
     } else {
@@ -2650,7 +2652,7 @@ class PlannedWork extends GeneralWork {
           $projPrio=500;
         }
       }
-      if (pq_trim($projPrio)) $projPrio=500;
+      if (! pq_trim($projPrio)) $projPrio=500;
       if (! $elt->leftWork or $elt->leftWork==0) {$prio=0;}
       $critDate=$str99;
       if ($pm=='CDUR' and $expectedStartDate) {

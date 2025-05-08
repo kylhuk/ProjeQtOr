@@ -122,7 +122,8 @@ use function Composer\Autoload\includeFile;
     // End of get description for subscription //
   } else {
     echo "Cannot access remote information for subscription at ".$urlPlugins;
-    echo "<br/>Possibly your server has no acces to internet.";
+    if ($getYesNo=='NO') echo "<br/>Global Parameter 'check for new version' is disabled, so we won't access remote server.";
+    else echo "<br/>Possibly your server has no acces to internet.";
     exit;
   }
   $lastTab = Parameter::getUserParameter('subscriptionTab');

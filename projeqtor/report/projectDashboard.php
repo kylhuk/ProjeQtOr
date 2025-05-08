@@ -166,7 +166,8 @@ while ($line = Sql::fetchLine($result)) {
   
   
 if (checkNoData($tab)) if (!empty($cronnedScript)) goto end; else exit;
-
+$topStyle="width='95%' align='center'";
+if($outMode=='pdf')$topStyle='"style="width:45%;"';
 // Header
 $plannedBGColor='#FFFFDD';
 $plannedFrontColor='#777777';
@@ -176,7 +177,7 @@ echo "<table width='95%' align='center'>";
 echo "  <tr><td class='legend'>" . Work::displayWorkUnit() . "</td></tr>";
 echo "</table>";
 echo "<br/>";
-echo '<table width="95%" align="center">';
+echo '<table '.$topStyle.'>';
 echo '  <tr>';
 echo '    <td>';
 

@@ -199,9 +199,13 @@ if (checkNoData($tab)) if (!empty($cronnedScript)) goto end; else exit;
 $arrDates=array();
 $arrYear=array();
 $date=$start;
+$startYear=null;
+$endYear=null;
 while ($date<=$end) {
   $arrDates[]=$date;
   $year=pq_substr($date,0,4);
+  if (! $startYear or $year<$startYear) $startYear=$year;
+  if (! $endYear or $year>$endYear) $endYear=$year;
   if (! array_key_exists($year,$arrYear)) {
     $arrYear[$year]=0;
   }
@@ -216,11 +220,16 @@ while ($date<=$end) {
     $date=pq_substr($next,0,4) . pq_substr($next,5,2);
   }
 }
+if (! $startYear) $startYear=date('Y');
+if (! $endYear) $endYear=date('Y');
 // Header
 $plannedBGColor='#FFFFDD';
 $plannedFrontColor='#777777';
 $plannedStyle=' style="width:20px;text-align:center;background-color:' . $plannedBGColor . '; color: ' . $plannedFrontColor . ';" ';
 
+$loop=($outMode=='pdf')?true:false;
+if ($loop==true && intval($endYear)-intval($startYear)>2)$loop=true;
+for ($loopYear=$startYear;$loopYear<=$endYear;$loopYear++) {
 echo "<table width='95%' align='center'><tr>";
 echo '<td><table width="100%" align="left"><tr>';
 echo "<td class='reportTableDataFull' style='width:20px; text-align:center;'>";
@@ -237,6 +246,7 @@ echo '<table width="100%" align="center">';
 echo '<tr rowspan="2">';
 echo '<td class="reportTableHeader" rowspan="2">' . i18n('Project') . '</td>';
 foreach ($arrYear as $year=>$nb) {
+  if ($loop and $year!=$loopYear) continue;
   echo '<td class="reportTableHeader" colspan="' . $nb . '">' . $year . '</td>';
 }
 echo '<td class="reportTableHeader" rowspan="2">' . i18n('sum') . '</td>';
@@ -244,6 +254,8 @@ echo '</tr>';
 echo '<tr>';
 $arrSum=array();
 foreach ($arrDates as $date) {
+  $year=pq_substr($date,0,4);
+  if ($loop and $year!=$loopYear) continue;
   echo '<td class="reportTableColumnHeader" >';
   echo pq_substr($date,4,2); 
   echo '</td>';
@@ -267,6 +279,8 @@ foreach($tab as $proj=>$lists) {
     }
     $sum=0;
     foreach($arrDates as $date) {
+      $year=pq_substr($date,0,4);
+      if ($loop and $year!=$loopYear) continue;
       if ($i==1) {
         $sumProj[$proj][$date]=0;
       }
@@ -305,6 +319,8 @@ echo '<td class="reportTableHeader" >' . htmlDisplayCurrency($sum) . '</td>';
 echo '</tr>';
 echo '</table>';
 echo '</td></tr></table>';
+if (! $loop) break;
+} // end loop on $loopYear
 // Graph
 if (! testGraphEnabled()) { return;}
   include_once("../external/pChart2/class/pData.class.php");

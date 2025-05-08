@@ -154,7 +154,7 @@ function jsonBuildWhereCriteria(&$querySelect, &$queryFrom, &$queryWhere, &$quer
           foreach ($splitVal as $idP) {
             $prod=new Product($idP);
             $critSqlValue.=', '.$idP;
-            $list=$prod->getRecursiveSubProjectsFlatList(false, false); // Will work only if selected is Product, not for Component
+            $list=$prod->getRecursiveSubProductsFlatList(false, false); // Will work only if selected is Product, not for Component
             foreach ($list as $idPrd=>$namePrd) {
               $critSqlValue.=', '.$idPrd;
             }

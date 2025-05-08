@@ -33,7 +33,7 @@ projeqtor_set_memory_limit('512M');
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // Projet section dans le rapport
 
-	$bPrjSheet=($tabPrj['prj']['id']==$idProject && $bMultiPrj);
+$bPrjSheet=($tabPrj['prj']['id']==$idProject && $bMultiPrj && count($tabPrj['bc'])==0);
 
 	$indicator="neutral";
 	$diff=round($tabPrj['prj']['real']+$tabPrj['prj']['left'] - $tabPrj['prj']['validated'], 2);
@@ -104,11 +104,11 @@ projeqtor_set_memory_limit('512M');
 			}
 				
 			echo '<tr>';
-			echo '<td class="reportTableLineHeader"  colspan=2 title="'. htmlEncode($item['name'])  .'" style="width:600px;">' . htmlEncode($name) . '</td>';
+			echo '<td class="reportTableLineHeader" colspan=2 title="'. htmlEncode($item['name'])  .'" style="xwidth:600px;">' . htmlEncode($name) . '</td>';
 			echo '<td class="reportTableData" >' . $item['work'] . '</td>';
 			echo '<td class="reportTableData" >' . $item['tjm'] . '</td>';
 			echo '<td class="reportTableData" >' . $item['total'] . '</td>';
-			echo '<td class="reportTableData" style="background-color:' . $item['color'] . ';" colspan=2>' . $item['status'] . '</td>';
+			echo '<td class="reportTableData" style="background-color:' . $item['color'] . ';" colspan="2">' . $item['status'] . '</td>';
 			echo '</tr>';
 		}
 	}

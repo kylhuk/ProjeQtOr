@@ -141,7 +141,10 @@ foreach ($lstWork as $work) {
   if (! array_key_exists($work->day,$result[$work->idProject][$work->idResource])) {
     $result[$work->idProject][$work->idResource][$work->day]=0;
     $realDays[$work->idProject][$work->idResource][$work->day]='real';
-    if($work->day < date('Ymd'))$real[$work->day]=true;
+    if($work->day < date('Ymd')) {
+      if (!isset($real[$work->idResource])) $real[$work->idResource]=array();
+      $real[$work->idResource][$work->day]=true;
+    }
   } 
   $result[$work->idProject][$work->idResource][$work->day]+=$work->work;
 }
@@ -161,10 +164,10 @@ foreach ($lstPlanWork as $work) {
     $result[$work->idProject][$work->idResource]=array();
     $realDays[$work->idProject][$work->idResource]=array();
   }
-  if (! array_key_exists($work->day,$result[$work->idProject][$work->idResource]) and !isset($real[$work->day])) {
+  if (! array_key_exists($work->day,$result[$work->idProject][$work->idResource]) and !isset($real[$work->idResource][$work->day])) {
     $result[$work->idProject][$work->idResource][$work->day]=0;
   }
-  if (! array_key_exists($work->day,$realDays[$work->idProject][$work->idResource]) and !isset($real[$work->day])) { // Do not add planned if real exists 
+  if (! array_key_exists($work->day,$realDays[$work->idProject][$work->idResource]) and !isset($real[$work->idResource][$work->day])) { // Do not add planned if real exists 
     $result[$work->idProject][$work->idResource][$work->day]+=$work->work;
   } else if ($work->day>date('Ymd')) {
     $result[$work->idProject][$work->idResource][$work->day]+=$work->work;

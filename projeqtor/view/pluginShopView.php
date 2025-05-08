@@ -35,7 +35,8 @@ require_once "../tool/formatter.php";
   $urlPlugins = "https://projeqtor.org/admin/getPlugins.php";
   $getYesNo=Parameter::getGlobalParameter('getVersion');
   if ($getYesNo=='NO') {
-    echo "Cannot access remote information for the plugin";
+    echo "Cannot access remote information for the plugin.";
+    echo "<br/>Global Parameter 'check for new version' is disabled, so we won't access remote server.";
     exit;
   }
   $json=null;

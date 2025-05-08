@@ -598,6 +598,17 @@ function getJsonPlanningUrl (versionsPlanning) {
       param=true;
     }
   }
+  if (dijit.byId('hideAssignationWihtoutLeftWork') && versionsPlanning == 'workPlan') {
+    if(dijit.byId('hideAssignationWihtoutLeftWork').get("value")=='on'){
+      url+=(param) ? "&" : "?";
+      url+="hideAssignationWihtoutLeftWork=false";
+      param=true;
+    }else{
+      url+=(param) ? "&" : "?";
+      url+="hideAssignationWihtoutLeftWork=true";
+      param=true;
+    }
+  }
   
   if (dijit.byId('listShowMilestone') && versionsPlanning != 'workPlan') {
     url+=(param) ? "&" : "?";

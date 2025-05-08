@@ -1454,7 +1454,7 @@ abstract class SqlElement {
           $where = "nameIndicatorable='$classIndicatorable' and idle = 0";
         }
         $lstInd = $indDef->getSqlElementsFromCriteria ( null, false, $where );
-        if(!$lstInd){
+        if(!$lstInd or count($lstInd)==0){
           $crit = array('nameIndicatorable' => $classIndicatorable, 'idle' => '0','idProject' =>"");
           $lstInd = $indDef->getSqlElementsFromCriteria ( $crit, false );
         }
@@ -4175,6 +4175,11 @@ abstract class SqlElement {
         }
       }
     }
+    // Set also criteria fields
+    foreach ($this->getStaticDatabaseCriteria() as $crt=>$val) {
+      if (property_exists($this, $crt)) $this->$crt=$val;
+    }
+    
   }
 
   /**

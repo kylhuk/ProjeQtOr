@@ -291,7 +291,7 @@ if($positionListDiv == 'top'){
 		            <td style="width:90%;">&nbsp;
                 </td>
                 <?php if ($canPlan) { ?>
-		            <td style="width:auto;position:relative;min-width:90px;">
+		            <td style="width:auto;position:relative;min-width:100px;">
 		              <div id="predecessorSequence" class="dependencySequence" style="left:0px;"></div>
 		              <div class="iconSucessorPredecessor iconSize60 imageColorNewGuiNoSelection">
 		                <div title="<?php echo i18n('helpPredecessorButton');?>" id="predecessor" class="dependencyPredecessor" onclick="drawButtonPredecessorElement();" style="left: -4px;"></div>
@@ -320,7 +320,7 @@ if($positionListDiv == 'top'){
                     <?php drawButtonPlan(); ?>
                     </div>    
 		            </td>
-		            <td style="width:70px; position:relative;padding-right:20px;">
+		            <td style="width:70px; min-width:22px; position:relative;padding-right:20px;">
                     <?php drawOptionAutomatic();?>
                 </td>
                 <?php } ?>

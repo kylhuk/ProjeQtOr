@@ -80,7 +80,10 @@ $monthlyRevenueTotal=0;
 
 
 // top board
-echo '<table  style="width:90%;margin-left:5%;margin-right:5%;" '.excelName().'>';
+$width="90";
+if($outMode=='pdf')$width="85";
+
+echo '<table  style="width:'.$width.'%;margin-left:5%;margin-right:5%;" '.excelName().'>';
 echo ' <tr>';
 echo '   <td style="width:20%,border-bottom:2px solid black;" class="reportTableHeader" '.excelFormatCell('header',60).' rowspan="2" colspan="2">'.i18n('menuProject').'</td>';
 echo '   <td style="width:10%" class="reportTableHeader" '.excelFormatCell('header',20).' rowspan="2">'.pq_ucfirst(i18n('validatedConsolidation')).'</td>';

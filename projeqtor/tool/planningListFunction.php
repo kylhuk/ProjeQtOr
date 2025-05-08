@@ -31,7 +31,7 @@ function drawOptionAutomatic() {
   }
   $disabled = (getSessionValue('lockPlanningSaveRefresh') and getSessionValue('lockPlanningSaveRefresh') == '1')?true:false;
   ?>
-  <div style="white-space:nowrap;">
+  <div style="white-space:nowrap;position:absolute; top:5px" title="<?php echo i18n('automaticRunPlan');?>">
   <?php if (isNewGui()) htmlDrawSwitch('automaticRunPlan',$automaticRunPlanning, true, true, $disabled);?>
     <span title="<?php echo i18n('automaticRunPlanHelp');?>" dojoType="dijit.form.CheckBox" 
       <?php if (isNewGui()) echo 'style="display:none"';?>
@@ -40,7 +40,7 @@ function drawOptionAutomatic() {
       <script type="dojo/connect" event="onChange" args="evt">
         saveUserParameter('automaticRunPlanning',((this.checked)?'1':'0'));
       </script>                    
-    </span>&nbsp;<?php if ($displayWidthPlan>1250) echo i18n('automaticRunPlan'); else echo i18n('automaticRunPlanShort');?>
+    </span><div style="font-size:90%;margin:auto"><?php if (0 and $displayWidthPlan>1250) echo i18n('automaticRunPlan'); else echo i18n('automaticRunPlanShort');?></div>
   </div>
 <?php 
 }
@@ -1676,10 +1676,10 @@ function drawOptionResource() {
 function drawResourceTeamOrga($planningType='resource', $withPool=true) {
   global $displayWidthPlan, $displayListDiv;
   $sizeSelect=($displayListDiv>1400)?150:100;
-  $showOrga=($displayListDiv>1180)?true:false;
-  $showTeam=($displayListDiv>980)?true:false;
-  $showPool=($displayListDiv>780)?true:false;
-  $showRes=($displayListDiv>780)?true:false;
+  $showOrga=($displayWidthPlan>1180)?true:false;
+  $showTeam=($displayWidthPlan>980)?true:false;
+  $showPool=($displayWidthPlan>780)?true:false;
+  $showRes=($displayWidthPlan>780)?true:false;
   ?>
   <table>
     <tr>

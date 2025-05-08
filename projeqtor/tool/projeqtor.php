@@ -55,9 +55,9 @@ if (is_session_started()===FALSE) {
 // === Application data : version, dependencies, about message, ...
 $applicationName = "ProjeQtOr"; // Name of the application
 $copyright = $applicationName; // Copyright to be displayed
-$version = "V12.1.1"; // Version of application : Major / Minor / Release
-$svnRevision="22708";
-$build = "0380"; // Build number. To be increased on each release
+$version = "V12.1.2"; // Version of application : Major / Minor / Release
+$svnRevision="22817";
+$build = "0381"; // Build number. To be increased on each release
 $website = "https://www.projeqtor.org"; // ProjeQtOr site url
 if (!isset($aesKeyLength)) { // one can define key lenth to 256 in parameters.php with $aesKeyLength=256; // valid values are 128, 192 and 256
   $aesKeyLength=128;
@@ -4849,6 +4849,16 @@ function securityCheckRequest() {
   // parameters to check for non html
   $parameters=array('objectClass', 'objectId', 'directAccess', 'page', 'directAccessPage');
   $pages=array('page', 'directAccessPage');
+  if (isset($_REQUEST['directAccess']) and pq_strpos($_REQUEST['directAccess'],'&amp;')!==false) {
+    $direct=$_REQUEST['directAccess'];
+    $all=explode('&amp;',$direct);
+    foreach ($all as $prm) {
+      $exp=explode('=',$prm);
+      if (count($exp)==1) $_REQUEST['directAccess']=$exp[0];
+      else if (count($exp)==2) $_REQUEST[$exp[0]]=$exp[1];
+      else traceHack("projeqtor->securityCheckRequest, _REQUEST['directAccess']=$direct | cannot be split for $prm");
+    }
+  }
   foreach ($parameters as $param) {
     if (isset($_REQUEST[$param])) {
       $paramVal=$_REQUEST[$param];

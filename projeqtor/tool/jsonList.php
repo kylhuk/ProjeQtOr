@@ -93,6 +93,11 @@ if ($type == 'empty') {
   $json=ob_get_clean();
   $jsonValid='{"identifier":"id", "items":['.$json.']}';
   $arr=json_decode($jsonValid);
+  if (!$arr) {
+    errorLog("Cannot decode json string for fields list (jsonList.php - type='object')");
+    errorLog($jsonValid);
+    exit;
+  }
   function build_sorter($key) {
     return function ($a, $b) use ($key) {
       return strnatcmp($a->$key, $b->$key);

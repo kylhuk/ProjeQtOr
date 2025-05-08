@@ -1,22 +1,26 @@
 
 
+
 <!DOCTYPE html>
 
-<html lang="en" data-content_root="./">
+<html lang="en">
   <head>
     <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="generator" content="Docutils 0.19: https://docutils.sourceforge.io/" />
 
     <title>Administration &#8212; ProjeQtOr User guide 12.1 documentation</title>
-    <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=fa44fd50" />
-    <link rel="stylesheet" type="text/css" href="_static/classic.css?v=3f452e31" />
+    <link rel="stylesheet" type="text/css" href="_static/pygments.css" />
+    <link rel="stylesheet" type="text/css" href="_static/classic.css" />
     <link rel="stylesheet" href="_static/projeqtor.css" type="text/css" />
     
-    <script src="_static/documentation_options.js?v=c19c448c"></script>
-    <script src="_static/doctools.js?v=888ff710"></script>
-    <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script data-url_root="./" id="documentation_options" src="_static/documentation_options.js"></script>
+    <script src="_static/jquery.js"></script>
+    <script src="_static/underscore.js"></script>
+    <script src="_static/_sphinx_javascript_frameworks_compat.js"></script>
+    <script src="_static/doctools.js"></script>
+    <script src="_static/sphinx_highlight.js"></script>
     
-    <link rel="icon" href="_static/favicon.ico"/>
+    <link rel="shortcut icon" href="_static/favicon.ico"/>
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
     <link rel="next" title="Configuration Management" href="AccessRights.html" />
@@ -45,11 +49,11 @@
           <div class="body" role="main">
             
   <section id="administration-console">
-<span id="admin-console"></span><span id="index-0"></span><h1>Administration Console<a class="headerlink" href="#administration-console" title="Link to this heading">¶</a></h1>
+<span id="admin-console"></span><span id="index-0"></span><h1>Administration Console<a class="headerlink" href="#administration-console" title="Permalink to this heading">¶</a></h1>
 <figure class="align-center" id="id1">
 <img alt="Administration screen" src="_images/ADMIN_SCR_Console.png" />
 <figcaption>
-<p><span class="caption-text">Administration screen</span><a class="headerlink" href="#id1" title="Link to this image">¶</a></p>
+<p><span class="caption-text">Administration screen</span><a class="headerlink" href="#id1" title="Permalink to this image">¶</a></p>
 </figcaption>
 </figure>
 <div class="admonition note">
@@ -59,22 +63,22 @@
 </div>
 <p>Administration console allows to execute administration tasks on application.</p>
 <section id="background-tasks">
-<span id="background-task"></span><span id="index-1"></span><h2>Background tasks<a class="headerlink" href="#background-tasks" title="Link to this heading">¶</a></h2>
+<span id="background-task"></span><span id="index-1"></span><h2>Background tasks<a class="headerlink" href="#background-tasks" title="Permalink to this heading">¶</a></h2>
 <section id="the-cron">
-<h3>the CRON<a class="headerlink" href="#the-cron" title="Link to this heading">¶</a></h3>
+<h3>the CRON<a class="headerlink" href="#the-cron" title="Permalink to this heading">¶</a></h3>
 <p>The <a class="reference internal" href="Glossary.html#term-CRON"><span class="xref std std-term">CRON</span></a> program starts and stops background jobs that process and periodically check indicators to generate the corresponding alerts, warnings or even automatic imports if necessary.</p>
 <p>This program automatically runs scripts, commands, or software at a specified date and time, or a pre-defined cycle.</p>
 <figure class="align-default" id="id2">
 <img alt="Background tasks in Admin" src="_images/ADMIN_ZONE_BackgroundTask.png" />
 <figcaption>
-<p><span class="caption-text">Background tasks is running in Administration console</span><a class="headerlink" href="#id2" title="Link to this image">¶</a></p>
+<p><span class="caption-text">Background tasks is running in Administration console</span><a class="headerlink" href="#id2" title="Permalink to this image">¶</a></p>
 </figcaption>
 </figure>
 <p>You can activate or deactivate CRON directly from the info bar.</p>
 <figure class="align-default" id="id3">
 <img alt="CRON Button" src="_images/ADMIN_ZONE_ButtonCRON.png" />
 <figcaption>
-<p><span class="caption-text">CRON activation button</span><a class="headerlink" href="#id3" title="Link to this image">¶</a></p>
+<p><span class="caption-text">CRON activation button</span><a class="headerlink" href="#id3" title="Permalink to this image">¶</a></p>
 </figcaption>
 </figure>
 <div class="admonition seealso">
@@ -84,12 +88,12 @@
 </section>
 </section>
 <section id="send-an-internal-alert">
-<span id="index-2"></span><h2>Send an internal alert<a class="headerlink" href="#send-an-internal-alert" title="Link to this heading">¶</a></h2>
+<span id="index-2"></span><h2>Send an internal alert<a class="headerlink" href="#send-an-internal-alert" title="Permalink to this heading">¶</a></h2>
 <p>Allows to send an internal alert to users.</p>
 <figure class="align-default" id="id4">
 <img alt="Internal Alert" src="_images/ADMIN_ZONE_SendAlertIntern.png" />
 <figcaption>
-<p><span class="caption-text">Internal Alert</span><a class="headerlink" href="#id4" title="Link to this image">¶</a></p>
+<p><span class="caption-text">Internal Alert</span><a class="headerlink" href="#id4" title="Permalink to this image">¶</a></p>
 </figcaption>
 </figure>
 <p>Internal alerts can be sent to users.</p>
@@ -114,11 +118,11 @@
 </div>
 </section>
 <section id="manage-connections">
-<span id="manage-connection"></span><span id="index-3"></span><h2>Manage connections<a class="headerlink" href="#manage-connections" title="Link to this heading">¶</a></h2>
+<span id="manage-connection"></span><span id="index-3"></span><h2>Manage connections<a class="headerlink" href="#manage-connections" title="Permalink to this heading">¶</a></h2>
 <figure class="align-default" id="id5">
 <img alt="Manage connections" src="_images/ADMIN_ZONE_ManageConnection.png" />
 <figcaption>
-<p><span class="caption-text">Manage connections</span><a class="headerlink" href="#id5" title="Link to this image">¶</a></p>
+<p><span class="caption-text">Manage connections</span><a class="headerlink" href="#id5" title="Permalink to this image">¶</a></p>
 </figcaption>
 </figure>
 <p>Allows to force disconnection of active users and close the application for new connections.</p>
@@ -137,11 +141,11 @@
 </ul>
 </section>
 <section id="consistency-check">
-<span id="index-4"></span><h2>Consistency check<a class="headerlink" href="#consistency-check" title="Link to this heading">¶</a></h2>
+<span id="index-4"></span><h2>Consistency check<a class="headerlink" href="#consistency-check" title="Permalink to this heading">¶</a></h2>
 <figure class="align-center" id="id6">
 <img alt="constancy check" src="_images/ADMIN_ConstencyCheck.png" />
 <figcaption>
-<p><span class="caption-text">consistency check</span><a class="headerlink" href="#id6" title="Link to this image">¶</a></p>
+<p><span class="caption-text">consistency check</span><a class="headerlink" href="#id6" title="Permalink to this image">¶</a></p>
 </figcaption>
 </figure>
 <ul class="simple">
@@ -153,14 +157,14 @@
 </ul>
 <p>You can program the search for the consistency check as well as its execution.</p>
 <p>Set the desired frequency settings and activate the service.</p>
-</section>
+<span class="target" id="index-5"></span><span class="target" id="index-6"></span></section>
 <section id="maintenance-of-data">
-<span id="index-7"></span><span id="index-6"></span><span id="index-5"></span><h2>Maintenance of Data<a class="headerlink" href="#maintenance-of-data" title="Link to this heading">¶</a></h2>
+<span id="index-7"></span><h2>Maintenance of Data<a class="headerlink" href="#maintenance-of-data" title="Permalink to this heading">¶</a></h2>
 <p>The administrator has the possibility to:</p>
 <figure class="align-default" id="id7">
 <img alt="Maintenance of datas" src="_images/ADMIN_ZONE_DataMaintenance.png" />
 <figcaption>
-<p><span class="caption-text">Maintenance of datas</span><a class="headerlink" href="#id7" title="Link to this image">¶</a></p>
+<p><span class="caption-text">Maintenance of datas</span><a class="headerlink" href="#id7" title="Permalink to this image">¶</a></p>
 </figcaption>
 </figure>
 <ul class="simple">
@@ -171,11 +175,11 @@
 <p>You can automate these cleanings by activating them using the corresponding buttons.</p>
 </section>
 <section id="log-files-maintenance">
-<span id="index-8"></span><h2>Log files maintenance<a class="headerlink" href="#log-files-maintenance" title="Link to this heading">¶</a></h2>
+<span id="index-8"></span><h2>Log files maintenance<a class="headerlink" href="#log-files-maintenance" title="Permalink to this heading">¶</a></h2>
 <figure class="align-center" id="id8">
 <img alt="Log files maintenance" src="_images/ADMIN_Zone_LogFiles.png" />
 <figcaption>
-<p><span class="caption-text">Log files maintenance</span><a class="headerlink" href="#id8" title="Link to this image">¶</a></p>
+<p><span class="caption-text">Log files maintenance</span><a class="headerlink" href="#id8" title="Permalink to this image">¶</a></p>
 </figcaption>
 </figure>
 <p>The administrator has the possibility to choose the level of the log files among debug, trace, script and errors.</p>
@@ -187,16 +191,16 @@
 <figure class="align-center" id="id9">
 <img alt="Log files maintenance" src="_images/ADMIN_BOX_LogfilesList.png" />
 <figcaption>
-<p><span class="caption-text">Log files list</span><a class="headerlink" href="#id9" title="Link to this image">¶</a></p>
+<p><span class="caption-text">Log files list</span><a class="headerlink" href="#id9" title="Permalink to this image">¶</a></p>
 </figcaption>
 </figure>
 </section>
 <section id="ordering-projects-by-priority">
-<h2>Ordering projects by priority<a class="headerlink" href="#ordering-projects-by-priority" title="Link to this heading">¶</a></h2>
+<h2>Ordering projects by priority<a class="headerlink" href="#ordering-projects-by-priority" title="Permalink to this heading">¶</a></h2>
 <figure class="align-center" id="id10">
 <img alt="Log files maintenance" src="_images/OrderingProjectPrio.png" />
 <figcaption>
-<p><span class="caption-text">Ordering project by priority</span><a class="headerlink" href="#id10" title="Link to this image">¶</a></p>
+<p><span class="caption-text">Ordering project by priority</span><a class="headerlink" href="#id10" title="Permalink to this image">¶</a></p>
 </figcaption>
 </figure>
 <p>You can list projects in priority order rather than WBS order across a set of reports using this administration feature.</p>
@@ -212,7 +216,7 @@
 </section>
 </section>
 <section id="api-rest-2">
-<span id="api"></span><span id="index-9"></span><h1>API REST 2<a class="headerlink" href="#api-rest-2" title="Link to this heading">¶</a></h1>
+<span id="api"></span><span id="index-9"></span><h1>API REST 2<a class="headerlink" href="#api-rest-2" title="Permalink to this heading">¶</a></h1>
 <p>ProjeQtOr provides an API to interact with its elements. It is provided as a REST web service.</p>
 <p>The GET, PUT, POST and DELETE methods are used for elements.</p>
 <p>For security reasons, the API is not enabled by default.</p>
@@ -221,7 +225,7 @@
 <p>Update the .htaccess file to specify the location of your .htpasswd file:</p>
 <p><strong>AuthUserFile “/pathToFile/.htpasswd”</strong> The default location is the Apache directory.</p>
 <section id="how-the-api-works">
-<h2>How the API works<a class="headerlink" href="#how-the-api-works" title="Link to this heading">¶</a></h2>
+<h2>How the API works<a class="headerlink" href="#how-the-api-works" title="Permalink to this heading">¶</a></h2>
 <p>The user used, the one defined in. htpassword, must exist as a user in the database. The access rights: read, create, update, delete, must be defined for this user. This allows you to provide some access to external users and control the visibility they get on your data.</p>
 <p><strong>METHODS</strong></p>
 <ul class="simple">
@@ -246,7 +250,7 @@
 </ul>
 </section>
 <section id="queries-in-json">
-<h2>Queries in Json<a class="headerlink" href="#queries-in-json" title="Link to this heading">¶</a></h2>
+<h2>Queries in Json<a class="headerlink" href="#queries-in-json" title="Permalink to this heading">¶</a></h2>
 <p>Some examples of queries in Json format.</p>
 <p class="rubric">GET</p>
 <ul>
@@ -449,8 +453,8 @@ curl_close($curl);
       </ul>
     </div>
     <div class="footer" role="contentinfo">
-    &#169; Copyright 2015-2024, ProjeQtOr.
-      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 7.2.6.
+        &#169; Copyright 2015-2024, ProjeQtOr.
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 5.2.3.
     </div>
   </body>
 </html>

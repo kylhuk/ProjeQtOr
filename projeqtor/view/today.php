@@ -502,6 +502,7 @@ global $cptMax, $print, $workVisibility, $templateProjectList, $arrayCols, $show
   
   $user=getSessionUser();
   $parmSizeProject=Parameter::getUserParameter('sizeDisplayProjectToday');
+  if (!$parmSizeProject) $parmSizeProject=$cptMax;
   $prjVisLst=$user->getVisibleProjects();
   $prjLst=$user->getHierarchicalViewOfVisibleProjects(true);
   $lstProj=array();

@@ -133,7 +133,7 @@ $userLink['MessageType']='ListsOfTypes.html#message-type';
 $userLink['Milestone']='PlanningElements.html#milestone';
 $userLink['MilestoneType']='ListsOfTypes.html#milestone-type';
 $userLink['Model']='AssetManagement.html#models';
-$userLink['Module']='AccessRight.html#module-management';
+$userLink['Module']='AccessRights.html#module-management';
 
 $userLink['Notification']='ControlAutomation.html#notification-system';
 $userLink['NotificationDefinition']='ControlAutomation.html#notification-system';

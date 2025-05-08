@@ -256,7 +256,7 @@ function showSkill($id,$name,$level,$position, $arraySkill, $pertinence, &$resul
       if (securityCheckDisplayMenu(null,'Skill') and securityGetAccessRightYesNo('menu'.get_class($item), 'read', '')=="YES") {
       	$goto=' onClick="top.gotoElement(\''.get_class($item).'\',\''.htmlEncode($item->id).'\');window.top.dijit.byId(\'dialogPrint\').hide();" style="cursor: pointer;" ';
       }
-      $result .='       <TD '.$goto.' style="'.$style.'padding-bottom:5px;" class="'.((isNewGui() and isset($goto) and $goto!='')?'classLinkName':'').'"><div style="white-space: nowrap;">#'.htmlEncode($item->id).'  '.htmlEncode($item->name). '</div></TD>' ;
+      $result .='       <TD '.$goto.' style="'.$style.'padding-bottom:5px;" class="'.((isNewGui() and isset($goto) and $goto!='')?'classLinkName':'').'"><div style="margin:10px; text-align:left;">#'.htmlEncode($item->id).'  '.htmlEncode($item->name). '</div></TD>' ;
     }
     $result .='      </tr></table>';
     $result .='    </span>';

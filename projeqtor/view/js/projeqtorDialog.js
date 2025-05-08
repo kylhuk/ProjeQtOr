@@ -591,7 +591,6 @@ function hideMsg(id,value){
 // =============================================================================
 
 function showPrint(page, context, comboName, outMode, orientation, attach) {
-  //console.log(page);
   showWait();
   quitConfirmed=true;
   noDisconnect=true;

@@ -271,6 +271,14 @@
       $workCommandBill = new WorkCommandBilled($idWorkCommandBill);
       $total = ($workCommand->billedQuantity)-($workCommandBill->billedQuantity);
       echo $total;
+    }else if($type=='workCommandParent'){
+      //remi
+      $idWorkCommandParent = RequestHandler::getId('idWorkCommandParent');
+      $wkp = new WorkCommand($idWorkCommandParent);
+      $wkpUO = $wkp->idWorkUnit;
+      $wkpComp = $wkp->idComplexity;
+      $wkpArray="$wkpUO#$wkpComp";
+      echo $wkpArray;
     }else if($type=='editLink'){  
       $id = RequestHandler::getId('idLink');
       $link = new Link($id,true);

@@ -1,22 +1,26 @@
 
 
+
 <!DOCTYPE html>
 
-<html lang="en" data-content_root="./">
+<html lang="en">
   <head>
     <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="generator" content="Docutils 0.19: https://docutils.sourceforge.io/" />
 
     <title>Configuration Management &#8212; ProjeQtOr User guide 12.1 documentation</title>
-    <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=fa44fd50" />
-    <link rel="stylesheet" type="text/css" href="_static/classic.css?v=3f452e31" />
+    <link rel="stylesheet" type="text/css" href="_static/pygments.css" />
+    <link rel="stylesheet" type="text/css" href="_static/classic.css" />
     <link rel="stylesheet" href="_static/projeqtor.css" type="text/css" />
     
-    <script src="_static/documentation_options.js?v=c19c448c"></script>
-    <script src="_static/doctools.js?v=888ff710"></script>
-    <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script data-url_root="./" id="documentation_options" src="_static/documentation_options.js"></script>
+    <script src="_static/jquery.js"></script>
+    <script src="_static/underscore.js"></script>
+    <script src="_static/_sphinx_javascript_frameworks_compat.js"></script>
+    <script src="_static/doctools.js"></script>
+    <script src="_static/sphinx_highlight.js"></script>
     
-    <link rel="icon" href="_static/favicon.ico"/>
+    <link rel="shortcut icon" href="_static/favicon.ico"/>
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
     <link rel="next" title="Requirements and tests" href="RequirementsTest.html" />
@@ -45,7 +49,7 @@
           <div class="body" role="main">
             
   <section id="configuration-management">
-<span id="configurationmanagement"></span><span id="index-0"></span><h1>Configuration Management<a class="headerlink" href="#configuration-management" title="Link to this heading">¶</a></h1>
+<span id="configurationmanagement"></span><span id="index-0"></span><h1>Configuration Management<a class="headerlink" href="#configuration-management" title="Permalink to this heading">¶</a></h1>
 <p>Configuration management consists of managing the technical description of a system, as well as managing all changes made during the evolution of the system.</p>
 <p>It is the set of processes to ensure the conformity of a product to the requirements, throughout its life cycle.</p>
 <p>In computing, for example, configuration management can be used for many purposes.</p>
@@ -55,24 +59,24 @@
 <li><p>Manage source codes …</p></li>
 </ul>
 <section id="products">
-<span id="product"></span><span id="index-1"></span><h2>Products<a class="headerlink" href="#products" title="Link to this heading">¶</a></h2>
+<span id="product"></span><span id="index-1"></span><h2>Products<a class="headerlink" href="#products" title="Permalink to this heading">¶</a></h2>
 <p>Allows to define product and sub-product.</p>
 <p>Allows to link components to product.</p>
 <figure class="align-default" id="id2">
 <img alt="Product configuration screen" src="_images/CONF_SCR_Product.png" />
 <figcaption>
-<p><span class="caption-text">Product configuration screen</span><a class="headerlink" href="#id2" title="Link to this image">¶</a></p>
+<p><span class="caption-text">Product configuration screen</span><a class="headerlink" href="#id2" title="Permalink to this image">¶</a></p>
 </figcaption>
 </figure>
 <p>You can create many links between products, product versions and component</p>
 <section id="project-linked-to-this-product">
-<h3>Project linked to this product<a class="headerlink" href="#project-linked-to-this-product" title="Link to this heading">¶</a></h3>
+<h3>Project linked to this product<a class="headerlink" href="#project-linked-to-this-product" title="Permalink to this heading">¶</a></h3>
 <p>Possibility of attaching the products of the list to projects.</p>
 <p>When you link a project to a product, all versions of this product are going to be linked.</p>
 <p>The start and end date corresponds to the duration of this link.</p>
 </section>
 <section id="composition">
-<h3>Composition<a class="headerlink" href="#composition" title="Link to this heading">¶</a></h3>
+<h3>Composition<a class="headerlink" href="#composition" title="Permalink to this heading">¶</a></h3>
 <p>List of sub-products and list of components used by this product</p>
 <div class="admonition seealso">
 <p class="admonition-title">See also</p>
@@ -80,12 +84,12 @@
 </div>
 </section>
 <section id="structure">
-<h3>Structure<a class="headerlink" href="#structure" title="Link to this heading">¶</a></h3>
+<h3>Structure<a class="headerlink" href="#structure" title="Permalink to this heading">¶</a></h3>
 <p>You can display 2 ways to display the structure. Normal and flat.</p>
 <figure class="align-default" id="id3">
 <img alt="Display the product structure" src="_images/CONF_BOX_DisplayStructureSSBox.png" />
 <figcaption>
-<p><span class="caption-text">Normal display the product structure</span><a class="headerlink" href="#id3" title="Link to this image">¶</a></p>
+<p><span class="caption-text">Normal display the product structure</span><a class="headerlink" href="#id3" title="Permalink to this image">¶</a></p>
 </figcaption>
 </figure>
 <p>Box checked “Show versions for all structure” allows to display versions of sub-products and components.</p>
@@ -93,19 +97,19 @@
 <figure class="align-default" id="id4">
 <img alt="Display the product structure box checked" src="_images/CONF_BOX_DisplayStructure.png" />
 <figcaption>
-<p><span class="caption-text">Display the product structure with the boxes checked</span><a class="headerlink" href="#id4" title="Link to this image">¶</a></p>
+<p><span class="caption-text">Display the product structure with the boxes checked</span><a class="headerlink" href="#id4" title="Permalink to this image">¶</a></p>
 </figcaption>
 </figure>
 </section>
 </section>
 <section id="product-versions">
-<span id="product-version"></span><span id="index-2"></span><h2>Product Versions<a class="headerlink" href="#product-versions" title="Link to this heading">¶</a></h2>
+<span id="product-version"></span><span id="index-2"></span><h2>Product Versions<a class="headerlink" href="#product-versions" title="Permalink to this heading">¶</a></h2>
 <p>Allows to define versions of a product.</p>
 <p>Allows to link a component version to product version.</p>
 <p>Allows to link the product version to a project.</p>
 <p>Ability to define the compatibility between product versions (feature activated through a global parameter)</p>
 <section id="automatic-formatting-of-version-name">
-<h3>Automatic formatting of version name<a class="headerlink" href="#automatic-formatting-of-version-name" title="Link to this heading">¶</a></h3>
+<h3>Automatic formatting of version name<a class="headerlink" href="#automatic-formatting-of-version-name" title="Permalink to this heading">¶</a></h3>
 <aside class="sidebar">
 <p class="sidebar-title">Other sections</p>
 <ul class="simple">
@@ -120,7 +124,7 @@
 <figure class="align-default" id="id5">
 <img alt="Product version description" src="_images/CONF_ZONE_DescriptionVersionProduct.png" />
 <figcaption>
-<p><span class="caption-text">Product version description</span><a class="headerlink" href="#id5" title="Link to this image">¶</a></p>
+<p><span class="caption-text">Product version description</span><a class="headerlink" href="#id5" title="Permalink to this image">¶</a></p>
 </figcaption>
 </figure>
 <p class="rubric">Version number &amp; Name</p>
@@ -137,7 +141,7 @@
 </section>
 </section>
 <section id="components">
-<span id="component"></span><span id="index-3"></span><h2>Components<a class="headerlink" href="#components" title="Link to this heading">¶</a></h2>
+<span id="component"></span><span id="index-3"></span><h2>Components<a class="headerlink" href="#components" title="Permalink to this heading">¶</a></h2>
 <aside class="sidebar">
 <p class="sidebar-title"><strong>Other sections</strong></p>
 <ul class="simple">
@@ -151,14 +155,14 @@
 <figure class="align-default" id="id6">
 <img alt="Component" src="_images/CONF_ZONE_ComponentDetails.png" />
 <figcaption>
-<p><span class="caption-text">Component details</span><a class="headerlink" href="#id6" title="Link to this image">¶</a></p>
+<p><span class="caption-text">Component details</span><a class="headerlink" href="#id6" title="Permalink to this image">¶</a></p>
 </figcaption>
 </figure>
 <p>List of versions defined for the component.</p>
 <p>Component versions are defined in <a class="reference internal" href="#component-version"><span class="std std-ref">Component Versions</span></a> screen.</p>
 </section>
 <section id="component-versions">
-<span id="component-version"></span><span id="index-4"></span><h2>Component Versions<a class="headerlink" href="#component-versions" title="Link to this heading">¶</a></h2>
+<span id="component-version"></span><span id="index-4"></span><h2>Component Versions<a class="headerlink" href="#component-versions" title="Permalink to this heading">¶</a></h2>
 <aside class="sidebar">
 <p class="sidebar-title">Other sections</p>
 <ul class="simple">
@@ -171,7 +175,7 @@
 <figure class="align-default" id="id7">
 <img alt="Component version details" src="_images/CONF_ZONE_ComponentVersionDetails.png" />
 <figcaption>
-<p><span class="caption-text">Component version details</span><a class="headerlink" href="#id7" title="Link to this image">¶</a></p>
+<p><span class="caption-text">Component version details</span><a class="headerlink" href="#id7" title="Permalink to this image">¶</a></p>
 </figcaption>
 </figure>
 <div class="admonition note">
@@ -194,9 +198,9 @@
 </div>
 </section>
 <section id="relationships">
-<span id="relationship-product-component"></span><h2>Relationships<a class="headerlink" href="#relationships" title="Link to this heading">¶</a></h2>
+<span id="relationship-product-component"></span><h2>Relationships<a class="headerlink" href="#relationships" title="Permalink to this heading">¶</a></h2>
 <section id="product-and-component-elements">
-<h3>Product and component elements<a class="headerlink" href="#product-and-component-elements" title="Link to this heading">¶</a></h3>
+<h3>Product and component elements<a class="headerlink" href="#product-and-component-elements" title="Permalink to this heading">¶</a></h3>
 <p>Allows to manage relationships between products and components to define product structure.</p>
 <p>See possible relationships:  <a class="reference internal" href="Concept.html#product-structure"><span class="std std-ref">Product structure</span></a></p>
 <p class="rubric">Relationships management</p>
@@ -207,12 +211,12 @@
 <figure class="align-center" id="id8">
 <img alt="Dialog box - Structure" src="_images/CONF_BOX_ProductStructure.png" />
 <figcaption>
-<p><span class="caption-text">Structure</span><a class="headerlink" href="#id8" title="Link to this image">¶</a></p>
+<p><span class="caption-text">Structure</span><a class="headerlink" href="#id8" title="Permalink to this image">¶</a></p>
 </figcaption>
 </figure>
 </section>
 <section id="versions-of-products-and-components">
-<span id="version-product-component"></span><h3>Versions of products and components<a class="headerlink" href="#versions-of-products-and-components" title="Link to this heading">¶</a></h3>
+<span id="version-product-component"></span><h3>Versions of products and components<a class="headerlink" href="#versions-of-products-and-components" title="Permalink to this heading">¶</a></h3>
 <p>Allows to define links between versions of products and components.</p>
 <div class="admonition note">
 <p class="admonition-title">Note</p>
@@ -226,12 +230,12 @@
 <figure class="align-center" id="id9">
 <img alt="Dialog box - Version structure" src="_images/CONF_BOX_VersionStructure.png" />
 <figcaption>
-<p><span class="caption-text">Version structure</span><a class="headerlink" href="#id9" title="Link to this image">¶</a></p>
+<p><span class="caption-text">Version structure</span><a class="headerlink" href="#id9" title="Permalink to this image">¶</a></p>
 </figcaption>
 </figure>
 </section>
 <section id="version-to-projects">
-<span id="link-version-project-section"></span><h3>version to projects<a class="headerlink" href="#version-to-projects" title="Link to this heading">¶</a></h3>
+<span id="link-version-project-section"></span><h3>version to projects<a class="headerlink" href="#version-to-projects" title="Permalink to this heading">¶</a></h3>
 <p>This section allows to manage links between projects and versions of products.</p>
 <p class="rubric">Link version to projects management</p>
 <ul class="simple">
@@ -242,7 +246,7 @@
 <figure class="align-center" id="id10">
 <img alt="Dialog box - Project-Version link" src="_images/CONF_BOX_ProjectVersionLink.png" />
 <figcaption>
-<p><span class="caption-text">Project / Version Link</span><a class="headerlink" href="#id10" title="Link to this image">¶</a></p>
+<p><span class="caption-text">Project / Version Link</span><a class="headerlink" href="#id10" title="Permalink to this image">¶</a></p>
 </figcaption>
 </figure>
 <aside class="topic">
@@ -255,7 +259,7 @@
 </section>
 </section>
 <section id="versions-planning">
-<span id="id1"></span><h2>Versions planning<a class="headerlink" href="#versions-planning" title="Link to this heading">¶</a></h2>
+<span id="id1"></span><h2>Versions planning<a class="headerlink" href="#versions-planning" title="Permalink to this heading">¶</a></h2>
 <p>Select one or more product versions and the planning version is displayed.</p>
 <p>This planning displays each version of selected product versions and their components from define start date to deliverable date.</p>
 <p>To use it define your start and delivery date in Product Version and Component Version.</p>
@@ -268,7 +272,7 @@
 <figure class="align-center" id="id11">
 <img alt="Planning version" src="_images/CONF_ZONE_planningVersion.png" />
 <figcaption>
-<p><span class="caption-text">Planning version</span><a class="headerlink" href="#id11" title="Link to this image">¶</a></p>
+<p><span class="caption-text">Planning version</span><a class="headerlink" href="#id11" title="Permalink to this image">¶</a></p>
 </figcaption>
 </figure>
 <p class="rubric">Display options</p>
@@ -277,7 +281,7 @@ Click on <a class="reference internal" href="_images/iconFilters.png"><img alt="
 <figure class="align-default" id="id12">
 <img alt="Show options" src="_images/CONF_ZONE_Options.png" />
 <figcaption>
-<p><span class="caption-text">Version planning options</span><a class="headerlink" href="#id12" title="Link to this image">¶</a></p>
+<p><span class="caption-text">Version planning options</span><a class="headerlink" href="#id12" title="Permalink to this image">¶</a></p>
 </figcaption>
 </figure>
 <p>Click on <strong>Show activities from product version</strong> or <strong>Show activities from component version</strong> To display the related activities.</p>
@@ -369,8 +373,8 @@ Click on <a class="reference internal" href="_images/iconFilters.png"><img alt="
       </ul>
     </div>
     <div class="footer" role="contentinfo">
-    &#169; Copyright 2015-2024, ProjeQtOr.
-      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 7.2.6.
+        &#169; Copyright 2015-2024, ProjeQtOr.
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 5.2.3.
     </div>
   </body>
 </html>

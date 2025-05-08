@@ -102,6 +102,7 @@ $page=1;
 $lastName=null;
 function excelName($name=null, $quote='"') {
   global $lastName, $page;
+  if (!$page) $page=0;
   if (!$name) $name=RequestHandler::getValue('reportName');
   $name=pq_str_replace('/','-',$name);
   if ($name==$lastName) {

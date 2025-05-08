@@ -752,7 +752,7 @@ function drawTableFromObject($obj, $included=false, $parentReadOnly=false, $pare
   foreach ($obj as $col=>$val) {
     $varSet[$col]='set';
   }
-  
+  $lineStarted=false;
   // Loop on each property of the object
   foreach ($obj->getFieldsList() as $col) {
     if (! property_exists($obj, $col)) continue;
@@ -949,6 +949,7 @@ function drawTableFromObject($obj, $included=false, $parentReadOnly=false, $pare
       // }
       echo '</table><table id="'.$col.'" class="detail internalTable">';
       echo '<tr class="detail">';
+      $lineStarted=true;
       echo '<td class="detail"></td>'; // Empty label, to have column header in front of columns
                                        // $internalTableBorderTitle=($print)?'border:1px solid #A0A0A0;':'';
       $internalTableBorderTitle=($print)?'padding-top:5px;text-decoration: underline;padding-bottom:2px;':'';
@@ -1245,7 +1246,7 @@ function drawTableFromObject($obj, $included=false, $parentReadOnly=false, $pare
       }
       //if (!$nobr and ((!$hide and !$invisible) or !$print)) { /// PBER #9517  
       //if (! ($nobr or ( ($hide or $invisible) and $print) ) ) {
-      if (! $nobr){
+      if (! $nobr and $lineStarted){
         echo "</td></tr>";
       }
     } else if (pq_substr($col, 0, 5)=='_Link' and !$comboDetail) { // Display links to other objects
@@ -1652,6 +1653,7 @@ function drawTableFromObject($obj, $included=false, $parentReadOnly=false, $pare
       if ($internalTable==0) {
         if (!is_object($val) and !is_array($val) and !$hide and !$nobr_before) {
           echo '<tr class="detail'.((!$nobr)?' generalRowClass '.$col.'Class':'').'" style="'.((!$nobr)?$specificStyle:'').'">';
+          $lineStarted=true;
           if ($dataLength>4000 and getEditorType()!='text') {
             // Will have to add label
             echo '<td colspan="2" style="position:relative">';
@@ -1712,6 +1714,7 @@ function drawTableFromObject($obj, $included=false, $parentReadOnly=false, $pare
         if ($internalTable%$internalTableCols==0) {
           echo '</td></tr>'.$cr;
           echo '<tr class="detail">';
+          $lineStarted=true;
           if (isset($internalTableRowsCaptions[$internalTableCurrentRow]) and $internalTableRowsCaptions[$internalTableCurrentRow] and $arrTab['rows'][$internalTableCurrentRow]>0) {
             echo '<td class="labelPadding '.$internalTableSpecial.'" style="text-align:right;width:'.$labelStyleWidth.';">';
             // ADD BY Marc TABARY - 2017-03-10 - NO ':' IF LABEL IS EMPTY
@@ -1755,7 +1758,8 @@ function drawTableFromObject($obj, $included=false, $parentReadOnly=false, $pare
         }
       }
       if (isNewGui()) $fieldWidth-=10; 
-      if (pq_substr($col, 0, 2)=='id' and $dataType=='int' and pq_strlen($col)>2 and pq_substr($col, 2, 1)==pq_strtoupper(pq_substr($col, 2, 1))) {
+      //if (pq_substr($col, 0, 2)=='id' and $dataType=='int' and pq_strlen($col)>2 and pq_substr($col, 2, 1)==pq_strtoupper(pq_substr($col, 2, 1))) {
+      if (isForeignKey($col, $obj)) {
         $fieldWidth=$largeWidth;
       }
       if (pq_strpos($obj->getFieldAttributes($col), 'Width')!==false) {
@@ -3693,6 +3697,9 @@ function drawTableFromObject($obj, $included=false, $parentReadOnly=false, $pare
         }
       }
     }
+    if (! $hide and ! $nobr) {
+      $lineStarted=false;
+    }
   }
 
   if( $classObj=='ActivityPlanningElement' and ($validatedWorkReadOnly or $validatedCostReadOnly)){
@@ -3921,21 +3928,26 @@ function drawDocumentVersionFromObject($list, $obj, $refresh=false) {
   rsort($list);
   foreach ($list as $version) {
     echo '<tr>';
+    $canDownload = false;
+    if ($obj->locked){
+      $forbidDownload = Parameter::getGlobalParameter('lockDocumentDownload');
+      if(($forbidDownload == "YES" and $obj->idLocker == $user->id) or $forbidDownload == "NO" or $forbidDownload == ""){
+        $canDownload = true;
+      }
+    }else {
+      $canDownload = true;
+    }
     if (!$print) {
       echo '<td class="assignData" style="text-align:center; white-space: nowrap;vertical-align:top;">';
       //damian
-      $canDownload = false;
-      if ($obj->locked){
-        $forbidDownload = Parameter::getGlobalParameter('lockDocumentDownload');
-        if(($forbidDownload == "YES" and $obj->idLocker == $user->id) or $forbidDownload == "NO" or $forbidDownload == ""){
-          $canDownload = true;
-        }
-      }else {
-        $canDownload = true;
-      }
       if (!$print and $canDownload) {
-        echo '<a href="../tool/download.php?class=DocumentVersion&id='.htmlEncode($version->id).Security::addTokenIndexToUrl().'"';
-        echo ' target="printFrame" title="'.i18n('helpDownload')."\n".(($preserveFileName=='YES')?$version->fileName:$version->fullName).'">'.formatSmallButton('Download').'</a>';
+        if ( ! file_exists($version->getUploadFileName()) ) {
+          echo '<span class="" title="'.i18n('errorNotFoundAttachment')."\n".$version->getUploadFileName().'">';
+          echo formatSmallButton('Mark',false,false).'</span>';
+        } else {
+          echo '<a onClick="dojo.byId(\'printFrame\').src=\'../tool/download.php?class=DocumentVersion&id='.htmlEncode($version->id).Security::addTokenIndexToUrl().'\'"';
+          echo ' title="'.i18n('helpDownload')."\n".(($preserveFileName=='YES')?$version->fileName:$version->fullName).'">'.formatSmallButton('Download').'</a>';
+        }
       }
       if ($canUpdate and !$print and (!$obj->idle or $obj->idDocumentVersion==$version->id)) {
         echo '  <a onClick="editDocumentVersion('."'".htmlEncode($version->id)."'".",'".htmlEncode($version->version)."'".",'".htmlEncode($version->revision)."'".",'".htmlEncode($version->draft)."'".",'".htmlEncode($version->versionDate)."'".",'".htmlEncode($version->idStatus)."'".",'".$version->isRef."'".",'".$typeEvo."'".",'".htmlEncode($version->name,'protectQuotes')."'".",'".htmlEncode($version->name,'protectQuotes')."'".",'".htmlEncode($version->name,'protectQuotes')."'".');" '.'title="'.i18n('editDocumentVersion').'" >'.formatSmallButton('Edit').'</a> ';
@@ -5443,11 +5455,17 @@ function drawLinksFromObject($list, $obj, $classLink, $refresh=false) {
       echo formatUserThumb($userId, $userName, 'Creator');
       echo formatDateThumb($creationDate, null);
 
-      if ($link->idSynchronizationItem){
-        echo "<span style='position:relative;float:right;padding-right:3px;'>
-              <div title='" . i18n('linkSynchronized') . "' class='iconSize22 iconRefresh imageColorNewGui'></div>
-            </span>";
-        echo '</td>';
+      if(!$print){
+        //remi #9938
+        if ($link->idSynchronizationItem){
+          echo "<span style='position:relative;float:right;padding-right:3px;'>
+                <div title='" . i18n('linkSynchronized') . "' class='iconSize22 iconRefresh imageColorNewGui'></div>
+              </span>";
+        }
+      }else{
+        if ($link->idSynchronizationItem){
+          echo "<span style='margin-left:340px;'>".formatIcon('Refresh', 16)."</span>";   
+        }
       }
       
       $idStatus='idStatus';
@@ -5471,7 +5489,11 @@ function drawLinksFromObject($list, $obj, $classLink, $refresh=false) {
           $objR=get_class($linkObj);
           $objResp=new $objR($linkObj->id);
           //echo '<td class="dependencyData"  style="width:10%">'.formatLetterThumb($objResp->idResource, 22).'</td>';
-          echo '<td class="dependencyData"  style="width:10%;text-align:center;"><span style="display:inline-block;">'.formatUserThumb($objResp->idResource, SqlList::getNameFromId('Affectable', $objResp->idResource), 'Responsible').'</span></td>';
+          if(!$print){
+           echo '<td class="dependencyData"  style="width:10%;text-align:center;"><span style="display:inline-block;">'.formatUserThumb($objResp->idResource, SqlList::getNameFromId('Affectable', $objResp->idResource), 'Responsible').'</span></td>';
+          }else{
+            echo '<td class="dependencyData"  style="width:10%;text-align:center;"><span style="display:inline-block;">'.SqlList::getNameFromId('Affectable', $objResp->idResource).'</span></td>';
+          }
         } else {
           echo '<td class="dependencyData"  style="width:10%">&nbsp;</td>';
         }
@@ -8488,10 +8510,15 @@ function drawWorkUnitCatalogPhase($catalogUO,$listWorkUnitCatalogPhase,$object,$
     $canCreate=false;
     $canDelete=false;
   }
+  if ($objectClass == "WorkCommand"){
+    $complexityValues = new ComplexityValues();
+    $compValues = SqlElement::getSingleSqlElementFromCriteria('ComplexityValues', array("idComplexity"=>$object->idComplexity,"idWorkUnit"=>$object->idWorkUnit));
+  }
   $sumRatioPct =0;
   $sumRatioQt=0;
   $sumRatioAmount=0;
   $sumRatioAmountLocal=0;
+  $sumCharge = 0;
   echo '<table style="width:100%">';
   echo '<tr><td colspan=2 style="width:100%;"><table style="height:100%;width:100%;">';
   echo '<tr>';
@@ -8502,13 +8529,14 @@ function drawWorkUnitCatalogPhase($catalogUO,$listWorkUnitCatalogPhase,$object,$
     }
     echo '</td>';
   }
-  echo '<td class="assignHeader" style="width:60%;">'.i18n('colWorkUnitCatalogPhases').'</td>';
+  echo '<td class="assignHeader" style="width:50%;">'.i18n('colWorkUnitCatalogPhases').'</td>';
   echo '<td class="assignHeader" style="width:10%">'.i18n('percent').'</td>';
   
   if ($objectClass == "WorkCommand"){
     echo '<td class="assignHeader" style="width:10%">'.i18n('colShortQuantity').'</td>';
     $extraLocalClass=($object->hasCurrency())?' localLabelClass ':'';
-    echo '<td class="assignHeader '.$extraLocalClass.'" style="width:25%">'.i18n('colAmount').'</td>';
+    echo '<td class="assignHeader '.$extraLocalClass.'" style="width:10%">'.i18n('colAmount').'</td>';
+    echo '<td class="assignHeader style="width:10%">'.i18n('charge').' ('.Work::displayShortWorkUnit().')</td>';
   }
 
   echo'</tr>';
@@ -8536,9 +8564,11 @@ function drawWorkUnitCatalogPhase($catalogUO,$listWorkUnitCatalogPhase,$object,$
       $amountDisplay=htmlDisplayLocalCurrency($object->idProject,$commandAmount,$commandAmountLocal);
       echo '  <td class="assignData" style="'.$idleClass.'text-align: center;">'.($val->ratioPct * $object->commandQuantity) / 100 .'</td>';
       echo '  <td class="assignData" style="'.$idleClass.'text-align: center;">' .$amountDisplay. '</td>';
+      echo '  <td class="assignData" style="'.$idleClass.'text-align: center;">' .work::displayWorkWithUnit((($val->ratioPct * $object->commandQuantity) / 100) * $compValues->charge). '</td>';
       $sumRatioQt += (($val->ratioPct * $object->commandQuantity) / 100 );
       $sumRatioAmount += $commandAmount;
       $sumRatioAmountLocal += $commandAmountLocal;
+      $sumCharge += (($val->ratioPct * $object->commandQuantity) / 100) * $compValues->charge;
     }
     
     echo'</tr>';
@@ -8554,6 +8584,7 @@ function drawWorkUnitCatalogPhase($catalogUO,$listWorkUnitCatalogPhase,$object,$
     if ($objectClass == "WorkCommand"){
       echo '<td class="assignData" style="text-align: center; background-color:' . ($sumRatioPct > 100 ? '#ffaaaa' : '#FFFFFF') . ';"><strong> ' .$sumRatioQt. ' </strong></td>';
       echo '<td class="assignData" style="text-align: center; background-color:' . ($sumRatioPct > 100 ? '#ffaaaa' : '#FFFFFF') . ';"><strong> ' .htmlDisplayLocalCurrency($object->idProject,$sumRatioAmount,$sumRatioAmountLocal). '</strong></td>';
+      echo '<td class="assignData" style="text-align: center; background-color:' . ($sumRatioPct > 100 ? '#ffaaaa' : '#FFFFFF') . ';"><strong> ' .work::displayWorkWithUnit($sumCharge). '</strong></td>';   
     } 
   }
   
@@ -9167,7 +9198,7 @@ function displayWorkCommandRow($workCom, $canUpdate, $canDelete, $obj, $isMother
         echo '<a onClick="removeWorkCommand(\''.$workCom->id.'\');" title="'.i18n('removeWorkCommand').'" > '.formatSmallButton('Remove').'</a>';
     }
     echo '</td>';
-    $indentation = $isIndented ? '&nbsp;&nbsp;' : '';
+    $indentation = $isIndented ? 'padding-left:15px' : '';
     $fontWeight = $isMother ? 'font-weight:bold;' : '';
     if ($sumChildrenQuantity != null ){
       if ($sumChildrenQuantity < $workCom->commandQuantity) $backgroundColorQuantity = 'background-color: rgb(255, 217, 170)';
@@ -9181,20 +9212,20 @@ function displayWorkCommandRow($workCom, $canUpdate, $canDelete, $obj, $isMother
       else $backgroundColorAmount = '';
     }else $backgroundColorAmount = '';
     
-    echo '<td class="assignData" style="'.$fontWeight.'">'.$indentation.'#'.$workCom->id.'</td>';
+    echo '<td class="assignData" style="text-align:center;'.$fontWeight.'">'.'#'.$workCom->id.'</td>';
     if ($isMother){
-      echo '<td class="assignData" style="'. $fontWeight .'">' . $workCom->name . '</td>';
+      echo '<td class="assignData" style="'. $fontWeight .'">' . $workCom->name . '<br><span style="color:gray;font-size:88%">'.SqlList::getNameFromId('WorkUnit', $workCom->idWorkUnit).' - '.SqlList::getNameFromId('Complexity', $workCom->idComplexity).'</span></td>';
     }else{
-      echo '<td class="assignData">'.$indentation. $workCom->name.'</td>';
+      echo '<td class="assignData" style="'.$indentation.'">'.$workCom->name.'<br><span style="color:gray;font-size:88%">'.SqlList::getNameFromId('WorkUnit', $workCom->idWorkUnit).' - '.SqlList::getNameFromId('Complexity', $workCom->idComplexity).'</span></td>';
     }
-    echo '<td style="text-align:center;'.$fontWeight.'; '.$backgroundColorQuantity.'" class="assignData">'.htmlDisplayNumericWithoutTrailingZeros($workCom->commandQuantity).'</td>';
-    echo '<td style="text-align:right;'.$fontWeight.'; '.$backgroundColorAmount.'" class="assignData'.$locClass.'">'.htmlDisplayLocalCurrency($proj,$workCom->commandAmount,$workCom->commandAmountLocal).'</td>';
-    echo '<td style="text-align:center;'.$fontWeight.'" class="assignData">'.htmlDisplayNumericWithoutTrailingZeros($workCom->doneQuantity).'</td>';
-    echo '<td style="text-align:right;'.$fontWeight.'" class="assignData'.$locClass.'">'.htmlDisplayLocalCurrency($proj,$workCom->doneAmount,$workCom->doneAmountLocal).'</td>';
-    echo '<td style="text-align:center;'.$fontWeight.'" class="assignData">'.htmlDisplayNumericWithoutTrailingZeros($workCom->acceptedQuantity).'</td>';
-    echo '<td style="text-align:right;'.$fontWeight.'" class="assignData'.$locClass.'">'.htmlDisplayLocalCurrency($proj,$workCom->acceptedAmount,$workCom->acceptedAmountLocal).'</td>';
-    echo '<td style="text-align:center;'.$fontWeight.'" class="assignData">'.htmlDisplayNumericWithoutTrailingZeros($workCom->billedQuantity).'</td>';
-    echo '<td style="text-align:right;'.$fontWeight.'" class="assignData'.$locClass.'">'.htmlDisplayLocalCurrency($proj,$workCom->billedAmount,$workCom->billedAmountLocal).'</td>';
+    echo '<td style="vertical-align: middle;text-align:center;'.$fontWeight.'; '.$backgroundColorQuantity.'" class="assignData">'.htmlDisplayNumericWithoutTrailingZeros($workCom->commandQuantity).'</td>';
+    echo '<td style="vertical-align: middle;text-align:right;'.$fontWeight.'; '.$backgroundColorAmount.'" class="assignData'.$locClass.'">'.htmlDisplayLocalCurrency($proj,$workCom->commandAmount,$workCom->commandAmountLocal).'</td>';
+    echo '<td style="vertical-align: middle;text-align:center;'.$fontWeight.'" class="assignData">'.htmlDisplayNumericWithoutTrailingZeros($workCom->doneQuantity).'</td>';
+    echo '<td style="vertical-align: middle;text-align:right;'.$fontWeight.'" class="assignData'.$locClass.'">'.htmlDisplayLocalCurrency($proj,$workCom->doneAmount,$workCom->doneAmountLocal).'</td>';
+    echo '<td style="vertical-align: middle;text-align:center;'.$fontWeight.'" class="assignData">'.htmlDisplayNumericWithoutTrailingZeros($workCom->acceptedQuantity).'</td>';
+    echo '<td style="vertical-align: middle;text-align:right;'.$fontWeight.'" class="assignData'.$locClass.'">'.htmlDisplayLocalCurrency($proj,$workCom->acceptedAmount,$workCom->acceptedAmountLocal).'</td>';
+    echo '<td style="vertical-align: middle;text-align:center;'.$fontWeight.'" class="assignData">'.htmlDisplayNumericWithoutTrailingZeros($workCom->billedQuantity).'</td>';
+    echo '<td style="vertical-align: middle;text-align:right;'.$fontWeight.'" class="assignData'.$locClass.'">'.htmlDisplayLocalCurrency($proj,$workCom->billedAmount,$workCom->billedAmountLocal).'</td>';
     echo '</tr>';
 }
 

@@ -25,6 +25,18 @@ if (is_file ( "../tool/parametersLocation.php" )) {
   $svnRevision=0;
   $firstColor='545381';
   $background='#545381 !important';
+  if (!function_exists('enableCatchErrors')) {
+    function enableCatchErrors() {
+      global $globalCatchErrors;
+      $globalCatchErrors=true;
+    }
+  }
+  if (!function_exists('disableCatchErrors')) {
+    function disableCatchErrors() {
+      global $globalCatchErrors;
+      $globalCatchErrors=false;
+    }
+  }
   include_once '../tool/file.php';
 }
 /*** COPYRIGHT NOTICE *********************************************************

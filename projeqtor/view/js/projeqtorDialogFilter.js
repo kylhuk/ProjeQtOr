@@ -216,14 +216,14 @@ function filterSelectAtribute(value) {
           var extraUrl="";
           if (value == 'idTargetVersion' || value == 'idTargetProductVersion' || value == 'idOriginalProductVersion') {
             value='idProductVersion';
-            if (dojo.byId('archiveOn').style.display=='none'){
+            if (dojo.byId('archiveOn') && dojo.byId('archiveOn').style.display=='none'){
               extraUrl='&critField=idle&critValue=0'; 
             }else{
               extraUrl='&critField=idle&critValue=all';
             }
           } else if (value == 'idTargetComponentVersion' || value == 'idOriginalComponentVersion') {
             value='idComponentVersion';
-            if (dojo.byId('archiveOn').style.display=='none'){
+            if (dojo.byId('archiveOn') && dojo.byId('archiveOn').style.display=='none'){
               extraUrl='&critField=idle&critValue=0'; 
             }else{
               extraUrl='&critField=idle&critValue=all';

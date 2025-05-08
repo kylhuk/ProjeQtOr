@@ -169,7 +169,8 @@ if ($adminFunctionality=='sendAlert') {
   Sql::commitTransaction();
 } else if ($adminFunctionality == 'renumberWbs') {
     $planningElement = new PlanningElement();
-    $result=$planningElement->renumberWbs(false, true);
+    $result=$planningElement->renumberWbs(true, true);
+    $fixOrder=$planningElement->renumberWbs(true, false);
     $result .= '<input type="hidden" id="lastOperation" value="insert" />';
     $result .= '<input type="hidden" id="lastOperationStatus" value="OK" />';
 } else {

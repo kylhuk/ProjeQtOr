@@ -944,6 +944,35 @@ function workCommandChangeIdComplexity() {
   });
 }
 
+//remi #9958
+function workCommandParentChangeVerif() {
+  var idWkCdP = dijit.byId("workCommandParent").get('value');
+  if(idWkCdP==" "){ 
+    dijit.byId("workCommandWorkUnit").set('readOnly',false);
+    setTimeout("dijit.byId('workCommandComplexity').set('readOnly',false)",100);
+    dijit.byId("workCommandWorkUnit").set('value','');
+    dijit.byId("workCommandComplexity").set('value','');
+  }
+  //recover UO and complexity of Parent 
+  dojo.xhrGet({
+    url:'../tool/getSingleData.php?dataType=workCommandParent' + '&idWorkCommandParent=' + idWkCdP+ ''+addTokenIndexToUrl(),
+    handleAs:"text",
+    load:function(data) {
+      var vals=data.split('#');
+      var idwkWorkUnit = vals[0];
+      var idwkComplexity = vals[1];
+      if(idwkWorkUnit!="" && idwkComplexity!=""){
+        //set UO and complexity of Parent for the child item 
+        //dijit.byId("workCommandComplexity").set('readOnly',false);
+        dijit.byId("workCommandWorkUnit").set('value',idwkWorkUnit);
+        dijit.byId("workCommandWorkUnit").set('readOnly',true);
+        setTimeout("dijit.byId('workCommandComplexity').set('value',"+idwkComplexity+")", 100);
+        setTimeout("dijit.byId('workCommandComplexity').set('readOnly',true)",110);
+      }
+    }
+  });
+}
+
 function changeBilledWorkCommand() {
   dijit.byId("billedWorkCommandQuantityBilled").set('readOnly',false);
   dojo.xhrGet({

@@ -154,6 +154,7 @@ if(!$showProject){
 
 $showPoolForResource = Parameter::getUserParameter('workPlanShowPoolForResource');
 $showResourceWithoutWork = Parameter::getUserParameter('workPlanShowResourceWithoutWork');
+$hideAssignationWihtoutLeftWork = RequestHandler::getBoolean('hideAssignationWihtoutLeftWork');
 
 $pe=new PlanningElement();
 $ass=new Assignment();
@@ -232,19 +233,15 @@ $today=date('Y-m-d');
 
 if($refType and $refId and !$selectResource){
   $allowedResource = array();
+  $ass = new Assignment();
   if($refType != 'Project'){
-    $crit=array('refType'=>$refType, 'refId'=>$refId);
-    $lstAss = SqlList::getListWithCrit('Assignment', $crit, 'idResource');
-    foreach ($lstAss as $id) {
-      $allowedResource[$id]=SqlList::getNameFromId('ResourceAll', $id, false);
-    }
+    $where=($hideAssignationWihtoutLeftWork)?"refType='$refType' and refId=$refId and leftWork!=0":"refType='$refType' and refId=$refId";
   }else{
-    $ass = new Assignment();
-    $where = "idProject in ".getVisibleProjectsList(!$showIdleProjects, $refId);
-    $lstAss = $ass->getSqlElementsFromCriteria(null,null,$where);
-    foreach ($lstAss as $ass) {
-      $allowedResource[$ass->idResource]=SqlList::getNameFromId('ResourceAll', $ass->idResource, false);
-    }
+    $where=($hideAssignationWihtoutLeftWork)?"idProject in ".getVisibleProjectsList(!$showIdleProjects, $refId)." and leftWork!=0":"idProject in ".getVisibleProjectsList(!$showIdleProjects, $refId);
+  }
+  $lstAss = $ass->getSqlElementsFromCriteria(null,null,$where);
+  foreach ($lstAss as $ass) {
+    $allowedResource[$ass->idResource]=SqlList::getNameFromId('ResourceAll', $ass->idResource, false);
   }
 }
 
@@ -442,6 +439,7 @@ if (Sql::$lastQueryNbRows == 0) {
           if($resAr["topid"] and $line["reftype"]){
             $list[$keyAll]["isparent"]=true;;
           }
+          $resAr["isadministrative"]=false;
           $list[$keyRes]=$resAr;
           $sumReal=0;
           $sumPlanned=0;
@@ -477,6 +475,7 @@ if (Sql::$lastQueryNbRows == 0) {
         $resPr["idresource"]=$idResource;
         $resPr["topid"]=$idRes;
         $resPr["isparent"]=false;
+        $resPr["isadministrative"]=($prj->projectCode == 'ADM')?true:false;
         if ($line['projectisunderconstruction']==1) {
           $resPr['iconClass']='Construction';
         }
@@ -545,6 +544,7 @@ if (Sql::$lastQueryNbRows == 0) {
             $list[$keyRes]["isparent"]=true;
           }
         }
+        $line["isadministrative"]=($proj->projectCode == 'ADM')?true:false;
         $keyElm=$keyProj.'_'.$line['reftype'].'#'.$line['refid'];
 		$list[$keyElm]=$line;
 		if (! $list[$keyRes]["realstartdate"] or $line['realstartdate'] < $list[$keyRes]["realstartdate"]) {
@@ -795,13 +795,13 @@ if (Sql::$lastQueryNbRows == 0) {
   	  }
     }
   	$wk=new PlannedWork();
-    $querySelect = "select SUM(w.work) as work, w.workDate, w.idAssignment,";
+    $querySelect = "select SUM(w.work) as work, w.workDate, w.idAssignment, w.surbooked, ";
     $querySelect .= (Sql::isPgsql())?" string_agg(DISTINCT $groupConcat, ',') as arrayKey":" group_concat(DISTINCT $groupConcat SEPARATOR ',') as arrayKey";
     $queryFrom = " from ".$wk->getDatabaseTableName()." w";
     $queryWhere = " where w.idResource in ".transformListIntoInClause($resourceList);
     $queryWhere .= ($isFromPlanning)?"":" and w.idProject in " . getVisibleProjectsList(! $showIdleProjects, $detailProject);
     $queryWhere .= " and w.idProject not in " . Project::getAdminitrativeProjectList();
-    $groupBy = " group by w.idResource, w.workDate, w.idProject, w.idAssignment";
+    $groupBy = " group by w.idResource, w.workDate, w.idProject, w.idAssignment, w.surbooked";
     $groupBy .= ($showDetailElement)?", w.refType, w.refId":"";
     $query = $querySelect.$queryFrom.$queryWhere.$groupBy." ORDER BY w.workDate ASC";
     $result=Sql::query($query);
@@ -874,6 +874,9 @@ if (Sql::$lastQueryNbRows == 0) {
         }else{
           $workDate[$keyAll]['dates'][$date]['planned']['Assignments'][$statusColor]['work']+=floatval($line['work']);
         }
+        if(!isset($workDate[$keyAll]['dates'][$date]['planned']['Assignments'][$statusColor]['surbooked'])){
+          $workDate[$keyAll]['dates'][$date]['planned']['Assignments'][$statusColor]['surbooked']=0;
+        }
         if(!isset($workDate[$keyAll]['dates'][$date]['planned']['Globals']['work'])){
           $workDate[$keyAll]['dates'][$date]['planned']['Globals']['work']=floatval($line['work']);
         }else{
@@ -898,6 +901,9 @@ if (Sql::$lastQueryNbRows == 0) {
             $workDate[$keyRes]['dates'][$date]['planned']['Assignments'][$statusColor]['work']=floatval($line['work']);
           }else{
             $workDate[$keyRes]['dates'][$date]['planned']['Assignments'][$statusColor]['work']+=floatval($line['work']);
+          }
+          if(!isset($workDate[$keyRes]['dates'][$date]['planned']['Assignments'][$statusColor]['surbooked'])){
+            $workDate[$keyRes]['dates'][$date]['planned']['Assignments'][$statusColor]['surbooked']=0;
           }
           if(!isset($workDate[$keyRes]['dates'][$date]['planned']['Globals']['work'])){
             $workDate[$keyRes]['dates'][$date]['planned']['Globals']['work']=floatval($line['work']);
@@ -926,6 +932,9 @@ if (Sql::$lastQueryNbRows == 0) {
           }else{
             $workDate[$keyProj]['dates'][$date]['planned']['Assignments'][$statusColor]['work']+=floatval($line['work']);
           }
+          if(!isset($workDate[$keyProj]['dates'][$date]['planned']['Assignments'][$statusColor]['surbooked'])){
+            $workDate[$keyProj]['dates'][$date]['planned']['Assignments'][$statusColor]['surbooked']=$line['surbooked'];
+          }
           if(!isset($workDate[$keyProj]['dates'][$date]['planned']['Globals']['work'])){
             $workDate[$keyProj]['dates'][$date]['planned']['Globals']['work']=floatval($line['work']);
           }else{
@@ -952,6 +961,9 @@ if (Sql::$lastQueryNbRows == 0) {
             $workDate[$keyElm]['dates'][$date]['planned']['Assignments'][$statusColor]['work']=floatval($line['work']);
           }else{
             $workDate[$keyElm]['dates'][$date]['planned']['Assignments'][$statusColor]['work']+=floatval($line['work']);
+          }
+          if(!isset($workDate[$keyElm]['dates'][$date]['planned']['Assignments'][$statusColor]['surbooked'])){
+            $workDate[$keyElm]['dates'][$date]['planned']['Assignments'][$statusColor]['surbooked']=$line['surbooked'];
           }
           if(!isset($workDate[$keyElm]['dates'][$date]['planned']['Globals']['work'])){
             $workDate[$keyElm]['dates'][$date]['planned']['Globals']['work']=floatval($line['work']);

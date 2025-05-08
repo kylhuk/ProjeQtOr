@@ -104,12 +104,13 @@ class ProjectExpenseMain extends Expense {
     ';
 
   private static $_fieldsAttributes=array("id"=>"nobr", "reference"=>"readonly",
+                                  "scope"=>"hidden",
                                   "idProject"=>"required",
                                   "name"=>"required",
                                   "idProjectExpenseType"=>"required",
                                   "expensePlannedDate"=>"",
                                   "idStatus"=>"required",
-  								                "idUser"=>"hidden",              
+                                  "idUser"=>"hidden",              
                                   "day"=>"hidden",
                                   "week"=>"hidden",
                                   "month"=>"hidden",
