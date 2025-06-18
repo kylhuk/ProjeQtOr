@@ -149,10 +149,13 @@ if (checkNoData($tab)) if (!empty($cronnedScript)) goto end; else exit;
 $arrDates=array();
 $arrYear=array();
 $date=$start;
-
+$startYear=null;
+$endYear=null;
 while ($date<=$end) {
   $arrDates[]=$date;
   $year=pq_substr($date,0,4);
+  if (! $startYear or $year<$startYear) $startYear=$year;
+  if (! $endYear or $year>$endYear) $endYear=$year;
   if (! array_key_exists($year,$arrYear)) {
     $arrYear[$year]=0;
   }
@@ -167,95 +170,107 @@ while ($date<=$end) {
     $date=pq_substr($next,0,4) . pq_substr($next,5,2);
   }
 }
+if (! $startYear) $startYear=date('Y');
+if (! $endYear) $endYear=date('Y');
 // Header
 $plannedBGColor='#FFFFDD';
 $plannedFrontColor='#777777';
 $plannedStyle=' style="width:20px;text-align:center;background-color:' . $plannedBGColor . '; color: ' . $plannedFrontColor . ';" ';
+$loop=($outMode=='pdf')?true:false;
+if ($loop==true && intval($endYear)-intval($startYear)>2)$loop=true;
 
-echo "<table width='95%' align='center'><tr>";
-echo '<td><table width="100%" align="left"><tr>';
-echo "<td class='reportTableDataFull' style='width:20px; text-align:center;'>";
-echo "1";
-echo "</td><td width='100px' class='legend'>" . i18n('colRealCost') . "</td>";
-echo "<td width='5px'>&nbsp;&nbsp;&nbsp;</td>";
-echo '<td class="reportTableDataFull" ' . $plannedStyle . '>';
-echo "<i>1</i>";
-echo "</td><td width='100px' class='legend'>" . i18n('colPlanned') . "</td>";
-echo "<td>&nbsp;</td>";
-echo "</tr></table>";
-echo "<br/>";
-echo '<table width="100%" align="center">';
-echo '<tr rowspan="2">';
-echo '<td class="reportTableHeader" rowspan="2">' . i18n('Project') . '</td>';
-foreach ($arrYear as $year=>$nb) {
-  echo '<td class="reportTableHeader" colspan="' . $nb . '">' . $year . '</td>';
-}
-echo '<td class="reportTableHeader" rowspan="2">' . i18n('sum') . '</td>';
-echo '</tr>';
-echo '<tr>';
-$arrSum=array();
-foreach ($arrDates as $date) {
-  echo '<td class="reportTableColumnHeader" >';
-  echo pq_substr($date,4,2); 
-  echo '</td>';
-  $arrSum[$date]=0;
-} 
-echo '</tr>';
-$sumProj=array();
-foreach($tab as $proj=>$lists) {
-  $sumProj[$proj]=array();
-  for ($i=1; $i<=2; $i++) {
-    if ($i==1) {
-      echo '<tr><td class="reportTableLineHeader" rowspan="2">' . htmlEncode($lists['name']) . '</td>';
-      $style='';
-      $mode='real';
-      $ital=false;
-    } else {
-      echo '<tr>';
-      $style=$plannedStyle;
-      $mode='plan';
-      $ital=true;
-    }
-    $sum=0;
-    foreach($arrDates as $date) {
-      if ($i==1) {
-        $sumProj[$proj][$date]=0;
-      }
-      $val=0;
-      if (array_key_exists($mode, $lists) and array_key_exists($date,$lists[$mode])) {
-        $val=$lists[$mode][$date];
-      }
-      echo '<td class="reportTableData" ' . $style . '>';
-      echo ($ital)?'<i>':'';
-      echo htmlDisplayCurrency($val);
-      echo ($ital)?'</i>':'';
-      $sum+=$val;
-      $arrSum[$date]+=$val;
-      echo '</td>';
-      $sumProj[$proj][$date]+=$val;
-    }
-    echo '<td class="reportTableColumnHeader">';
-    echo ($ital)?'<i>':'';
-    echo htmlDisplayCurrency($sum);
-    echo ($ital)?'</i>':'';
-    echo '</td>';
-    echo '</tr>';
-    
+for ($loopYear=$startYear;$loopYear<=$endYear;$loopYear++) {
+  echo "<table width='95%' align='center'><tr>";
+  echo '<td><table width="100%" align="left"><tr>';
+  echo "<td class='reportTableDataFull' style='width:20px; text-align:center;'>";
+  echo "1";
+  echo "</td><td width='100px' class='legend'>" . i18n('colRealCost') . "</td>";
+  echo "<td width='5px'>&nbsp;&nbsp;&nbsp;</td>";
+  echo '<td class="reportTableDataFull" ' . $plannedStyle . '>';
+  echo "<i>1</i>";
+  echo "</td><td width='100px' class='legend'>" . i18n('colPlanned') . "</td>";
+  echo "<td>&nbsp;</td>";
+  echo "</tr></table>";
+  echo "<br/>";
+  echo '<table width="100%" align="center">';
+  echo '<tr rowspan="2">';
+  echo '<td class="reportTableHeader" rowspan="2">' . i18n('Project') . '</td>';
+  foreach ($arrYear as $year=>$nb) {
+    if ($loop and $year!=$loopYear) continue;
+    echo '<td class="reportTableHeader" colspan="' . $nb . '">' . $year . '</td>';
   }
-}
-echo "<tr><td>&nbsp;</td></tr>";
-echo '<tr><td class="reportTableHeader" >' . i18n('sum') . '</td>';
-$sum=0;
-$cumul=array();
-foreach ($arrSum as $date=>$val) {
-  echo '<td class="reportTableHeader" >' . htmlDisplayCurrency($val) . '</td>';
-  $sum+=$val;
-  $cumul[$date]=$sum;
-}
-echo '<td class="reportTableHeader" >' . htmlDisplayCurrency($sum) . '</td>';
-echo '</tr>';
-echo '</table>';
-echo '</td></tr></table>';
+  echo '<td class="reportTableHeader" rowspan="2">' . i18n('sum') . '</td>';
+  echo '</tr>';
+  echo '<tr>';
+  $arrSum=array();
+  foreach ($arrDates as $date) {
+  $year=pq_substr($date,0,4);
+  if ($loop and $year!=$loopYear) continue;
+    echo '<td class="reportTableColumnHeader" >';
+    echo pq_substr($date,4,2); 
+    echo '</td>';
+    $arrSum[$date]=0;
+  } 
+  echo '</tr>';
+  $sumProj=array();
+  foreach($tab as $proj=>$lists) {
+    $sumProj[$proj]=array();
+    for ($i=1; $i<=2; $i++) {
+      if ($i==1) {
+        echo '<tr><td class="reportTableLineHeader" rowspan="2">' . htmlEncode($lists['name']) . '</td>';
+        $style='';
+        $mode='real';
+        $ital=false;
+      } else {
+        echo '<tr>';
+        $style=$plannedStyle;
+        $mode='plan';
+        $ital=true;
+      }
+      $sum=0;
+      foreach($arrDates as $date) {
+        $year=pq_substr($date,0,4);
+        if ($loop and $year!=$loopYear) continue;
+        if ($i==1) {
+          $sumProj[$proj][$date]=0;
+        }
+        $val=0;
+        if (array_key_exists($mode, $lists) and array_key_exists($date,$lists[$mode])) {
+          $val=$lists[$mode][$date];
+        }
+        echo '<td class="reportTableData" ' . $style . '>';
+        echo ($ital)?'<i>':'';
+        echo htmlDisplayCurrency($val);
+        echo ($ital)?'</i>':'';
+        $sum+=$val;
+        $arrSum[$date]+=$val;
+        echo '</td>';
+        $sumProj[$proj][$date]+=$val;
+      }
+      echo '<td class="reportTableColumnHeader">';
+      echo ($ital)?'<i>':'';
+      echo htmlDisplayCurrency($sum);
+      echo ($ital)?'</i>':'';
+      echo '</td>';
+      echo '</tr>';
+      
+    }
+  }
+  echo "<tr><td>&nbsp;</td></tr>";
+  echo '<tr><td class="reportTableHeader" >' . i18n('sum') . '</td>';
+  $sum=0;
+  $cumul=array();
+  foreach ($arrSum as $date=>$val) {
+    echo '<td class="reportTableHeader" >' . htmlDisplayCurrency($val) . '</td>';
+    $sum+=$val;
+    $cumul[$date]=$sum;
+  }
+  echo '<td class="reportTableHeader" >' . htmlDisplayCurrency($sum) . '</td>';
+  echo '</tr>';
+  echo '</table>';
+  echo '</td></tr></table>';
+if (! $loop) break;
+} // end loop on $loopYear
 // Graph
 if (! testGraphEnabled()) { return;}
   include_once("../external/pChart2/class/pData.class.php");

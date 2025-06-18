@@ -38,12 +38,7 @@ function showFilterDialog() {
   function callBack() {
     filterStartInput=false;
     window.top.filterFromDetail=false;
-    if (window.top.dijit.byId('dialogDetail').open) {
-      window.top.filterFromDetail=true;
-      dojo.byId('filterDefaultButtonDiv').style.display='none';
-    } else {
-      dojo.byId('filterDefaultButtonDiv').style.display='block';
-    }
+
     dojo.style(dijit.byId('idFilterOperator').domNode,{
       visibility:'hidden'
     });
@@ -91,7 +86,8 @@ function showFilterDialog() {
       }
     });
     compUrl=(window.top.dijit.byId("dialogDetail").open) ? '?comboDetail=true' : '';
-    loadContent("../tool/displayFilterClause.php" + compUrl,"listFilterClauses","dialogFilterForm",false,null,null,null,displayOrOperator);
+    loadContent("../tool/displayFilterClause.php" + compUrl,"listFilterClauses","dialogFilterForm",false,null,null,null);
+    loadContent("../tool/refreshFilterNameLayout.php" + compUrl,"filterNameLayoutDiv","dialogFilterForm",false, null, null, null);
     loadContent("../tool/displayFilterList.php" + compUrl,"listStoredFilters","dialogFilterForm",false);
     loadContent("../tool/displayFilterSharedList.php" + compUrl,"listSharedFilters","dialogFilterForm",false);
     var objectClass='';
@@ -811,6 +807,9 @@ function filterSelectOperator(operator) {
 
 function addfilterClause(silent) {
   filterStartInput=false;
+  var isGroup = dojo.byId('isGroup');
+  var indentLevel = dojo.byId('indentLevel');
+  
   if (dijit.byId('filterNameDisplay')) {
     dojo.byId('filterName').value=dijit.byId('filterNameDisplay').get('value');
   }
@@ -853,6 +852,7 @@ function addfilterClause(silent) {
   var compUrl=(window.top.dijit.byId("dialogDetail").open) ? '?comboDetail=true' : '';
   loadContent("../tool/addFilterClause.php" + compUrl,"listFilterClauses","dialogFilterForm",false,null,null,null,function() {
     clearDivDelayed('saveFilterResult');
+    isGroup.value = "0";
   });
   if (dojo.byId('filterLogicalOperator') && dojo.byId('filterLogicalOperator').style.display == 'none') {
     dojo.byId('filterLogicalOperator').style.display='block';
@@ -986,12 +986,18 @@ function clearFilter() {
   dojo.byId('filterName').value=null;
 }
 
-function defaultFilter() {
-  if (dijit.byId('filterNameDisplay')) {
+function defaultFilter(removeDefaultFilter,filterName) {
+  if (!removeDefaultFilter) removeDefaultFilter=false; 
+  if (!filterName) filterName=null;
+  if (dijit.byId('filterNameDisplay') && !removeDefaultFilter && filterName==null) {
     dojo.byId('filterName').value=dijit.byId('filterNameDisplay').get('value');
+  }else if (filterName){
+    dojo.byId('filterName').value=filterName;
   }
+  console.log(filterName);
+  var removeParam = (compUrl ? "&" : "?") + "removeDefaultFilter=" + (removeDefaultFilter ? "1" : "0");
   var compUrl=(window.top.dijit.byId("dialogDetail").open) ? '?comboDetail=true' : '';
-  loadContent("../tool/defaultFilter.php" + compUrl,"listStoredFilters","dialogFilterForm",false,null,null,null,function() {
+  loadContent("../tool/defaultFilter.php" + compUrl + removeParam,"listStoredFilters","dialogFilterForm",false,null,null,null,function() {
     clearDivDelayed('saveFilterResult');
   });
 }
@@ -1015,6 +1021,32 @@ function saveFilter() {
   });
 }
 
+function openCloseGroup() {
+  var button = dojo.byId("dialogFilterOpenClose");
+  var triangle = dojo.byId("cursorFilter");
+  var isGroup = dojo.byId("isGroup");
+  var indentLevel = dojo.byId("indentLevel");
+  
+  if (button.getAttribute("data-state") == "open") {
+    dojo.byId("dialogFilterOpenClose_label").innerHTML = i18n('closeGroup');
+    button.setAttribute("data-state", "closed");
+    button.setAttribute("title", i18n('closeGroup'));
+    isGroup.value = "1";
+    indentLevel.value = "1";
+  } else {
+    dojo.byId("dialogFilterOpenClose_label").innerHTML = i18n('openGroup');
+    button.setAttribute("data-state", "open");
+    button.setAttribute("title", i18n('openGroup'));
+    if (triangle) {
+      triangle.style.marginLeft = "0px";
+    }
+    isGroup.value = "2";
+    indentLevel.value = "0";
+  }
+
+}
+
+
 /**
  * Select a stored filter in the list and fetch criteria
  * 
@@ -1022,6 +1054,7 @@ function saveFilter() {
 var globalSelectFilterContentLoad=null;
 var globalSelectFilterContainer=null;
 function selectStoredFilter(idFilter,idLayout,context,contentLoad,container) {
+  console.log('selectStoredFilter');
   var compUrl=(window.top.dijit.byId("dialogDetail").open) ? '&comboDetail=true' : '';
   globalSelectFilterContentLoad=null;
   globalSelectFilterContainer=null;
@@ -1078,10 +1111,22 @@ function selectStoredFilter(idFilter,idLayout,context,contentLoad,container) {
       dijit.byId('listFilterFilter').closeDropDown();
     }
   } else {
+    var filters = document.querySelectorAll("tr[id^='filter']");
+    for (var m = 0; m < filters.length; m++){
+      if (filters[m].id === 'filter' + idFilter) {
+        dojo.byId('filter' + idFilter).style.cssText = "color: var(--color-darker); background-color: var(--color-medium-secondary);";
+        dojo.byId('imgFilter'+ idFilter).style.cssText = "filter: brightness(0) invert(var(--color-toolbar-invert));float:left;width:10px";
+      } else {
+        dojo.byId(filters[m].id).style.cssText = "cursor: pointer;";
+        var filterID= filters[m].id.charAt(0).toUpperCase() + filters[m].id.slice(1)
+        dojo.byId('img'+ filterID).style.cssText = "float:left;width:10px";
+      }
+    }
     if (dojo.byId('filterLogicalOperator') && dojo.byId('filterLogicalOperator').style.display == 'none') {
       dojo.byId('filterLogicalOperator').style.display='block';
-    }
+    }   
     loadContent("../tool/selectStoredFilter.php?idFilter=" + idFilter + compUrl,"listFilterClauses","dialogFilterForm",false, null, null, null);
+    loadContent("../tool/refreshFilterNameLayout.php?idFilter=" + idFilter + compUrl,"filterNameLayoutDiv","dialogFilterForm",false, null, null, null);
   }
 
 }
@@ -1130,6 +1175,7 @@ function selectDynamicFilter() {
 }
 
 function selectDynamicFilterContinue() {
+  console.log('selectDynamicFilterContinue');
   if (window.top.dijit.byId('dialogDetail').open) {
     var doc=window.top.frames['comboDetailFrame'];
   } else {

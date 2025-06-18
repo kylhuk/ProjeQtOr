@@ -1454,7 +1454,7 @@ abstract class SqlElement {
           $where = "nameIndicatorable='$classIndicatorable' and idle = 0";
         }
         $lstInd = $indDef->getSqlElementsFromCriteria ( null, false, $where );
-        if(!$lstInd){
+        if(!$lstInd or count($lstInd)==0){
           $crit = array('nameIndicatorable' => $classIndicatorable, 'idle' => '0','idProject' =>"");
           $lstInd = $indDef->getSqlElementsFromCriteria ( $crit, false );
         }
@@ -4175,6 +4175,11 @@ abstract class SqlElement {
         }
       }
     }
+    // Set also criteria fields
+    foreach ($this->getStaticDatabaseCriteria() as $crt=>$val) {
+      if (property_exists($this, $crt)) $this->$crt=$val;
+    }
+    
   }
 
   /**
@@ -9273,7 +9278,11 @@ public function getMailDetailFromTemplate($templateToReplace, $lastChangeDate=nu
         $result[$fld]=$value;
       } else if (isForeignKey ($fld, $this)) { // idXxx : also add nameXxx
         $class = pq_substr(foreignKeyWithoutAlias($fld),2);
-        $fldName='name'.pq_substr($fld,2);
+        if (pq_strpos($fld, '__') !== false && pq_substr($fld, 0, 2) !== 'id') {
+          $fldName='label'.ucfirst($fld);
+        }else{
+          $fldName='name'.pq_substr($fld,2);
+        }
         if ($class=='Resource' or $class=='User' or $class=='Contact') {
           $result[$fldName]=SqlList::getNameFromId('Affectable', $value);
         } else if (SqlElement::class_exists($class) and property_exists($class,'name')) {

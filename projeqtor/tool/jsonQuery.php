@@ -1341,6 +1341,10 @@
             } else if ($formatter[$nbFields]=='numericFormatter') {
             	$numericLength=9;
             	if ($val<0) $numericLength=0;
+            	if ( (pq_strtolower($id)=='warningvalue' or pq_strtolower($id)=='alertvalue') and ! $val) {
+            	  $numericLength=null;
+            	  $val='NaN';
+            	}
             } else if ($formatter[$nbFields]=='dateTimeFormatter') {
                 if (($id=='initialDueDateTime' || $id=='actualDueDateTime') and $hideHoursTicketDueDates=='YES' and $val){
                   $val = date('Y-m-d', pq_strtotime($val));

@@ -137,9 +137,9 @@ function loadDialog(dialogDiv, callBack, autoShow, params, clearOnHide, closable
    params="";
   }
   showWait();
+  var url='../tool/dynamicDialog.php?dialog='+dialogDiv+'&isIE='+((dojo.isIE)?dojo.isIE:'')+params+addTokenIndexToUrl();
   dojo.xhrPost({
-   url : '../tool/dynamicDialog.php?dialog=' + dialogDiv + '&isIE='
-       + ((dojo.isIE) ? dojo.isIE : '') + params+addTokenIndexToUrl(),
+   url : url,
    form : formName,
    handleAs : "text",
    load : function(data) {
@@ -591,7 +591,6 @@ function hideMsg(id,value){
 // =============================================================================
 
 function showPrint(page, context, comboName, outMode, orientation, attach) {
-  //console.log(page);
   showWait();
   quitConfirmed=true;
   noDisconnect=true;

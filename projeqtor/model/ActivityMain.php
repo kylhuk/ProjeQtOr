@@ -737,7 +737,7 @@ class ActivityMain extends SqlElement {
     if ($this->id and $this->handled and $this->handledDate and ! $this->ActivityPlanningElement->validatedStartDate) {
       if ( $this->ActivityPlanningElement->realWork==0 and ($this->ActivityPlanningElement->assignedWork>0 or $this->ActivityPlanningElement->leftWork>0) 
       and ($this->ActivityPlanningElement->idPlanningMode==29 or $this->ActivityPlanningElement->idPlanningMode==30)) {
-        // Constrained duration, if activity "started" (handledDate set) and no real work entered and has left work, set validatedStartDate isf not set.
+        // Constrained duration, if activity "started" (handledDate set) and no real work entered and has left work, set validatedStartDate if not set.
         $this->ActivityPlanningElement->validatedStartDate=$this->handledDate;
       }
     }

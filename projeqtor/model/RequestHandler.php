@@ -61,7 +61,7 @@ abstract class RequestHandler {
   public static function getClass($code,$required=false,$default=null) {
     $val=self::getValue($code,$required,$default);
     if ($val==$default) return $val;
-    if ($val=='Planning' or $val=='VersionsPlanning' or $val=='ResourcePlanning') return $val;
+    if ($val=='Planning' or $val=='VersionsPlanning' or $val=='ResourcePlanning' or $val=='PlanningWorkPlan') return $val;
     if (pq_substr($val,0,7)=='Report_') return $val;
     if (pq_strtolower($val)=='null' or pq_strtolower($val)=='undefined') return null; 
     return Security::checkValidClass($val);
@@ -78,6 +78,7 @@ abstract class RequestHandler {
   
   public static function getNumeric($code,$required=false,$default=null) {
     $val=self::getValue($code,$required,$default);
+    $val=pq_str_replace('NaN', '', $val);
     if (!$val and $default!==null) return $default;
     if ($val==$default) return $val;
     return Security::checkValidNumeric($val);

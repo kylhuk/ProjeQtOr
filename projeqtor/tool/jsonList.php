@@ -93,6 +93,11 @@ if ($type == 'empty') {
   $json=ob_get_clean();
   $jsonValid='{"identifier":"id", "items":['.$json.']}';
   $arr=json_decode($jsonValid);
+  if (!$arr) {
+    errorLog("Cannot decode json string for fields list (jsonList.php - type='object')");
+    errorLog($jsonValid);
+    exit;
+  }
   function build_sorter($key) {
     return function ($a, $b) use ($key) {
       return strnatcmp($a->$key, $b->$key);
@@ -1171,6 +1176,7 @@ function listFieldsForFilter($obj, $nbRows, $included = false) {
     if (!$fieldType and $col=='_Assignment') {
       if ($nbRows > 0) echo ', ';
       echo '{"id":"' . ($included ? get_class ( $obj ) . '_' : '') . 'assignedResource__idResourceAll' . '", "name":"' . i18n("assignedResource") . '", "dataType":"list"}';
+      $nbRows++;
       continue;
     }
     if (pq_substr ( $col, 0, 1 ) != "_" and pq_substr ( $col, 0, 1 ) != pq_ucfirst ( pq_substr ( $col, 0, 1 ) ) and ! $obj->isAttributeSetToField ( $col, 'hidden' ) and ! $obj->isAttributeSetToField ( $col, 'calculated' ) and 
@@ -1220,7 +1226,18 @@ function listFieldsForMultipleUpdate($obj, $nbRows,$pObj=false, $included = fals
   $extraHiddenFields = $obj->getExtraHiddenFields ( null, null, getSessionUser ()->getProfile () );
   $extraReadonlyFields = $obj->getExtraReadonlyFields ( null, null, getSessionUser ()->getProfile () );
   $proExist=property_exists(get_class($obj), SqlElement::getTypeName(get_class($obj)));
+  //get my user
+  $user=getSessionUser();
+  //get my acces right for specificAccess param ( Can update creation information )
+  $rightChangeSender = SqlElement::getSingleSqlElementFromCriteria('HabilitationOther', array('idProfile'=>$user->idProfile, 'scope'=>'canUpdateCreation'));
+  $rightChangeSender = $rightChangeSender->rightAccess;
   foreach ( $obj as $col => $val ) {
+    //if my acces right are No don't display in list
+      if ($rightChangeSender=="2"){
+      if($col=='idUser' or $col=='creationDate' or $col=='idleDate'){
+        continue;
+      }
+    }
     if ($col=='_Assignment') {
       continue;
     }

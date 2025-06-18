@@ -34,7 +34,7 @@ require_once "../tool/projeqtor.php";
 // Get the filter info
 $filterObjectClass=RequestHandler::getValue('filterObjectClass',true);
 if (!isset($objectClass) or !$objectClass) $objectClass=$filterObjectClass;
-if ($objectClass=='Planning' or $objectClass=='GlobalPlanning') $objectClass='Activity';
+if ($objectClass=='Planning' or $objectClass=='GlobalPlanning' or $objectClass=='ResourcePlanning' or $objectClass=='PlanningWorkPlan') $objectClass='Activity';
 else if (pq_substr($objectClass,0,7)=='Report_') $objectClass=pq_substr($objectClass,7);
 Security::checkValidClass($objectClass);
 

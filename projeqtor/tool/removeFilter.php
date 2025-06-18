@@ -36,7 +36,7 @@ if (! array_key_exists('filterObjectClass',$_REQUEST)) {
   throwError('filterObjectClass parameter not found in REQUEST');
 }
 $filterObjectClass=$_REQUEST['filterObjectClass'];
-if ($filterObjectClass!='Planning' and $filterObjectClass!='GlobalPlanning' and $filterObjectClass!='VersionsPlanning' and $filterObjectClass!='ResourcePlanning' ) Security::checkValidClass($filterObjectClass, 'filterObjectClass');
+if ($filterObjectClass!='Planning' and $filterObjectClass!='GlobalPlanning' and $filterObjectClass!='VersionsPlanning' and $filterObjectClass!='ResourcePlanning' and $filterObjectClass!='PlanningWorkPlan') Security::checkValidClass($filterObjectClass, 'filterObjectClass');
 
 if (! array_key_exists('idFilter',$_REQUEST)) {
   throwError('idFilter parameter not found in REQUEST');
@@ -54,7 +54,7 @@ echo '</td></tr></table>';
 echo "</div>"; 
 
 $flt=new Filter();
-$crit=array('idUser'=> $user->id, 'refType'=>($filterObjectClass=='Planning')?'Activity':$filterObjectClass );
+$crit=array('idUser'=> $user->id, 'refType'=>($filterObjectClass=='Planning' or $filterObjectClass=='PlanningWorkPlan')?'Activity':$filterObjectClass );
 $orderByFilter = "sortOrder ASC";
 $filterList=$flt->getSqlElementsFromCriteria($crit,false,null,$orderByFilter);
 $comboDetail=false;

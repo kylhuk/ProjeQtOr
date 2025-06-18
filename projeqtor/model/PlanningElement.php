@@ -2177,6 +2177,14 @@ class PlanningElement extends SqlElement {
   
   public function renumberWbs($force=false,$orderByPriority=false) {
     if (PlanningElement::$_noDispatch and !$force) return;
+    // Before reorderring, ensure Administrative projects are placed at first position
+    $pe=new PlanningElement();$peTable=$pe->getDatabaseTableName();
+    $p=new Project();$pTable=$p->getDatabaseTableName();
+    $t=new Type();$tTable=$t->getDatabaseTableName();
+    $selectProjId="select p.id from $pTable p left join $tTable t on p.idProjectType=t.id where t.code='ADM'";
+    $queryAdmPe="update $peTable pe set priority=0 where pe.refType='Project' and pe.refId in ($selectProjId)";
+    if ($orderByPriority) SqlDirectElement::execute($queryAdmPe);
+    
     $countChangedWbs = 0;
   	if ($this->id) {
   		$where="topRefType='" . $this->refType . "' and topRefId=" . Sql::fmtId($this->refId) ;

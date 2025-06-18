@@ -188,6 +188,7 @@ function validateLayoutListColumn(planningType){
             dijit.byId('listColumnSelector').closeDropDown();
             resizeListDiv();
           }
+          filterJsonList(dojo.byId("objectClass").value);
         };
         if (compUrl) {
           doc.refreshJsonList(dojo.byId('objectClassList').value);

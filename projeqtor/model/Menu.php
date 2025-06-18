@@ -343,8 +343,8 @@ class Menu extends SqlElement {
         }
         
         if($defaultMenu == 'menuBarRecent' and !in_array($menu->name,$customMenuArray) or ($defaultMenu == 'menuBarCustom')){
-          echo '<div class="comboButtonInvisible" dojoType="dijit.form.DropDownButton"id="addFavorite'.$class.'_'.$idFavoriteRow.'" name="addFavorite'.$class.'" style="position:absolute;top:22px;left:0px;height: 0px; overflow: hidden; ">';
-          echo '<div dojoType="dijit.TooltipDialog" id="dialogFavorite'.$class.'_'.$idFavoriteRow.'" style="cursor:pointer;"onMouseEnter="clearTimeout(closeFavoriteTimeout);"onMouseLeave="hideFavoriteTooltip(200,\''.$class.'\',\''.$idFavoriteRow.'\')"';
+          echo '<div class="comboButtonInvisible" dojoType="dijit.form.DropDownButton"id="addFavorite'.$class.'_'.$idFavoriteRow.'" name="addFavorite'.$class.'" style="position:absolute;top:22px;left:20px;height: 0px; overflow: hidden; ">';
+          echo '<div dojoType="dijit.TooltipDialog" id="dialogFavorite'.$class.'_'.$idFavoriteRow.'" style="cursor:pointer;" onMouseEnter="clearTimeout(closeFavoriteTimeout);" onMouseLeave="hideFavoriteTooltip(200,\''.$class.'\',\''.$idFavoriteRow.'\')"';
                     
           if (!in_array($menu->name,$customMenuArray)){
             $mode="add";
@@ -356,7 +356,7 @@ class Menu extends SqlElement {
             $lib=i18n('customMenuRemove');
           }
           echo 'onClick="addRemoveFavMenuLeft(\'div'.(($isReport==true)?pq_ucfirst($menu->name):$menu->name).'\', \''.$menu->name.'\',\''.$mode.'\',\''.(($isReport==true)?"reportDirect":"menu").'\', \''.$idFavoriteRow.'\');">';
-          echo'<div class="'.$classAttr.'" style="white-space:nowrap;padding-right:10px;">'.$lib.'</div>';
+          echo'<div class="'.$classAttr.'" style="white-space:nowrap;">'.$lib.'</div>';
           echo '</div></div>';
         }
       }

@@ -988,6 +988,7 @@
           $ParamDefaultTypeColor=Parameter::getGlobalParameter('showColorTypeActivity');
         }
         if (!$line['color'] and ($ParamDefaultTypeColor=="YES") and $line['reftype']=='Activity') {
+          $ref=$line['reftype'];
           $item=new $ref($line['refid'],true); // TODO Remove
           $colorType=SqlList::getFieldFromId('ActivityType', $item->idActivityType, 'color');
           if ($colorType) $line['color']=$colorType;

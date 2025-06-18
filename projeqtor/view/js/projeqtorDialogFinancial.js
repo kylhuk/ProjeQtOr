@@ -466,7 +466,7 @@ function addResourceCost(idResource,idRole,funcList) {
     setTimeout("affectationLoad=false",500);
   };
   var params="&idResource=" + idResource;
-  params+="&funcList=" + funcList;
+  //params+="&funcList=" + funcList;
   params+="&idRole=" + idRole;
   params+="&mode=add";
   loadDialog('dialogResourceCost',callBack,true,params);
@@ -478,7 +478,7 @@ function removeResourceCost(id,idRole,nameRole,startDate) {
     return;
   }
   var params="&idResource=" + dijit.byId('id').get("value");
-  params+="&funcList=";
+  //params+="&funcList=";
   params+="&idRole=" + idRole;
   params+="&mode=delete";
   var callBack=function() {
@@ -940,6 +940,35 @@ function workCommandChangeIdComplexity() {
       vals=data.split('#');
       dijit.byId('workCommandUnitAmount').set('value',vals[0]);
       if (dijit.byId('workCommandUnitAmountLocal') && vals.length>1) dijit.byId('workCommandUnitAmountLocal').set('value',vals[1]);
+    }
+  });
+}
+
+//remi #9958
+function workCommandParentChangeVerif() {
+  var idWkCdP = dijit.byId("workCommandParent").get('value');
+  if(idWkCdP==" "){ 
+    dijit.byId("workCommandWorkUnit").set('readOnly',false);
+    setTimeout("dijit.byId('workCommandComplexity').set('readOnly',false)",100);
+    dijit.byId("workCommandWorkUnit").set('value','');
+    dijit.byId("workCommandComplexity").set('value','');
+  }
+  //recover UO and complexity of Parent 
+  dojo.xhrGet({
+    url:'../tool/getSingleData.php?dataType=workCommandParent' + '&idWorkCommandParent=' + idWkCdP+ ''+addTokenIndexToUrl(),
+    handleAs:"text",
+    load:function(data) {
+      var vals=data.split('#');
+      var idwkWorkUnit = vals[0];
+      var idwkComplexity = vals[1];
+      if(idwkWorkUnit!="" && idwkComplexity!=""){
+        //set UO and complexity of Parent for the child item 
+        //dijit.byId("workCommandComplexity").set('readOnly',false);
+        dijit.byId("workCommandWorkUnit").set('value',idwkWorkUnit);
+        dijit.byId("workCommandWorkUnit").set('readOnly',true);
+        setTimeout("dijit.byId('workCommandComplexity').set('value',"+idwkComplexity+")", 100);
+        setTimeout("dijit.byId('workCommandComplexity').set('readOnly',true)",110);
+      }
     }
   });
 }

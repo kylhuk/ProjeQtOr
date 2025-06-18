@@ -44,7 +44,7 @@ require_once "../tool/formatter.php";
 // CHANGE BY Marc TABARY - 2017-02-17
 function htmlDrawOptionForReference($col, $selection, $obj=null, $required=false, $critFld=null, $critVal=null, $limitToActiveProjects=true, $limitToActiveOrganizations=true,$showIdle=false,$onProjectSelector=false, $allProjects=false, $typeSelect=false) {
   //scriptLog("      =>htmlDrawOptionForReference(col=$col,selection=$selection,object=" .debugDisplayObj($obj).",required=$required,critFld=".debugDisplayObj($critFld).",critVal=".debugDisplayObj($critVal).")");
-  global $idReport, $idReportCategory;
+  global $idReport, $idReportCategory, $showHierarchy;
   $reportAdminProject=false;
   // Take into account array of $critFld // TODO : check where it is used 
 	$col=pq_str_replace(array('ActivityPlanningElement_','ProjectPlanningElement_','MilestonePlanningElement_','MeetingPlanningElement_','TestSessionPlanningElement_'),'',$col);
@@ -241,16 +241,21 @@ function htmlDrawOptionForReference($col, $selection, $obj=null, $required=false
       }
     }  
     $table=SqlList::getListWithCrit($listType,$critArray,$column,$selection);
-    if ($listType =='WorkCommand' && isset($critArray['idComplexity']) && isset($critArray['idWorkUnit']) ){ 
+    if ($listType =='WorkCommand' && isset($critArray['idComplexity']) && isset($critArray['idWorkUnit']) ){
       $workCommand = new WorkCommand();
       $table=array();
       $critWhere = "idComplexity = " . $critArray['idComplexity'] . " AND idWorkUnit = " . $critArray['idWorkUnit'];
+      if(isset($critArray['elementary']))$critWhere.=" AND elementary = ".$critArray['elementary'];
+      if(isset($critArray['idCommand']))$critWhere.=" AND idCommand = ".$critArray['idCommand'];
       $listWorkCommand = $workCommand->getSqlElementsFromCriteria(null, false, $critWhere);
       foreach ($listWorkCommand as $val){
-        if ($val->elementary == 1){
-          $command = new Command($val->idCommand);
-          $table[$val->id]='#'.$val->id.'-'.$command->reference.' - '.$val->name;
-        }
+          if ($val->elementary == 1 ){
+            $command = new Command($val->idCommand);
+            $table[$val->id]='#'.$val->id.'-'.$command->reference.' - '.$val->name;
+          }else if(isset($critArray['elementary'])){
+            $command = new Command($val->idCommand);
+            $table[$val->id]=$val->name;
+          }
       }      
     }
     if($col == 'idActivity' and $obj and (get_class($obj)=='Activity' or get_class($obj)=='TestSession' or get_class($obj)=='Milestone')){
@@ -1272,7 +1277,7 @@ function htmlDrawOptionForReference($col, $selection, $obj=null, $required=false
   foreach ($lstPluginEvt as $script) {
     require $script; // execute code
   }
-  if (! $obj and $col!="planning" and $col!="idProject") $sepChar='no';
+  if (! $obj and $col!="planning" and $col!="idProject" and $showHierarchy!==true) $sepChar='no';
   $selectedFound=false;
   $next="";
   if (!$allProjects) {

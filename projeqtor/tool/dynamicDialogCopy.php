@@ -87,7 +87,7 @@ if($copyType=="copyObjectTo"){
                <?php echo autoOpenFilteringSelect(); if($objectClass == 'CatalogUO'){ ?> readOnly <?php }?>
                 id="copyToClass" name="copyToClass" required="required"
                 class="input required" >
-                 <?php htmlDrawOptionForReference('idCopyable', $copyToClassId, $toCopy, true,'idle','0');?>
+                 <?php htmlDrawOptionForReference('idCopyable', $copyToClassId, $toCopy, ($copyToClass=="SubTask")?false:true,'idle','0');?>
                  <script type="dojo/connect" event="onChange" args="evt" >
                    var objclass=copyableArray[this.value];
                    dijit.byId('copyToType').set('value',null);
@@ -122,7 +122,7 @@ if($copyType=="copyObjectTo"){
                 id="copyToType" name="copyToType" required
                 class="input required">
                 <?php ($copyToClass=="PeriodicMeeting")?$colName='idMeetingType':$colName='id'.$copyToClass.'Type';
-                      if($copyToClass!="ProviderTerm"){
+                    if($copyToClass!="ProviderTerm" and $copyToClass!="SubTask"){
                       htmlDrawOptionForReference($colName, (($copyToClass==$objectClass)?$toCopy->$colName:null), null, true); }
                 ?>
                </select>

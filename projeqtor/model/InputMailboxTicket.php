@@ -476,7 +476,7 @@ class InputMailboxTicket extends SqlElement {
           }
         }
         $title = "Cannot connect to ticket mailbox #$this->id";
-        $content = pq_mb_substr(imap_last_error().' - ticket mailbox closed, next try in 1 hour');
+        $content = imap_last_error().' - ticket mailbox closed, next try in 1 hour';
         sendNotification($receivers, $this, "ALERT", $title, $content, $error);
       }
       $resMb=$this->save();
@@ -1043,7 +1043,7 @@ class InputMailboxTicket extends SqlElement {
     // Search end of Message (this is valid for text only, treatment of html messages would require other code)
     
     $posEndMsg=strrpos($body,"###PROJEQTOR###");
-    if(! $posEndMsg){
+    if($posEndMsg){
       $checkThunderAndGmail=pq_strpos($body,"\r\n>");
       //$checkSeparator=pq_strpos($body,"____________________");
       if($checkThunderAndGmail and $checkThunderAndGmail<$posEndMsg){
@@ -1076,6 +1076,8 @@ class InputMailboxTicket extends SqlElement {
       }
     }
     if (!$posEndMsg) { // Message not received with previous methods, try another one
+      $posClass=pq_strpos($body,'directAccess=true&objectClass=');
+      if (! $posClass) $posClass=pq_strpos($body,'directAccess=true&amp;objectClass=');
       $posEndMsgDe=strrpos(pq_substr($body,0,$posClass), "\n");
       $posDe=strrpos(pq_substr($body,0,$posEndMsgDe), "De : ");
       if ($posDe>2) {

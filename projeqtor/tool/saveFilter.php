@@ -51,7 +51,7 @@ if (! $comboDetail and ! $user->_arrayFilters) {
 // }
 //$filterObjectClass=$_REQUEST['filterObjectClass'];
 $filterObjectClass=RequestHandler::getClass('filterObjectClass',true);
-$objectClass=($filterObjectClass=='Planning' or $filterObjectClass=='VersionsPlanning' or $filterObjectClass=='ResourcePlanning' )?'Activity':$filterObjectClass;
+$objectClass=($filterObjectClass=='Planning' or $filterObjectClass=='VersionsPlanning' or $filterObjectClass=='ResourcePlanning' or $filterObjectClass=='PlanningWorkPlan')?'Activity':$filterObjectClass;
 $objectClass=(pq_substr($objectClass,0,7)=='Report_')?pq_substr($objectClass,7):$objectClass;
 
 // Get existing filter info

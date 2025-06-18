@@ -507,7 +507,7 @@ function getJsonPlanningUrl (versionsPlanning) {
     } 
   }
   
-  if (dijit.byId('listShowProject') && versionsPlanning == 'workPlan') {
+  if (dijit.byId('listShowProject') && versionsPlanning != 'workPlan') {
     if(dijit.byId('listShowProject').get("value")=='on'){
       url+=(param) ? "&" : "?";
       url+="showProject=true";
@@ -598,6 +598,17 @@ function getJsonPlanningUrl (versionsPlanning) {
       param=true;
     }
   }
+  if (dijit.byId('hideAssignationWihtoutLeftWork') && versionsPlanning == 'workPlan') {
+    if(dijit.byId('hideAssignationWihtoutLeftWork').get("value")=='on'){
+      url+=(param) ? "&" : "?";
+      url+="hideAssignationWihtoutLeftWork=false";
+      param=true;
+    }else{
+      url+=(param) ? "&" : "?";
+      url+="hideAssignationWihtoutLeftWork=true";
+      param=true;
+    }
+  }
   
   if (dijit.byId('listShowMilestone') && versionsPlanning != 'workPlan') {
     url+=(param) ? "&" : "?";
@@ -624,12 +635,13 @@ function getJsonPlanningUrl (versionsPlanning) {
     }
   }
   
-  if(dojo.byId("planningJsonData") && dojo.byId("workPlanJsonData")){
-    var startDateView = JSGantt.formatDateStr(g.getPlanningMinDate(),'yyyy-mm-dd');
-    var endDateView = JSGantt.formatDateStr(g.getPlanningMaxDate(),'yyyy-mm-dd');
-    dojo.byId('planningStartDateView').value = htmlEncode(startDateView);
-    dojo.byId('planningEndDateView').value = htmlEncode(endDateView);
-  }
+// Get planning min and max date removed due to display lag   
+//  if(dojo.byId("planningJsonData") && dojo.byId("workPlanJsonData")){
+//    var startDateView = JSGantt.formatDateStr(g.getPlanningMinDate(),'yyyy-mm-dd');
+//    var endDateView = JSGantt.formatDateStr(g.getPlanningMaxDate(),'yyyy-mm-dd');
+//    dojo.byId('planningStartDateView').value = htmlEncode(startDateView);
+//    dojo.byId('planningEndDateView').value = htmlEncode(endDateView);
+//  }
   
   if (dijit.byId('listShowNullAssignment') && versionsPlanning != 'workPlan') {
     if (dojo.byId('listShowNullAssignment').checked) {
@@ -833,6 +845,7 @@ function refreshGridCount(repeat) {
   }
   refreshGridSum();
 }
+
 function refreshGridSum(){
 	var fldSum=null;
 	var sumValue=0;
@@ -872,7 +885,19 @@ function refreshGridSum(){
 	  sumValue=numericFormatter(sumValue,"left");
 	}
 	 dojo.byId('listSumOnFilterSpan').innerHTML= i18n("sumOnColumn")+"&nbsp;"+i18n("col"+fldSum.charAt(0).toUpperCase() + fldSum.slice(1))+"&nbsp;:&nbsp;";
-	 dojo.byId('listSumOnFilter').innerHTML=sumValue;
+	 dojo.byId('listSumOnFilter').innerHTML=sumValue; 
+   if (dijit.byId('listTypeFilterQuickSw') && dijit.byId('listTypeFilterQuickSw').get('value') == 'off') {
+     dojo.byId('listTypeFilterSpan').style.display="none";
+     dijit.byId('listTypeFilter').domNode.style.display='none';
+   }
+   if (dijit.byId('listClientFilterQuickSw') && dijit.byId('listClientFilterQuickSw').get('value') == 'off') {
+     dojo.byId('listClientFilterSpan').style.display="none";
+     dijit.byId('listClientFilter').domNode.style.display='none';
+   }
+   if (dijit.byId('listBudgetParentFilterQuickSw') && dijit.byId('listBudgetParentFilterQuickSw').get('value') == 'off') {
+     dojo.byId('listBudgetParentFilterSpan').style.display="none";
+     dijit.byId('listBudgetParentFilter').domNode.style.display='none';
+   }
 }
 /**
  * ============================================================================
@@ -3346,11 +3371,23 @@ function selectAllRows(gridName) {
   if (!grid) {
     return;
   }
+  $idx=-1;
   grid.store.fetch({
     onComplete:function(items) {
       dojo.forEach(items,function(item,index) {
-        grid.selection.setSelected(index,true);
+        idx++;
+        grid.scrollToRow(idx);
       });
+      var executeSelectNow=function() { 
+        grid.store.fetch({
+          onComplete:function(items) {
+            dojo.forEach(items,function(item,index) {
+              grid.selection.setSelected(index,true);
+            });
+          }
+        });
+      };
+      setTimeout(executeSelectNow,100);
     }
   });
 }
@@ -7985,9 +8022,11 @@ function showActionSelect(selectClass,selectId,selectField,canCreate,canUpdate) 
     }
     if (canCreate && width < maxWidth && !(dojo.attr(selectField,'readonly'))) {
       width+=25;
-      buttons+='<div title="' + i18n('buttonNew',new Array(i18n(selectClassTitle))) + '" style="float:right;margin-right:3px;" class="roundedButton roundedIconButton generalColClass ' + selectField
+      selectClassTitleCreate=(selectClassTitle=='Affectable')?'Contact':selectClassTitle;
+      selectClassCreate=(selectClass=='Affectable')?'Contact':selectClass;
+      buttons+='<div title="' + i18n('buttonNew',new Array(i18n(selectClassTitleCreate))) + '" style="float:right;margin-right:3px;" class="roundedButton roundedIconButton generalColClass ' + selectField
           + 'Class">';
-      buttons+='  <div class="imageColorNewGui iconToolbarAdd" onclick="actionSelectAdd(\'' + selectClass + '\', \'' + selectId + '\', \'' + selectField + '\');"></div>';
+      buttons+='  <div class="imageColorNewGui iconToolbarAdd" onclick="actionSelectAdd(\'' + selectClassCreate + '\', \'' + selectId + '\', \'' + selectField + '\');"></div>';
       buttons+='</div>';
     }
     if (selectId && width < maxWidth) {

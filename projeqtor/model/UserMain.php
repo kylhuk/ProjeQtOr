@@ -1630,7 +1630,7 @@ class UserMain extends SqlElement {
         $this->unsuccessfullLogin();
         return "login";
       }
-			if (! $bind_user or !$parampassword) {
+			if (! $bind_user or ! $parampassword) {
 			  $this->unsuccessfullLogin();
 				return "login";
 			}
@@ -1661,10 +1661,16 @@ class UserMain extends SqlElement {
 				  }
 				  setSessionUser($this);
 				  traceLog("New user from LDAP : create user in table with name='$this->name', fullName='$this->resourceName', email='$this->email'");
-				  debugTraceLog("  => Before save, count users with same name = ".$this->countSqlElementsFromCriteria(array("name"=>$this->name)));
+				  $sameName=$this->countSqlElementsFromCriteria(array("name"=>$this->name));
+				  debugTraceLog("  => Before save, count users with same name = ".$sameName);
+				  if (!$this->id and $sameName>0) {
+				    errorLog("User cannot be created with already existing name='$this->name', fullName='$this->resourceName', email='$this->email'");
+				    $this->unsuccessfullLogin();
+				    return "login";
+				  }
 				  $resultSaveUser=$this->save();
-				  debugTraceLog("  => Result=$resultSaveUser");
-				  debugTraceLog("  => After save, count users with same name = ".$this->countSqlElementsFromCriteria(array("name"=>$this->name)));
+				  //debugTraceLog("  => Result=$resultSaveUser");
+				  //debugTraceLog("  => After save, count users with same name = ".$this->countSqlElementsFromCriteria(array("name"=>$this->name)));
 				  if ($this->countSqlElementsFromCriteria(array("name"=>$this->name))>1) {
 				    errorLog("Duplicate user created with name='$this->name', fullName='$this->resourceName', email='$this->email'");
 				    errorLog("login='$paramlogin', stored name='$this->name'");

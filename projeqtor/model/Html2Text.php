@@ -356,6 +356,7 @@ class Html2Text
 
     protected function converter(&$text)
     {
+        if ($text===null) return;
         $this->convertBlockquotes($text);
         $this->convertPre($text);
         $text = preg_replace(pq_nvl($this->search), pq_nvl($this->replace), pq_nvl($text));

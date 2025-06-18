@@ -55,9 +55,9 @@ if (is_session_started()===FALSE) {
 // === Application data : version, dependencies, about message, ...
 $applicationName = "ProjeQtOr"; // Name of the application
 $copyright = $applicationName; // Copyright to be displayed
-$version = "V12.1.1"; // Version of application : Major / Minor / Release
-$svnRevision="22708";
-$build = "0380"; // Build number. To be increased on each release
+$version = "V12.1.3"; // Version of application : Major / Minor / Release
+$svnRevision="22989";
+$build = "0382"; // Build number. To be increased on each release
 $website = "https://www.projeqtor.org"; // ProjeQtOr site url
 if (!isset($aesKeyLength)) { // one can define key lenth to 256 in parameters.php with $aesKeyLength=256; // valid values are 128, 192 and 256
   $aesKeyLength=128;
@@ -2429,7 +2429,7 @@ function extractExternalImages(&$message) {
         $data = base64_encode($img);
         $base64Image = 'data:image/jpeg;base64,' . $data;
       } else {
-        errorLog("Base64 Encoding of image - Could not read file $imageUrl");
+        traceLog("Base64 Encoding of image - Could not read file $imageUrl");
         $base64Image='';
       }
       $message = str_replace($imageUrl, $base64Image, $message);
@@ -4849,6 +4849,16 @@ function securityCheckRequest() {
   // parameters to check for non html
   $parameters=array('objectClass', 'objectId', 'directAccess', 'page', 'directAccessPage');
   $pages=array('page', 'directAccessPage');
+  if (isset($_REQUEST['directAccess']) and pq_strpos($_REQUEST['directAccess'],'&amp;')!==false) {
+    $direct=$_REQUEST['directAccess'];
+    $all=explode('&amp;',$direct);
+    foreach ($all as $prm) {
+      $exp=explode('=',$prm);
+      if (count($exp)==1) $_REQUEST['directAccess']=$exp[0];
+      else if (count($exp)==2) $_REQUEST[$exp[0]]=$exp[1];
+      else traceHack("projeqtor->securityCheckRequest, _REQUEST['directAccess']=$direct | cannot be split for $prm");
+    }
+  }
   foreach ($parameters as $param) {
     if (isset($_REQUEST[$param])) {
       $paramVal=$_REQUEST[$param];
@@ -4861,7 +4871,13 @@ function securityCheckRequest() {
         }
       }
       if (pq_trim($paramVal) and pq_htmlentities($paramVal)!=$paramVal) {
-        traceHack("projeqtor->securityCheckRequest, _REQUEST['$param']=$paramVal");
+        if ($param=='objectClass' and pq_strpos($paramVal, '<input type="hidden" id="lastOperation" name="lastOperation" value="testConnection"><input type="hidden" id="lastOperationStatus" name="lastOperationStatus" value="ERROR">'!==false)) {
+          echo '<input type="hidden" id="lastOperation" name="lastOperation" value="testConnection">';
+          echo '<input type="hidden" id="lastOperationStatus" name="lastOperationStatus" value="ERROR">';
+          echo '<div class="messageERROR" >'.i18n('errorConnection').'</div>';
+        } else {
+          traceHack("projeqtor->securityCheckRequest, _REQUEST['$param']=$paramVal");
+        }
         exit();
       }
     }

@@ -927,6 +927,12 @@ function drawGantt(onlyRefresh) {
   var gFormat = "day";
   if (g) {
     gFormat = g.getFormat();
+    if (dijit.byId('selectBaselineBottom')) {
+      g.setBaseBottomName(dijit.byId('selectBaselineBottom').get('displayedValue'));
+    }
+    if (dijit.byId('selectBaselineTop')) {
+      g.setBaseTopName(dijit.byId('selectBaselineTop').get('displayedValue'));
+    }
   }
   // Only first display, refresh JSGantt object
   if (! onlyRefresh) {
@@ -942,16 +948,16 @@ function drawGantt(onlyRefresh) {
     g.setDateInputFormat('yyyy-mm-dd'); // Set format of input dates ('mm/dd/yyyy', 'dd/mm/yyyy', 'yyyy-mm-dd')
     g.setDateDisplayFormat('default'); // Set format to display dates ('mm/dd/yyyy', 'dd/mm/yyyy', 'yyyy-mm-dd')
     g.setFormatArr("day", "week", "month", "quarter"); // Set format options (up
+    // to 4 :
+    // "minute","hour","day","week","month","quarter")
+    if (ganttPlanningScale) {
+      g.setFormat(ganttPlanningScale,true);
+    }
     if (dijit.byId('selectBaselineBottom')) {
       g.setBaseBottomName(dijit.byId('selectBaselineBottom').get('displayedValue'));
     }
     if (dijit.byId('selectBaselineTop')) {
       g.setBaseTopName(dijit.byId('selectBaselineTop').get('displayedValue'));
-    }
-    // to 4 :
-    // "minute","hour","day","week","month","quarter")
-    if (ganttPlanningScale) {
-      g.setFormat(ganttPlanningScale,true);
     }
     g.setStartDateView(startDateView);
     g.setEndDateView(endDateView);
@@ -1982,15 +1988,19 @@ function highlightPlanningLine(id, planningEditMode, autoScrollPlanning) {
     }
   }
 }
-function scrollBarIntoView(id, topPos, forWorkPlan) {
-  if(forWorkPlan == undefined)forWorkPlan=false;
+var scrollBarIntoViewRetry=0;
+function scrollBarIntoView(id, topPos) {
   if (topPos==undefined) topPos=null;
   var bar=dojo.byId("bardiv_"+id);
-  if (!bar) return;
+  if (!bar) {
+    scrollBarIntoViewRetry++;
+    if (scrollBarIntoViewRetry<=5) setTimeout("scrollBarIntoView("+id+","+topPos+");",500*scrollBarIntoViewRetry);
+    return;
+  }
+  scrollBarIntoViewRetry=0;
   pos=bar.offsetLeft;
-  var divName = (forWorkPlan)?'workPlanRightGanttChartDIV':'rightGanttChartDIV';
-  if (topPos==null) document.getElementById(divName).scrollLeft=pos-100;
-  else document.getElementById(divName).scrollTo(pos-100,topPos);
+  if (topPos==null) document.getElementById('rightGanttChartDIV').scrollLeft=pos-100;
+  else document.getElementById('rightGanttChartDIV').scrollTo(pos-100,topPos);
 }
 
 function selectPlanningLine(selClass, selId, autoscroll) {

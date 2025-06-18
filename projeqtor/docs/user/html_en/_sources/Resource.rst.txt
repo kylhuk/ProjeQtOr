@@ -519,9 +519,9 @@ This material resource will be able to be planned just like a human resource wit
 
 The human, overcapacity and overbooking fields are not available for this type of resource.
 
-However, a hardware resource can have a supporting but unsupported resource or an incompatible resource. For example a trailer could support a truck. Or an automatic car may be incompatible with a resource that does not know how to drive this type of car.
+However, a material resource can have a supporting but unsupported resource or an incompatible resource. For example a trailer could support a truck. Or an automatic car may be incompatible with a resource that does not know how to drive this type of car.
 
-A hardware resource cannot be part of a resource pool. Exclusively human.
+A material resource cannot be part of a resource pool. Exclusively human.
 
 
 .. _calendars:

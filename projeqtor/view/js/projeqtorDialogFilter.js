@@ -184,7 +184,6 @@ function filterSelectAtribute(value) {
         dojo.byId('filterDataType').value=dataType;
         if (dataType == "bool") {
           dijit.byId("filterCompareParameter").set("checked",false);
-          dojo.byId('filterCompareParameterPane').style.display='none';
           filterType="bool";
           dojo.style(dijit.byId('filterValue').domNode,{
             display:'none'
@@ -209,6 +208,7 @@ function filterSelectAtribute(value) {
           dojo.style(dijit.byId('filterValueDate').domNode,{
             display:'none'
           });
+          dojo.byId('filterCompareParameterPane').style.display='none';
         } else if (dataType == "list") {
           dijit.byId("filterCompareParameter").set("checked",false);
           dojo.byId('filterCompareParameterPane').style.display='none';
@@ -216,14 +216,14 @@ function filterSelectAtribute(value) {
           var extraUrl="";
           if (value == 'idTargetVersion' || value == 'idTargetProductVersion' || value == 'idOriginalProductVersion') {
             value='idProductVersion';
-            if (dojo.byId('archiveOn').style.display=='none'){
+            if (dojo.byId('archiveOn') && dojo.byId('archiveOn').style.display=='none'){
               extraUrl='&critField=idle&critValue=0'; 
             }else{
               extraUrl='&critField=idle&critValue=all';
             }
           } else if (value == 'idTargetComponentVersion' || value == 'idOriginalComponentVersion') {
             value='idComponentVersion';
-            if (dojo.byId('archiveOn').style.display=='none'){
+            if (dojo.byId('archiveOn') && dojo.byId('archiveOn').style.display=='none'){
               extraUrl='&critField=idle&critValue=0'; 
             }else{
               extraUrl='&critField=idle&critValue=all';
@@ -713,6 +713,7 @@ function filterSelectOperator(operator) {
       display:'none'
     });
     if (dataType == "bool") {
+      dojo.byId('filterCompareParameterPane').style.display='none';
       filterType="bool";
       if (dijit.byId('filterValueCheckboxSwitch')) {
         dojo.style(dijit.byId('filterValueCheckboxSwitch').domNode,{
@@ -1045,6 +1046,7 @@ function selectStoredFilter(idFilter,idLayout,context,contentLoad,container) {
     if (dojo.byId('objectClassList') && dojo.byId('objectClassList').value) objectClass=dojo.byId('objectClassList').value;
     else if (dojo.byId("objectClassManual") && dojo.byId("objectClassManual").value) objectClass=dojo.byId("objectClassManual").value;
     else if (dojo.byId('objectClass') && dojo.byId('objectClass').value) objectClass=dojo.byId('objectClass').value;
+    if (objectClass=="PlanningWorkPlan") objectClass="Planning";
     var validationType=(idFilter==0 || ! idLayout)?null:'skipRefresh';
     var currentScreen = (dojo.byId("objectClassManual") && dojo.byId("objectClassManual").value)?dojo.byId("objectClassManual").value:null;
     if (dojo.byId('dynamicFilterId' + idFilter)) {
@@ -1151,7 +1153,7 @@ function selectDynamicFilterContinue() {
   doc.loadContent("../tool/displayFilterList.php?context=directFilterList&displayQuickFilter=true&displayQuickFilter=true&filterObjectClass=" + objectClass + compUrl,"directFilterList",null,false,
       'returnFromFilter',false);
 
-  if (dojo.byId("objectClassManual") && dojo.byId("objectClassManual").value == 'Planning' && !window.top.dijit.byId('dialogDetail').open) {
+  if (dojo.byId("objectClassManual") && (dojo.byId("objectClassManual").value == 'Planning' || dojo.byId("objectClassManual").value == 'PlanningWorkPlan') && !window.top.dijit.byId('dialogDetail').open) {
     refreshJsonPlanning();
   } else if (dojo.byId("objectClassManual") && dojo.byId("objectClassManual").value == 'Report') {
     dojo.byId('outMode').value='';
@@ -1252,6 +1254,9 @@ function resetFilter(lstStat, lstTags) {
     if (dijit.byId('hideInService')) {
       dijit.byId('hideInService').set('value','');
     }
+    if (dojo.byId("listQuickSearchValueFilter")){
+      dijit.byId('listQuickSearchFilter').set('value','');
+    }
     if (dijit.byId('listIdFilter') || dijit.byId('listNameFilter') || dijit.byId('listNameFilter') && dijit.byId('listIdFilter')) {
       dijit.byId('listIdFilter').set('value','');
       dijit.byId('listNameFilter').set('value','');
@@ -1315,9 +1320,6 @@ function resetFilterQuick(lstStat, lstTags) {
     if (dijit.byId('ListBudgetParentFilter')) {
       dijit.byId('ListBudgetParentFilter').set('value','');
     }
-    if (dijit.byId('ListBudgetParentFilter')) {
-      dijit.byId('ListBudgetParentFilter').set('value','');
-    }
     if (dijit.byId('ListShowIdle')) {
       dijit.byId('ListShowIdle').set('value','');
     }
@@ -1329,6 +1331,9 @@ function resetFilterQuick(lstStat, lstTags) {
     }
     if (dijit.byId('listNameFilter')) {
       dijit.byId('listNameFilter').set('value','');
+    }
+    if (dojo.byId("listQuickSearchValueFilter")){
+      dijit.byId('listQuickSearchFilter').set('value','');
     }
     if (dijit.byId('listIdFilter') || dijit.byId('listNameFilter')) {
       filter={};
@@ -1353,15 +1358,34 @@ function resetFilterQuick(lstStat, lstTags) {
   }
   if (dijit.byId('listTypeFilterQuick')) {
     dijit.byId('listTypeFilterQuick').set('value','');
+    if (dijit.byId('listTypeFilterQuickSw').get('value') == 'off') {
+      dojo.byId('listTypeFilterSpan').style.display="none";
+      dijit.byId('listTypeFilter').domNode.style.display='none';
+    }
   }
   if (dijit.byId('listClientFilterQuick')) {
     dijit.byId('listClientFilterQuick').set('value','');
+    if (dijit.byId('listClientFilterQuickSw').get('value') == 'off') {
+      dojo.byId('listClientFilterSpan').style.display="none";
+      dijit.byId('listClientFilter').domNode.style.display='none';
+    }
   }
   if (dijit.byId('listBudgetParentFilterQuick')) {
     dijit.byId('listBudgetParentFilterQuick').set('value','');
+    if (dijit.byId('listBudgetParentFilterQuickSw').get('value') == 'off') {
+      dojo.byId('listBudgetParentFilterSpan').style.display="none";
+      dijit.byId('listBudgetParentFilter').domNode.style.display='none';
+    }
   }
 
   if (dijit.byId('quickSearchValueQuick')) {
     dijit.byId('quickSearchValueQuick').set('value','');
+    quickSearchClose();
+    if (dijit.byId('quickSearchValueQuickSw').get('value') == 'off') {
+      dojo.byId('listQuickSearchFilterSpan').style.display="none";
+      dijit.byId('listQuickSearchFilter').domNode.style.display = "none";
+      dojo.byId('listQuickSearchFilterBtnSearch').style.display = "none";
+      dojo.byId('listQuickSearchFilterBtnClose').style.display = "none";
+    }
   }
 }

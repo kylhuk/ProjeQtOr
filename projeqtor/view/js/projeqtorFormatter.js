@@ -313,7 +313,7 @@ function dayFormatter(value) {
  */
 function numericFormatter(value, align) {
   var result=value;
-  if (value === null) result='';
+  if (value === null || value=='NaN') result='';
   else result=dojo.number.format(value);
   // var result = value.replace(/^0+/g, '');
   // result = value.replace(/^0+/g,'');

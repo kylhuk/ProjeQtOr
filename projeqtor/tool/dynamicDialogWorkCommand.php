@@ -98,6 +98,28 @@ if($id){
                   maxlength="200" class="input"  value="<?php echo $nameWorkCommand;?>"></textarea>
              </td>
           </tr>
+          <?php if (!$isWorkCommandParent) {?>
+           <tr>
+             <td class="dialogLabel"  >
+               <label for="workCommandParent" ><?php echo i18n("colIsSubWorkCommand") ?>&nbsp;<?php if(!isNewGui()){?>:<?php }?>&nbsp;</label>
+             </td>
+             <td>
+               <select dojoType="dijit.form.FilteringSelect"
+              <?php echo autoOpenFilteringSelect();?>
+                id="workCommandParent" name="workCommandParent"  
+                onchange="workCommandParentChangeVerif();" 
+                class="input" value="<?php echo $idWorkCommand;?>">
+                 <?php 
+                 if($idWorkUnit==""){
+                  htmlDrawOptionForReference('idWorkCommand',null, $obj, false, array('elementary', 'idCommand'), array('0', $obj->id));
+                 }else{
+                  htmlDrawOptionForReference('idWorkCommand',null, $obj, false, array('elementary', 'idCommand','idWorkUnit' , 'idComplexity' ), array('0', $obj->id, $idWorkUnit, $idComplexity));
+                 }
+                 ?>
+               </select> 
+             </td>
+           </tr>
+           <?php }?>
           <tr>
              <td class="dialogLabel"  >
                <label for="workCommandWorkUnit" ><?php echo i18n("colIdWorkUnit") ?>&nbsp;<?php if(!isNewGui()){?>:<?php }?>&nbsp;</label>
@@ -128,21 +150,6 @@ if($id){
                </select> 
              </td>
            </tr>
-           <?php if (!$isWorkCommandParent) {?>
-           <tr>
-             <td class="dialogLabel"  >
-               <label for="workCommandParent" ><?php echo i18n("colIsSubWorkCommand") ?>&nbsp;<?php if(!isNewGui()){?>:<?php }?>&nbsp;</label>
-             </td>
-             <td>
-               <select dojoType="dijit.form.FilteringSelect"
-              <?php echo autoOpenFilteringSelect();?>
-                id="workCommandParent" name="workCommandParent"
-                class="input" value="<?php echo $idWorkCommand;?>">
-                 <?php htmlDrawOptionForReference('idWorkCommand',null, $obj, false, array('elementary', 'idCommand'), array('0', $obj->id));?>
-               </select> 
-             </td>
-           </tr>
-           <?php }?>
            <tr>
              <td class="dialogLabel" >
              <?php $extraLocalClass=(! $showGlobalCurrency)?' localLabelClass ':'';?>

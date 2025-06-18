@@ -8465,7 +8465,7 @@ function updateSubTask(id,refType,refId,isPrio,isRes) {
   var priorityVal=(id == 0) ? dojo.byId(refType + '_' + refId + '_priorityNewSubTask_' + id).value : dijit.byId(refType + '_' + refId + '_priorityNewSubTask_' + id).get('value');
   var resourceVal=(id == 0) ? dojo.byId(refType + '_' + refId + '_resourceNewSubTask_' + id).value : dijit.byId(refType + '_' + refId + '_resourceNewSubTask_' + id).get('value');
   var dueDateVal=(id == 0) ? dojo.byId(refType + '_' + refId + '_dueDateNewSubTask_' + id).value : dijit.byId(refType + '_' + refId + '_dueDateNewSubTask_' + id).get('value');
-  //console.log('id : ',id, 'dueDate : ',dueDateVal);
+  console.log('id : ',id, 'dueDate : ',dueDateVal);
   if (dueDateVal != null && id != 0) dueDateVal = dojo.date.locale.format(dueDateVal, {selector: "date", datePattern: "yyyy-MM-dd"});
   if (name.trim() != '') {
     var sortOrder=(dojo.byId('sortOrder_' + refType + "_" + refId + '_' + id).value != '') ? parseInt(dojo.byId('sortOrder_' + refType + "_" + refId + '_' + id).value) : 0;

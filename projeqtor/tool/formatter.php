@@ -474,7 +474,8 @@ function formatDateThumb($creationDate,$updateDate,$float='right',$size=22,$addN
   $date=($updateDate)?$updateDate:$creationDate;
   //$date=pq_substr($date,0,10);
   $color="White";
-  if ($date==$today) {
+  $dateNote= new DateTime($date);
+  if ($dateNote->format('Y-m-d')==$today) {
     $color='Red';
   } else if (addWorkDaysToDate($date,2)==$today) {
     $color='Yellow';

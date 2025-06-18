@@ -2546,6 +2546,8 @@
 
 .iconProspectType{ background-image: url(customIcons/new/iconProspectType.svg);  background-repeat: no-repeat; }
 
+.iconProspectEventType{ background-image: url(customIcons/new/iconEventType.svg);  background-repeat: no-repeat; }
+
 /* Q */
 
 .iconQuality { background-image: url(images/iconQuality32.png);  background-repeat: no-repeat;  }
