@@ -117,7 +117,6 @@ if (!empty($filterArray)) {
 	//END CHANGE qCazelles - Ticket 165
 }
 //END ADD qCazelles - Dynamic filter - Ticket #78
-
 htmlDisplayFilterCriteria($filterArray,$name,$idLayout,$filterObjectClass); 
 
 ?>

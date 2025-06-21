@@ -121,6 +121,7 @@ class Assignment extends SqlElement {
     <th field="nameProject" formatter="nameFormatter" width="25%">${idProject}</th>
     <th field="refType" formatter="translateFormatter" width="10%">${refType}</th>
     <th field="refId" formatter="numericFormatter" width="10%">${refId}</th>
+    <th field="itemName" formatter="nameFormatter" width="20%">itemName</th>
     <th field="rate" formatter="numericFormatter" width="5%">${rate}</th>
     <th field="assignedWork" formatter="workFormatter" width="10%">${assignedWork}</th>
     <th field="nameRole" formatter="nameFormatter" width="10%">${idRole}</th>
@@ -432,8 +433,19 @@ class Assignment extends SqlElement {
     // Recalculate indicators
     if (SqlList::getIdFromTranslatableName('Indicatorable',$this->refType)) {
       $indDef=new IndicatorDefinition();
-      $crit=array('nameIndicatorable'=>$this->refType);
-      $lstInd=$indDef->getSqlElementsFromCriteria($crit, false);
+//      $crit=array('nameIndicatorable'=>$this->refType);
+//      $lstInd=$indDef->getSqlElementsFromCriteria($crit, false);
+      $idP=$this->idProject;
+      $proj= new Project($idP,true);
+      $listProj = $proj->getTopProjectList(true);
+      $listProj = implode(',', $listProj);
+      if (pq_trim($listProj)=='') $listProj='0';
+        $where = "nameIndicatorable='$this->refType' and idle = 0 and idProject in (".$listProj.")";
+      $lstInd = $indDef->getSqlElementsFromCriteria ( null, false, $where );
+      if(! $lstInd or count($lstInd)==0){
+        $crit = array('nameIndicatorable' => $this->refType, 'idle' => '0','idProject' =>"");
+        $lstInd = $indDef->getSqlElementsFromCriteria ( $crit, false );
+      }
       if (count($lstInd)>0) {
       	$item=new $this->refType($this->refId);
         foreach ($lstInd as $ind) {

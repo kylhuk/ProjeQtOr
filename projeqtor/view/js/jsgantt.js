@@ -638,6 +638,7 @@ JSGantt.WorkPlanItem = function(pItem, pName, pScope, pStart, pEnd, pParent, pRe
   var vMaxCapacity = pItem.maxcapacity;
   var vNbResource = pItem.nbresource;
   var vIsParent = pItem.isparent;
+  var vIsAdministrative = pItem.isadministrative;
   var vResStartDate = pItem.resourcestartdate;
   var vResEndDate = pItem.resourceenddate;
   
@@ -910,6 +911,9 @@ JSGantt.WorkPlanItem = function(pItem, pName, pScope, pStart, pEnd, pParent, pRe
   this.getIsParent = function(){
     return vIsParent;
   }
+  this.getIsAdministrative = function(){
+    return vIsAdministrative;
+  }
   this.getResourceStartDate = function(parse){
     if(parse == undefined)parse=false;
     var vDate = (parse)?((vResStartDate)?Date.parse(vResStartDate):vResStartDate):vResStartDate;
@@ -1071,8 +1075,8 @@ JSGantt.GanttChart =  function(pGanttVar, pDiv, pFormat) {
   this.getPlanningMaxDate = function() { return planningMaxDate; };
   this.getInitialStartDateView = function() { return vInitialStartDateView; };
   this.getFormat = function(){ return vFormat; };
-  this.getBaseBottomName = function() { return vBaseBottomName; };
-  this.getBaseTopName = function() { return vBaseTopName; };
+  this.getBaseBottomName = function() { return "   "+vBaseBottomName; };
+  this.getBaseTopName = function() { return "   "+vBaseTopName; };
   this.getShowCriticalPath = function () { return vShowCriticalPath;};
   this.getColorBaselineUpper = function() { return vColorBaselineUpper; };
   this.getColorBaselineBottom = function() { return vColorBaselineBottom; };
@@ -1962,15 +1966,16 @@ JSGantt.GanttChart =  function(pGanttVar, pDiv, pFormat) {
     var isPlanning = (planningType == 'planning')?true:false;
     if(vWorkPlanList.length > 0) {
       JSGantt.processRows(vWorkPlanList, 0, -1, 1, 1);
-      var vTaskList=(isPlanning)?g.getList():null;
-      vMinDate = (isPlanning)?JSGantt.getMinDate(vTaskList, vFormat, g.getStartDateView()):JSGantt.getMinDate(vWorkPlanList, vFormat,gwp.getStartDateView());
+      // Get planning min and max date removed due to display lag 
+      // var vTaskList=(isPlanning)?g.getList():null;
+      vMinDate = JSGantt.getMinDate(vWorkPlanList, vFormat,gwp.getStartDateView());//(isPlanning)?JSGantt.getMinDate(vTaskList, vFormat, g.getStartDateView()):
       vDefaultMinDate = JSGantt.getMinDate(vWorkPlanList, vFormat);
-      vMaxDate = (isPlanning)?JSGantt.getMaxDate(vTaskList, vFormat, g.getEndDateView()):JSGantt.getMaxDate(vWorkPlanList, vFormat, gwp.getEndDateView());
+      vMaxDate = JSGantt.getMaxDate(vWorkPlanList, vFormat, gwp.getEndDateView());//(isPlanning)?JSGantt.getMaxDate(vTaskList, vFormat, g.getEndDateView()):
       vDefaultMaxDate = JSGantt.getMaxDate(vWorkPlanList, vFormat);
       gwp.resetStartDateView();
       gwp.resetEndDateView();
-      vStartDateView = (isPlanning)?JSGantt.getMinDate(vTaskList, 'week',g.getStartDateView(), true):JSGantt.getMinDate(vWorkPlanList, 'week',gwp.getStartDateView(), true);
-      vEndDateView = (isPlanning)?JSGantt.getMaxDate(vTaskList, 'week',g.getEndDateView(), true):JSGantt.getMaxDate(vWorkPlanList, 'week', gwp.getEndDateView(), true);
+      vStartDateView = JSGantt.getMinDate(vWorkPlanList, 'week',gwp.getStartDateView(), true);//(isPlanning)?JSGantt.getMinDate(vTaskList, 'week',g.getStartDateView(), true):
+      vEndDateView = JSGantt.getMaxDate(vWorkPlanList, 'week', gwp.getEndDateView(), true);//(isPlanning)?JSGantt.getMaxDate(vTaskList, 'week',g.getEndDateView(), true):
       if(vMaxDate < vMinDate)vMaxDate=vEndDateView;
       if(vFormat == 'day') {
         vColWidth = 18;
@@ -1995,8 +2000,13 @@ JSGantt.GanttChart =  function(pGanttVar, pDiv, pFormat) {
       vNumUnits = vNumDays / vColUnit;
       vNumUnits=Math.round(vNumUnits);
       vChartWidth = (vNumUnits * (vColWidth + 1))+1;
-      vMinWidth = (!isPlanning)?window.screen.width-265:dojo.byId('rightside').offsetWidth;
-      vChartWidth = (isPlanning || vChartWidth < vMinWidth)?vMinWidth:vChartWidth;
+      if(isPlanning){
+        vMinWidth = dojo.byId('workPlanRightGanttChartDIV').offsetWidth-10;
+        vChartWidth = (dojo.byId('rightside').offsetWidth > vMinWidth)?dojo.byId('rightside').offsetWidth:vMinWidth;
+      }else{
+        vMinWidth = window.screen.width-265;
+        vChartWidth = (vChartWidth < vMinWidth)?vMinWidth:vChartWidth;
+      }
       vDayWidth = (vColWidth / vColUnit) + (1/vColUnit);
       
 // WorkPlanPart ======================================================================
@@ -2130,9 +2140,6 @@ JSGantt.GanttChart =  function(pGanttVar, pDiv, pFormat) {
           vTmpDate.setFullYear(vMinDate.getFullYear(), vMinDate.getMonth(), vMinDate.getDate());
           vTmpDate.setHours(0);
           vTmpDate.setMinutes(0);
-          vNxtDate.setFullYear(vMinDate.getFullYear(), vMinDate.getMonth(), vMinDate.getDate());
-          vNxtDate.setHours(0);
-          vNxtDate.setMinutes(0);
           cpt=0;
           
           var vHighlightSpecificDays="";
@@ -2141,6 +2148,8 @@ JSGantt.GanttChart =  function(pGanttVar, pDiv, pFormat) {
           var previousMaxTop = null;
           var showProjectColor = vWorkPlanList[i].getShowProjectColor();
           var showLateColor = vWorkPlanList[i].getShowLateColor();
+          var vNextTmpMaxCapacity = 0;
+          var left = 0;
           
           while(Date.parse(vTmpDate) <= Date.parse(vMaxDate)) {
             var vWork = 0;
@@ -2163,9 +2172,17 @@ JSGantt.GanttChart =  function(pGanttVar, pDiv, pFormat) {
               vMaxWork = vWork;
               vCapacity = vWorkPlanList[i].getCalendarCapacityByDate(colDate);
               var maxCapacityDateClass = (vMaxWork > vCapacity)?'workPlanSurbookingMaxCapacity':'workPlanPastMaxCapacity';
-              if(showProjectColor && (vWork > vCapacity))maxCapacityDateClass += '_PC';
+              if((showProjectColor || showLateColor) && (vMaxWork > vCapacity))maxCapacityDateClass += '_PC';
               var vResStartDate = vWorkPlanList[i].getResourceStartDate(true);
               var vResEndDate = vWorkPlanList[i].getResourceEndDate(true);
+              if(cpt == 0 && Date.parse(vTmpDate) < Date.parse(vStartDateView) && vCapacity == 0){
+                var difference = Math.floor((vStartDateView - vTmpDate) / (1000*60*60*24)) + 1;
+                vWidth = (vWidth*difference)/7;
+                vDayWidth = vWidth;
+              }else{
+                vWidth = vColWidth+1;
+                vDayWidth = (vColWidth / vColUnit) + (1/vColUnit);
+              }
               var vDate = Date.parse(colDate);
               if ((vResStartDate && vDate < vResStartDate) || (vResEndDate && vDate > vResEndDate) || vWorkPlanList[i].getCalendarOffdayByDate(colDate)) {
                 vTaskLeft = Math.ceil((Date.parse(vTmpDate) - Date.parse(vMinDate) + (1000*60*60)) / (24 * 60 * 60 * 1000) );
@@ -2182,8 +2199,22 @@ JSGantt.GanttChart =  function(pGanttVar, pDiv, pFormat) {
                 vHighlightSpecificDays+='<DIV class="specificDayCurrent" '
                   +'style="top: 0px; left:'+vDayLeft+'px; height:100px; width:'+vColWidth+'px"></DIV>';  
               }
-              var vMaxCapacity = vCapacity/vMaxWorkLine;
-              vMaxCapacityTop = (vMaxCapacityLine >= vCapacity)?100-((vCapacity/vMaxCapacityLine)*(90*vMaxCapacity)):vMaxCapacityTop;
+              var vMaxCapacity = (vMaxCapacityLine > vMaxWorkLine)?vCapacity/vMaxCapacityLine:vCapacity/vMaxWorkLine;
+              if(Date.parse(vTmpDate) < Date.parse(vStartDateView) && vCapacity == 0){
+                vTempNextDate = new Date();
+                vTempNextDate.setFullYear(vTmpDate.getFullYear(), vTmpDate.getMonth(), vTmpDate.getDate());
+                vTempNextDate.setHours(0);
+                vTempNextDate.setMinutes(0);
+                do {
+                  nextTmpDate.setFullYear(vTempNextDate.getFullYear(), vTempNextDate.getMonth(), vTempNextDate.getDate()+ 1);
+                  var vNextColDate = JSGantt.formatDateStr(nextTmpDate,"yyyy-ww",vMonthArr);
+                  var vNextCapacity = vWorkPlanList[i].getCalendarCapacityByDate(vNextColDate);
+                  vMaxCapacity=(vMaxCapacityLine > vMaxWorkLine)?vNextCapacity/vMaxCapacityLine:vNextCapacity/vMaxWorkLine;
+                  vTempNextDate.setFullYear(vTempNextDate.getFullYear(), vTempNextDate.getMonth(), vTempNextDate.getDate()+ 1);
+                } while (Date.parse(vTempNextDate) < Date.parse(vStartDateView));
+              }
+              vMaxCapacity = (isNaN(vMaxCapacity))?0:vMaxCapacity;
+              vMaxCapacityTop = 100-(90*vMaxCapacity);
               vMaxCapacityTop = (vMaxCapacityTop < 10)?10:vMaxCapacityTop;
               vMaxCapacityTop = (vMaxCapacityTop >= 100)?98:vMaxCapacityTop;
               var vHeight = 100 - vMaxCapacityTop;
@@ -2193,7 +2224,7 @@ JSGantt.GanttChart =  function(pGanttVar, pDiv, pFormat) {
               if(vWork > 0){
                 if(vWorkTop+vWorkHeight < 100)vWorkTop = vWorkTop+(100-(vWorkTop+vWorkHeight));
                 if(vWorkTop+vWorkHeight > 100)vWorkTop = vWorkTop-((vWorkTop+vWorkHeight)-100);
-                vWorkDays += '<DIV id="colDate#'+vWorkPlanList[i].getID()+'_'+colDate+'" style="position:absolute;z-index:1;top: '+vWorkTop+'px; left:'+(vWidth*cpt)+'px; height:'+vWorkHeight+'px;width:'+vWidth+'px;">';
+                vWorkDays += '<DIV id="colDate#'+vWorkPlanList[i].getID()+'_'+colDate+'" style="position:absolute;z-index:1;top: '+vWorkTop+'px; left:'+left+'px; height:'+vWorkHeight+'px;width:'+vWidth+'px;">';
                 var vMaxPlannedHeight = 0;
                 var vMaxRealHeight = 0;
                 var vMaxAdminHeight = 0;
@@ -2248,10 +2279,21 @@ JSGantt.GanttChart =  function(pGanttVar, pDiv, pFormat) {
                   if(plannedWorkDates){
                     plannedWorkDates.forEach(([color, works]) => {
                       var vPlannedWork = works['work'];
+                      var vSurbookedWork = works['surbookedWork'];
+                      var vIsLateColor = works['isLateColor'];
                       if(vPlannedWork > 0){
-                        var plannedHeight = Math.round((vPlannedWork/vMaxWork)*vWorkHeight);
-                        vMaxPlannedHeight += plannedHeight;
-                        vWorkDaySplit += '<DIV class="workPlanDay plannedDay" style="background-color:'+color+';position:relative;height:'+plannedHeight+'px;width:'+vWidth+'px;'+opacity+'"></DIV>';
+                        var plannedHeight = Math.round(((vPlannedWork)/vMaxWork)*vWorkHeight);
+                        var surbookedHeight = Math.round((vSurbookedWork/vMaxWork)*vWorkHeight);
+                        plannedHeight = (vPlannedWork - vSurbookedWork > 0)?Math.round(((vPlannedWork - vSurbookedWork)/vMaxWork)*vWorkHeight):plannedHeight;
+                        if(vSurbookedWork > 0){
+                          var subookedColor = (!vIsLateColor)?'#ffc90e':'#ff751a';
+                          vWorkDaySplit += '<DIV class="workPlanDay plannedDaySurbooked" style="background-color:'+subookedColor+';position:relative;height:'+surbookedHeight+'px;width:'+vWidth+'px;'+opacity+'"></DIV>';
+                          vMaxPlannedHeight += surbookedHeight;
+                        }
+                        if(vPlannedWork - vSurbookedWork > 0){
+                          vWorkDaySplit += '<DIV class="workPlanDay plannedDay" style="background-color:'+color+';position:relative;height:'+plannedHeight+'px;width:'+vWidth+'px;'+opacity+'"></DIV>';
+                          vMaxPlannedHeight += plannedHeight;
+                        }
                       }
                     });
                   }
@@ -2313,10 +2355,19 @@ JSGantt.GanttChart =  function(pGanttVar, pDiv, pFormat) {
                 nextTmpDate.setFullYear(vTmpDate.getFullYear(), vTmpDate.getMonth(), vTmpDate.getDate()+ 1);
                 var vNextColDate = JSGantt.formatDateStr(nextTmpDate,'yyyy-mm-dd');
                 var vNextCapacity = vWorkPlanList[i].getCalendarCapacityByDate(vNextColDate);
-                var vNextMaxCapacity = vNextCapacity/vMaxWorkLine;
-                nextMaxTop = (vMaxCapacityLine >= vNextCapacity)?100-((vNextCapacity/vMaxCapacityLine)*(90*vNextMaxCapacity)):nextMaxTop;
+                var vNextMaxCapacity = (vMaxCapacityLine > vMaxWorkLine)?vNextCapacity/vMaxCapacityLine:vNextCapacity/vMaxWorkLine;
+                vNextMaxCapacity = (isNaN(vNextMaxCapacity))?0:vNextMaxCapacity;
+                if(Date.parse(nextTmpDate) > Date.parse(vEndDateView) && vNextCapacity == 0){
+                  vNextMaxCapacity=vNextTmpMaxCapacity;
+                }else{
+                  vNextTmpMaxCapacity=vNextMaxCapacity;
+                }
+                nextMaxTop = 100-(90*vNextMaxCapacity);
                 nextMaxTop = (nextMaxTop < 10)?10:nextMaxTop;
                 nextMaxTop = (nextMaxTop >= 100)?98:nextMaxTop;
+                if(Date.parse(nextTmpDate) > Date.parse(vEndDateView) && vNextCapacity == 0){
+                  vMaxCapacityTop=nextMaxTop;
+                }
                 if((previousMaxTop < vMaxCapacityTop) && (nextMaxTop < vMaxCapacityTop)){
                   vMaxCapacityHeight = (vMaxCapacityTop - previousMaxTop)+3;
                   vMaxCapacityHeight = (vMaxCapacityHeight > 91)?91:vMaxCapacityHeight;
@@ -2325,15 +2376,15 @@ JSGantt.GanttChart =  function(pGanttVar, pDiv, pFormat) {
                     var splitWidth = vDayWidth/2;
                     vMaxCapacityTop = previousMaxTop;
                     maxCapacityDateClass = (vMaxWork > vCapacity)?'workPlanSurbookingMaxCapacityLeft':'workPlanPastMaxCapacityLeft';
-                    if(showProjectColor && (vWork > vCapacity))maxCapacityDateClass += '_PC';
-                    vMaxCapacityDays += '<DIV class="'+maxCapacityDateClass+'" style="top: '+vMaxCapacityTop+'px; left:'+(vDayWidth*cpt)+'px;width:'+splitWidth+'px;height:'+vMaxCapacityHeight+'px"></DIV>';
+                    if((showProjectColor || showLateColor) && (vMaxWork > vCapacity))maxCapacityDateClass += '_PC';
+                    vMaxCapacityDays += '<DIV class="capacity#'+vWorkPlanList[i].getID()+'_'+colDate+' '+maxCapacityDateClass+'" style="top: '+vMaxCapacityTop+'px; left:'+left+'px;width:'+splitWidth+'px;height:'+vMaxCapacityHeight+'px"></DIV>';
                     vMaxCapacityHeight = (vMaxCapacityTop + vMaxCapacityHeight) - nextMaxTop;
                     tmpMaxCapacityTop = vMaxCapacityTop;
                     vMaxCapacityTop = nextMaxTop;
                     tmpMaxCapacityTop = nextMaxTop;
                     maxCapacityDateClass = (vMaxWork > vCapacity)?'workPlanSurbookingMaxCapacityRight':'workPlanPastMaxCapacityRight';
-                    if(showProjectColor && (vWork > vCapacity))maxCapacityDateClass += '_PC';
-                    vMaxCapacityDays += '<DIV class="'+maxCapacityDateClass+'" style="top: '+vMaxCapacityTop+'px; left:'+((vDayWidth*cpt)+splitWidth)+'px;width:'+splitWidth+'px;height:'+vMaxCapacityHeight+'px"></DIV>';
+                    if((showProjectColor || showLateColor) && (vMaxWork > vCapacity))maxCapacityDateClass += '_PC';
+                    vMaxCapacityDays += '<DIV class="capacity#'+vWorkPlanList[i].getID()+'_'+colDate+' '+maxCapacityDateClass+'" style="top: '+vMaxCapacityTop+'px; left:'+(left+splitWidth)+'px;width:'+splitWidth+'px;height:'+vMaxCapacityHeight+'px"></DIV>';
                   }else{
                     vMaxCapacityTop = previousMaxTop;
                   }
@@ -2342,21 +2393,26 @@ JSGantt.GanttChart =  function(pGanttVar, pDiv, pFormat) {
                   vMaxCapacityHeight = (vMaxCapacityHeight > 91)?91:vMaxCapacityHeight;
                   vMaxCapacityTop = previousMaxTop;
                   maxCapacityDateClass = (vMaxWork > vCapacity)?'workPlanSurbookingMaxCapacityLeft':'workPlanPastMaxCapacityLeft';
-                  if(showProjectColor && (vWork > vCapacity))maxCapacityDateClass += '_PC';
+                  if((showProjectColor || showLateColor) && (vMaxWork > vCapacity))maxCapacityDateClass += '_PC';
                 }else if(((previousMaxTop == vMaxCapacityTop) && (nextMaxTop < vMaxCapacityTop)) || ((previousMaxTop > vMaxCapacityTop) && (nextMaxTop < vMaxCapacityTop))){
                   vMaxCapacityHeight = (vMaxCapacityTop - nextMaxTop)+3;
                   vMaxCapacityHeight = (vMaxCapacityHeight > 91)?91:vMaxCapacityHeight;
                   vMaxCapacityTop = nextMaxTop;
                   maxCapacityDateClass = (vMaxWork > vCapacity)?'workPlanSurbookingMaxCapacityRight':'workPlanPastMaxCapacityRight';
-                  if(showProjectColor && (vWork > vCapacity))maxCapacityDateClass += '_PC';
+                  if((showProjectColor || showLateColor) && (vMaxWork > vCapacity))maxCapacityDateClass += '_PC';
                 }
                 if(vMaxCapacityHeight){
                   vMaxCapacityHeight = 'height:'+vMaxCapacityHeight+'px';
                 }
               }
               previousMaxTop = tmpMaxCapacityTop;
-              if(!splitMaxCapacityDiv)vMaxCapacityDays += '<DIV class="'+maxCapacityDateClass+'" style="top: '+vMaxCapacityTop+'px; left:'+(vWidth*cpt)+'px;width:'+vWidth+'px;'+vMaxCapacityHeight+'"></DIV>';
+              if(!splitMaxCapacityDiv){
+                if(vMaxCapacityDays.indexOf('capacity#'+vWorkPlanList[i].getID()+'_'+colDate) == -1){
+                  vMaxCapacityDays += '<DIV class="capacity#'+vWorkPlanList[i].getID()+'_'+colDate+' '+maxCapacityDateClass+'" style="top: '+vMaxCapacityTop+'px; left:'+left+'px;width:'+vWidth+'px;'+vMaxCapacityHeight+'"></DIV>';
+                }
+              }
               vTmpDate.setFullYear(vTmpDate.getFullYear(), vTmpDate.getMonth(), vTmpDate.getDate()+ 1);
+              left += vWidth;
             } else if (vFormat == 'week') {
               var colDate = JSGantt.formatDateStr(vTmpDate,'yyyy-mm-dd');
               var vRealWork = vWorkPlanList[i].getRealWorkByDate(colDate);
@@ -2366,9 +2422,15 @@ JSGantt.GanttChart =  function(pGanttVar, pDiv, pFormat) {
               vMaxWork = vWork;
               vCapacity = vWorkPlanList[i].getCalendarCapacityByDate(colDate);
               var maxCapacityDateClass = (vMaxWork > vCapacity)?'workPlanSurbookingMaxCapacity':'workPlanPastMaxCapacity';
-              if(showProjectColor && (vWork > vCapacity))maxCapacityDateClass += '_PC';
+              if((showProjectColor || showLateColor) && (vMaxWork > vCapacity))maxCapacityDateClass += '_PC';
               var vResStartDate = vWorkPlanList[i].getResourceStartDate(true);
               var vResEndDate = vWorkPlanList[i].getResourceEndDate(true);
+              if(cpt == 0 && Date.parse(vTmpDate) < Date.parse(vStartDateView) && vCapacity == 0){
+                var difference = Math.floor((vStartDateView - vTmpDate) / (1000*60*60*24)) + 1;
+                vDayWidth = (vDayWidth*difference)/7;
+              }else{
+                vDayWidth = (vColWidth / vColUnit) + (1/vColUnit);
+              }
               var vDate = Date.parse(colDate);
               if ((vResStartDate && vDate < vResStartDate) || (vResEndDate && vDate > vResEndDate) || vWorkPlanList[i].getCalendarOffdayByDate(colDate)) {
                 vTaskLeft = Math.ceil((Date.parse(vTmpDate) - Date.parse(vMinDate) + (1000*60*60)) / (24 * 60 * 60 * 1000) );
@@ -2385,8 +2447,22 @@ JSGantt.GanttChart =  function(pGanttVar, pDiv, pFormat) {
                 vHighlightSpecificDays+='<DIV class="specificDayCurrent" '
                   +'style="top: 0px; left:'+vDayLeft+'px; height:100px; width:'+vDayWidth+'px"></DIV>';  
               }
-              var vMaxCapacity = vCapacity/vMaxWorkLine;
-              vMaxCapacityTop = (vMaxCapacityLine >= vCapacity)?100-((vCapacity/vMaxCapacityLine)*(90*vMaxCapacity)):vMaxCapacityTop;
+              var vMaxCapacity = (vMaxCapacityLine > vMaxWorkLine)?vCapacity/vMaxCapacityLine:vCapacity/vMaxWorkLine;
+              if(Date.parse(vTmpDate) < Date.parse(vStartDateView) && vCapacity == 0){
+                vTempNextDate = new Date();
+                vTempNextDate.setFullYear(vTmpDate.getFullYear(), vTmpDate.getMonth(), vTmpDate.getDate());
+                vTempNextDate.setHours(0);
+                vTempNextDate.setMinutes(0);
+                do {
+                  nextTmpDate.setFullYear(vTempNextDate.getFullYear(), vTempNextDate.getMonth(), vTempNextDate.getDate()+ 1);
+                  var vNextColDate = JSGantt.formatDateStr(nextTmpDate,"yyyy-ww",vMonthArr);
+                  var vNextCapacity = vWorkPlanList[i].getCalendarCapacityByDate(vNextColDate);
+                  vMaxCapacity=(vMaxCapacityLine > vMaxWorkLine)?vNextCapacity/vMaxCapacityLine:vNextCapacity/vMaxWorkLine;
+                  vTempNextDate.setFullYear(vTempNextDate.getFullYear(), vTempNextDate.getMonth(), vTempNextDate.getDate()+ 1);
+                } while (Date.parse(vTempNextDate) < Date.parse(vStartDateView));
+              }
+              vMaxCapacity = (isNaN(vMaxCapacity))?0:vMaxCapacity;
+              vMaxCapacityTop = 100-(90*vMaxCapacity);
               vMaxCapacityTop = (vMaxCapacityTop < 10)?10:vMaxCapacityTop;
               vMaxCapacityTop = (vMaxCapacityTop >= 100)?98:vMaxCapacityTop;
               var vHeight = 100 - vMaxCapacityTop;
@@ -2396,7 +2472,7 @@ JSGantt.GanttChart =  function(pGanttVar, pDiv, pFormat) {
               if(vWork > 0){
                 if(vWorkTop+vWorkHeight < 100)vWorkTop = vWorkTop+(100-(vWorkTop+vWorkHeight));
                 if(vWorkTop+vWorkHeight > 100)vWorkTop = vWorkTop-((vWorkTop+vWorkHeight)-100);
-                vWorkDays += '<DIV id="colDate#'+vWorkPlanList[i].getID()+'_'+colDate+'" style="position:absolute;z-index:1;top: '+vWorkTop+'px; left:'+(vDayWidth*cpt)+'px; height:'+vWorkHeight+'px;width:'+vDayWidth+'px;">';
+                vWorkDays += '<DIV id="colDate#'+vWorkPlanList[i].getID()+'_'+colDate+'" style="position:absolute;z-index:1;top: '+vWorkTop+'px; left:'+left+'px; height:'+vWorkHeight+'px;width:'+vDayWidth+'px;">';
                 var vMaxPlannedHeight = 0;
                 var vMaxRealHeight = 0;
                 var vMaxAdminHeight = 0;
@@ -2451,10 +2527,21 @@ JSGantt.GanttChart =  function(pGanttVar, pDiv, pFormat) {
                   if(plannedWorkDates){
                     plannedWorkDates.forEach(([color, works]) => {
                       var vPlannedWork = works['work'];
+                      var vSurbookedWork = works['surbookedWork'];
+                      var vIsLateColor = works['isLateColor'];
                       if(vPlannedWork > 0){
-                        var plannedHeight = Math.round((vPlannedWork/vMaxWork)*vWorkHeight);
-                        vMaxPlannedHeight += plannedHeight;
-                        vWorkDaySplit += '<DIV class="workPlanDay plannedDay" style="background-color:'+color+';position:relative;height:'+plannedHeight+'px;width:'+vDayWidth+'px;'+opacity+'"></DIV>';
+                        var plannedHeight = Math.round(((vPlannedWork)/vMaxWork)*vWorkHeight);
+                        var surbookedHeight = Math.round((vSurbookedWork/vMaxWork)*vWorkHeight);
+                        plannedHeight = (vPlannedWork - vSurbookedWork > 0)?Math.round(((vPlannedWork - vSurbookedWork)/vMaxWork)*vWorkHeight):plannedHeight;
+                        if(vSurbookedWork > 0){
+                          var subookedColor = (!vIsLateColor)?'#ffc90e':'#ff751a';
+                          vWorkDaySplit += '<DIV class="workPlanDay plannedDaySurbooked" style="background-color:'+subookedColor+';position:relative;height:'+surbookedHeight+'px;width:'+vDayWidth+'px;'+opacity+'"></DIV>';
+                          vMaxPlannedHeight += surbookedHeight;
+                        }
+                        if(vPlannedWork - vSurbookedWork > 0){
+                          vWorkDaySplit += '<DIV class="workPlanDay plannedDay" style="background-color:'+color+';position:relative;height:'+plannedHeight+'px;width:'+vDayWidth+'px;'+opacity+'"></DIV>';
+                          vMaxPlannedHeight += plannedHeight;
+                        }
                       }
                     });
                   }
@@ -2516,10 +2603,19 @@ JSGantt.GanttChart =  function(pGanttVar, pDiv, pFormat) {
                 nextTmpDate.setFullYear(vTmpDate.getFullYear(), vTmpDate.getMonth(), vTmpDate.getDate()+ 1);
                 var vNextColDate = JSGantt.formatDateStr(nextTmpDate,'yyyy-mm-dd');
                 var vNextCapacity = vWorkPlanList[i].getCalendarCapacityByDate(vNextColDate);
-                var vNextMaxCapacity = vNextCapacity/vMaxWorkLine;
-                nextMaxTop = (vMaxCapacityLine >= vNextCapacity)?100-((vNextCapacity/vMaxCapacityLine)*(90*vNextMaxCapacity)):nextMaxTop;
+                var vNextMaxCapacity = (vMaxCapacityLine > vMaxWorkLine)?vNextCapacity/vMaxCapacityLine:vNextCapacity/vMaxWorkLine;
+                vNextMaxCapacity = (isNaN(vNextMaxCapacity))?0:vNextMaxCapacity;
+                if(Date.parse(nextTmpDate) > Date.parse(vEndDateView) && vNextCapacity == 0){
+                  vNextMaxCapacity=vNextTmpMaxCapacity;
+                }else{
+                  vNextTmpMaxCapacity=vNextMaxCapacity;
+                }
+                nextMaxTop = 100-(90*vNextMaxCapacity);
                 nextMaxTop = (nextMaxTop < 10)?10:nextMaxTop;
                 nextMaxTop = (nextMaxTop >= 100)?98:nextMaxTop;
+                if(Date.parse(nextTmpDate) > Date.parse(vEndDateView) && vNextCapacity == 0){
+                  vMaxCapacityTop=nextMaxTop;
+                }
                 if((previousMaxTop < vMaxCapacityTop) && (nextMaxTop < vMaxCapacityTop)){
                   vMaxCapacityHeight = (vMaxCapacityTop - previousMaxTop)+3;
                   vMaxCapacityHeight = (vMaxCapacityHeight > 91)?91:vMaxCapacityHeight;
@@ -2528,15 +2624,15 @@ JSGantt.GanttChart =  function(pGanttVar, pDiv, pFormat) {
                     var splitWidth = vDayWidth/2;
                     vMaxCapacityTop = previousMaxTop;
                     maxCapacityDateClass = (vMaxWork > vCapacity)?'workPlanSurbookingMaxCapacityLeft':'workPlanPastMaxCapacityLeft';
-                    if(showProjectColor && (vWork > vCapacity))maxCapacityDateClass += '_PC';
-                    vMaxCapacityDays += '<DIV class="'+maxCapacityDateClass+'" style="top: '+vMaxCapacityTop+'px; left:'+(vDayWidth*cpt)+'px;width:'+splitWidth+'px;height:'+vMaxCapacityHeight+'px"></DIV>';
+                    if((showProjectColor || showLateColor) && (vMaxWork > vCapacity))maxCapacityDateClass += '_PC';
+                    vMaxCapacityDays += '<DIV class="capacity#'+vWorkPlanList[i].getID()+'_'+colDate+' '+maxCapacityDateClass+'" style="top: '+vMaxCapacityTop+'px; left:'+left+'px;width:'+splitWidth+'px;height:'+vMaxCapacityHeight+'px"></DIV>';
                     vMaxCapacityHeight = (vMaxCapacityTop + vMaxCapacityHeight) - nextMaxTop;
                     tmpMaxCapacityTop = vMaxCapacityTop;
                     vMaxCapacityTop = nextMaxTop;
                     tmpMaxCapacityTop = nextMaxTop;
                     maxCapacityDateClass = (vMaxWork > vCapacity)?'workPlanSurbookingMaxCapacityRight':'workPlanPastMaxCapacityRight';
-                    if(showProjectColor && (vWork > vCapacity))maxCapacityDateClass += '_PC';
-                    vMaxCapacityDays += '<DIV class="'+maxCapacityDateClass+'" style="top: '+vMaxCapacityTop+'px; left:'+((vDayWidth*cpt)+splitWidth)+'px;width:'+splitWidth+'px;height:'+vMaxCapacityHeight+'px"></DIV>';
+                    if((showProjectColor || showLateColor) && (vMaxWork > vCapacity))maxCapacityDateClass += '_PC';
+                    vMaxCapacityDays += '<DIV class="capacity#'+vWorkPlanList[i].getID()+'_'+colDate+' '+maxCapacityDateClass+'" style="top: '+vMaxCapacityTop+'px; left:'+(left+splitWidth)+'px;width:'+splitWidth+'px;height:'+vMaxCapacityHeight+'px"></DIV>';
                   }else{
                     vMaxCapacityTop = previousMaxTop;
                   }
@@ -2545,21 +2641,26 @@ JSGantt.GanttChart =  function(pGanttVar, pDiv, pFormat) {
                   vMaxCapacityHeight = (vMaxCapacityHeight > 91)?91:vMaxCapacityHeight;
                   vMaxCapacityTop = previousMaxTop;
                   maxCapacityDateClass = (vMaxWork > vCapacity)?'workPlanSurbookingMaxCapacityLeft':'workPlanPastMaxCapacityLeft';
-                  if(showProjectColor && (vWork > vCapacity))maxCapacityDateClass += '_PC';
+                  if((showProjectColor || showLateColor) && (vMaxWork > vCapacity))maxCapacityDateClass += '_PC';
                 }else if(((previousMaxTop == vMaxCapacityTop) && (nextMaxTop < vMaxCapacityTop)) || ((previousMaxTop > vMaxCapacityTop) && (nextMaxTop < vMaxCapacityTop))){
                   vMaxCapacityHeight = (vMaxCapacityTop - nextMaxTop)+3;
                   vMaxCapacityHeight = (vMaxCapacityHeight > 91)?91:vMaxCapacityHeight;
                   vMaxCapacityTop = nextMaxTop;
                   maxCapacityDateClass = (vMaxWork > vCapacity)?'workPlanSurbookingMaxCapacityRight':'workPlanPastMaxCapacityRight';
-                  if(showProjectColor && (vWork > vCapacity))maxCapacityDateClass += '_PC';
+                  if((showProjectColor || showLateColor) && (vMaxWork > vCapacity))maxCapacityDateClass += '_PC';
                 }
                 if(vMaxCapacityHeight){
                   vMaxCapacityHeight = 'height:'+vMaxCapacityHeight+'px';
                 }
               }
               previousMaxTop = tmpMaxCapacityTop;
-              if(!splitMaxCapacityDiv)vMaxCapacityDays += '<DIV class="'+maxCapacityDateClass+'" style="top: '+vMaxCapacityTop+'px; left:'+(vDayWidth*cpt)+'px;width:'+vDayWidth+'px;'+vMaxCapacityHeight+'"></DIV>';
+              if(!splitMaxCapacityDiv){
+                if(vMaxCapacityDays.indexOf('capacity#'+vWorkPlanList[i].getID()+'_'+colDate) == -1){
+                  vMaxCapacityDays += '<DIV class="capacity#'+vWorkPlanList[i].getID()+'_'+colDate+' '+maxCapacityDateClass+'" style="top: '+vMaxCapacityTop+'px; left:'+left+'px;width:'+vDayWidth+'px;'+vMaxCapacityHeight+'"></DIV>';
+                }
+              }
               vTmpDate.setFullYear(vTmpDate.getFullYear(), vTmpDate.getMonth(), vTmpDate.getDate()+ 1);
+              left += vDayWidth;
             } else if (vFormat == 'month') {
               var colDate = JSGantt.formatDateStr(vTmpDate,"yyyy-ww",vMonthArr);
               var vRealWork = vWorkPlanList[i].getRealWorkByDate(colDate);
@@ -2569,7 +2670,7 @@ JSGantt.GanttChart =  function(pGanttVar, pDiv, pFormat) {
               vMaxWork = vWork;
               vCapacity = vWorkPlanList[i].getCalendarCapacityByDate(colDate);
               var maxCapacityDateClass = (vMaxWork > vCapacity)?'workPlanSurbookingMaxCapacity':'workPlanPastMaxCapacity';
-              if(showProjectColor && (vWork > vCapacity))maxCapacityDateClass += '_PC';
+              if((showProjectColor || showLateColor) && (vMaxWork > vCapacity))maxCapacityDateClass += '_PC';
               var vResStartDate = new Date();
               if(vWorkPlanList[i].getResourceStartDate(true)){
                 vResStartDate.setTime(vWorkPlanList[i].getResourceStartDate(true));
@@ -2584,17 +2685,36 @@ JSGantt.GanttChart =  function(pGanttVar, pDiv, pFormat) {
               }else{
                 vResEndDate = null;
               }
+              if(cpt == 0 && Date.parse(vTmpDate) < Date.parse(vStartDateView) && vCapacity == 0){
+                var difference = Math.floor((vStartDateView - vTmpDate) / (1000*60*60*24)) + 1;
+                vDayWidth = (vDayWidth*difference)/7;
+              }else{
+                vDayWidth = (vColWidth / vColUnit) + (1/vColUnit);
+              }
               var vDate = Date.parse(vTmpDate);
               if ((vWorkPlanList[i].getCalendarOffdayByDate(colDate) > 0 && vWorkPlanList[i].getNbResource() * 7 == vWorkPlanList[i].getCalendarOffdayByDate(colDate))
                   || (vResStartDate && vDate < vResStartDate) || (vResEndDate && vDate > vResEndDate)) {
                 vScpecificDayCount++;
                 vHighlightSpecificDays+='<DIV class="specificDayWeekEnd" '
-                +'style="top: 0px; left:'+(vDayWidth*cpt)+'px; height:100px; width:'+vDayWidth+'px"></DIV>';
+                +'style="top: 0px; left:'+left+'px; height:100px; width:'+vDayWidth+'px"></DIV>';
                 opacity = 'opacity:0.7;';
               }
-              vNxtDate.setDate(vNxtDate.getDate() + 7);
-              var vMaxCapacity = vCapacity/vMaxWorkLine;
-              vMaxCapacityTop = (vMaxCapacityLine >= vCapacity)?100-((vCapacity/vMaxCapacityLine)*(90*vMaxCapacity)):vMaxCapacityTop;
+              var vMaxCapacity = (vMaxCapacityLine > vMaxWorkLine)?vCapacity/vMaxCapacityLine:vCapacity/vMaxWorkLine;
+              if(Date.parse(vTmpDate) < Date.parse(vStartDateView) && vCapacity == 0){
+                vTempNextDate = new Date();
+                vTempNextDate.setFullYear(vTmpDate.getFullYear(), vTmpDate.getMonth(), vTmpDate.getDate());
+                vTempNextDate.setHours(0);
+                vTempNextDate.setMinutes(0);
+                do {
+                  nextTmpDate.setFullYear(vTempNextDate.getFullYear(), vTempNextDate.getMonth(), vTempNextDate.getDate()+ 7);
+                  var vNextColDate = JSGantt.formatDateStr(nextTmpDate,"yyyy-ww",vMonthArr);
+                  var vNextCapacity = vWorkPlanList[i].getCalendarCapacityByDate(vNextColDate);
+                  vMaxCapacity=(vMaxCapacityLine > vMaxWorkLine)?vNextCapacity/vMaxCapacityLine:vNextCapacity/vMaxWorkLine;
+                  vTempNextDate.setFullYear(vTempNextDate.getFullYear(), vTempNextDate.getMonth(), vTempNextDate.getDate()+ 7);
+                } while (Date.parse(vTempNextDate) < Date.parse(vStartDateView));
+              }
+              vMaxCapacity = (isNaN(vMaxCapacity))?0:vMaxCapacity;
+              vMaxCapacityTop = 100-(90*vMaxCapacity);
               vMaxCapacityTop = (vMaxCapacityTop < 10)?10:vMaxCapacityTop;
               vMaxCapacityTop = (vMaxCapacityTop >= 100)?98:vMaxCapacityTop;
               var vHeight = 100 - vMaxCapacityTop;
@@ -2604,7 +2724,7 @@ JSGantt.GanttChart =  function(pGanttVar, pDiv, pFormat) {
               if(vWork > 0){
                 if(vWorkTop+vWorkHeight < 100)vWorkTop = vWorkTop+(100-(vWorkTop+vWorkHeight));
                 if(vWorkTop+vWorkHeight > 100)vWorkTop = vWorkTop-((vWorkTop+vWorkHeight)-100);
-                vWorkDays += '<DIV id="colDate#'+vWorkPlanList[i].getID()+'_'+colDate+'" style="position:absolute;z-index:1;top: '+vWorkTop+'px; left:'+(vDayWidth*cpt)+'px; height:'+vWorkHeight+'px;width:'+vDayWidth+'px;">';
+                vWorkDays += '<DIV id="colDate#'+vWorkPlanList[i].getID()+'_'+colDate+'" style="position:absolute;z-index:1;top: '+vWorkTop+'px; left:'+left+'px; height:'+vWorkHeight+'px;width:'+vDayWidth+'px;">';
                 var vMaxPlannedHeight = 0;
                 var vMaxRealHeight = 0;
                 var vMaxAdminHeight = 0;
@@ -2659,10 +2779,21 @@ JSGantt.GanttChart =  function(pGanttVar, pDiv, pFormat) {
                   if(plannedWorkDates){
                     plannedWorkDates.forEach(([color, works]) => {
                       var vPlannedWork = works['work'];
+                      var vSurbookedWork = works['surbookedWork'];
+                      var vIsLateColor = works['isLateColor'];
                       if(vPlannedWork > 0){
-                        var plannedHeight = Math.round((vPlannedWork/vMaxWork)*vWorkHeight);
-                        vMaxPlannedHeight += plannedHeight;
-                        vWorkDaySplit += '<DIV class="workPlanDay plannedDay" style="background-color:'+color+';position:relative;height:'+plannedHeight+'px;width:'+vDayWidth+'px;'+opacity+'"></DIV>';
+                        var plannedHeight = Math.round(((vPlannedWork)/vMaxWork)*vWorkHeight);
+                        var surbookedHeight = Math.round((vSurbookedWork/vMaxWork)*vWorkHeight);
+                        plannedHeight = (vPlannedWork - vSurbookedWork > 0)?Math.round(((vPlannedWork - vSurbookedWork)/vMaxWork)*vWorkHeight):plannedHeight;
+                        if(vSurbookedWork > 0){
+                          var subookedColor = (!vIsLateColor)?'#ffc90e':'#ff751a';
+                          vWorkDaySplit += '<DIV class="workPlanDay plannedDaySurbooked" style="background-color:'+subookedColor+';position:relative;height:'+surbookedHeight+'px;width:'+vDayWidth+'px;'+opacity+'"></DIV>';
+                          vMaxPlannedHeight += surbookedHeight;
+                        }
+                        if(vPlannedWork - vSurbookedWork > 0){
+                          vWorkDaySplit += '<DIV class="workPlanDay plannedDay" style="background-color:'+color+';position:relative;height:'+plannedHeight+'px;width:'+vDayWidth+'px;'+opacity+'"></DIV>';
+                          vMaxPlannedHeight += plannedHeight;
+                        }
                       }
                     });
                   }
@@ -2724,10 +2855,19 @@ JSGantt.GanttChart =  function(pGanttVar, pDiv, pFormat) {
                 nextTmpDate.setFullYear(vTmpDate.getFullYear(), vTmpDate.getMonth(), vTmpDate.getDate()+ 7);
                 var vNextColDate = JSGantt.formatDateStr(nextTmpDate,"yyyy-ww",vMonthArr);
                 var vNextCapacity = vWorkPlanList[i].getCalendarCapacityByDate(vNextColDate);
-                var vNextMaxCapacity = vNextCapacity/vMaxWorkLine;
-                nextMaxTop = (vMaxCapacityLine >= vNextCapacity)?100-((vNextCapacity/vMaxCapacityLine)*(90*vNextMaxCapacity)):nextMaxTop;
+                var vNextMaxCapacity = (vMaxCapacityLine > vMaxWorkLine)?vNextCapacity/vMaxCapacityLine:vNextCapacity/vMaxWorkLine;
+                vNextMaxCapacity = (isNaN(vNextMaxCapacity))?0:vNextMaxCapacity;
+                if(Date.parse(nextTmpDate) > Date.parse(vEndDateView) && vNextCapacity == 0){
+                  vNextMaxCapacity=vNextTmpMaxCapacity;
+                }else{
+                  vNextTmpMaxCapacity=vNextMaxCapacity;
+                }
+                nextMaxTop = 100-(90*vNextMaxCapacity);
                 nextMaxTop = (nextMaxTop < 10)?10:nextMaxTop;
                 nextMaxTop = (nextMaxTop >= 100)?98:nextMaxTop;
+                if(Date.parse(nextTmpDate) > Date.parse(vEndDateView) && vNextCapacity == 0){
+                  vMaxCapacityTop=nextMaxTop;
+                }
                 if((previousMaxTop < vMaxCapacityTop) && (nextMaxTop < vMaxCapacityTop)){
                   vMaxCapacityHeight = (vMaxCapacityTop - previousMaxTop)+3;
                   vMaxCapacityHeight = (vMaxCapacityHeight > 91)?91:vMaxCapacityHeight;
@@ -2736,15 +2876,15 @@ JSGantt.GanttChart =  function(pGanttVar, pDiv, pFormat) {
                     var splitWidth = vDayWidth/2;
                     vMaxCapacityTop = previousMaxTop;
                     maxCapacityDateClass = (vMaxWork > vCapacity)?'workPlanSurbookingMaxCapacityLeft':'workPlanPastMaxCapacityLeft';
-                    if(showProjectColor && (vMaxWork > vCapacity))maxCapacityDateClass += '_PC';
-                    vMaxCapacityDays += '<DIV class="'+maxCapacityDateClass+'" style="top: '+vMaxCapacityTop+'px; left:'+(vDayWidth*cpt)+'px;width:'+splitWidth+'px;height:'+vMaxCapacityHeight+'px"></DIV>';
+                    if((showProjectColor || showLateColor) && (vMaxWork > vCapacity))maxCapacityDateClass += '_PC';
+                    vMaxCapacityDays += '<DIV class="capacity#'+vWorkPlanList[i].getID()+'_'+colDate+' '+maxCapacityDateClass+'" style="top: '+vMaxCapacityTop+'px; left:'+left+'px;width:'+splitWidth+'px;height:'+vMaxCapacityHeight+'px"></DIV>';
                     vMaxCapacityHeight = (vMaxCapacityTop + vMaxCapacityHeight) - nextMaxTop;
                     tmpMaxCapacityTop = vMaxCapacityTop;
                     vMaxCapacityTop = nextMaxTop;
                     tmpMaxCapacityTop = nextMaxTop;
                     maxCapacityDateClass = (vMaxWork > vCapacity)?'workPlanSurbookingMaxCapacityRight':'workPlanPastMaxCapacityRight';
-                    if(showProjectColor && (vMaxWork > vCapacity))maxCapacityDateClass += '_PC';
-                    vMaxCapacityDays += '<DIV class="'+maxCapacityDateClass+'" style="top: '+vMaxCapacityTop+'px; left:'+((vDayWidth*cpt)+splitWidth)+'px;width:'+splitWidth+'px;height:'+vMaxCapacityHeight+'px"></DIV>';
+                    if((showProjectColor || showLateColor) && (vMaxWork > vCapacity))maxCapacityDateClass += '_PC';
+                    vMaxCapacityDays += '<DIV class="capacity#'+vWorkPlanList[i].getID()+'_'+colDate+' '+maxCapacityDateClass+'" style="top: '+vMaxCapacityTop+'px; left:'+(left+splitWidth)+'px;width:'+splitWidth+'px;height:'+vMaxCapacityHeight+'px"></DIV>';
                   }else{
                     vMaxCapacityTop = previousMaxTop;
                   }
@@ -2753,20 +2893,24 @@ JSGantt.GanttChart =  function(pGanttVar, pDiv, pFormat) {
                   vMaxCapacityHeight = (vMaxCapacityHeight > 91)?91:vMaxCapacityHeight;
                   vMaxCapacityTop = previousMaxTop;
                   maxCapacityDateClass = (vMaxWork > vCapacity)?'workPlanSurbookingMaxCapacityLeft':'workPlanPastMaxCapacityLeft';
-                  if(showProjectColor && (vMaxWork > vCapacity))maxCapacityDateClass += '_PC';
+                  if((showProjectColor || showLateColor) && (vMaxWork > vCapacity))maxCapacityDateClass += '_PC';
                 }else if(((previousMaxTop == vMaxCapacityTop) && (nextMaxTop < vMaxCapacityTop)) || ((previousMaxTop > vMaxCapacityTop) && (nextMaxTop < vMaxCapacityTop))){
                   vMaxCapacityHeight = (vMaxCapacityTop - nextMaxTop)+3;
                   vMaxCapacityHeight = (vMaxCapacityHeight > 91)?91:vMaxCapacityHeight;
                   vMaxCapacityTop = nextMaxTop;
                   maxCapacityDateClass = (vMaxWork > vCapacity)?'workPlanSurbookingMaxCapacityRight':'workPlanPastMaxCapacityRight';
-                  if(showProjectColor && (vMaxWork > vCapacity))maxCapacityDateClass += '_PC';
+                  if((showProjectColor || showLateColor) && (vMaxWork > vCapacity))maxCapacityDateClass += '_PC';
                 }
                 if(vMaxCapacityHeight){
                   vMaxCapacityHeight = 'height:'+vMaxCapacityHeight+'px';
                 }
               }
               previousMaxTop = tmpMaxCapacityTop;
-              if(!splitMaxCapacityDiv)vMaxCapacityDays += '<DIV class="'+maxCapacityDateClass+'" style="top: '+vMaxCapacityTop+'px; left:'+(vDayWidth*cpt)+'px;width:'+vDayWidth+'px;'+vMaxCapacityHeight+'"></DIV>';
+              if(!splitMaxCapacityDiv){
+                if(vMaxCapacityDays.indexOf('capacity#'+vWorkPlanList[i].getID()+'_'+colDate) == -1){
+                  vMaxCapacityDays += '<DIV class="capacity#'+vWorkPlanList[i].getID()+'_'+colDate+' '+maxCapacityDateClass+'" style="top: '+vMaxCapacityTop+'px; left:'+left+'px;width:'+vDayWidth+'px;'+vMaxCapacityHeight+'"></DIV>';
+                }
+              }
               var vTmpNextDate = new Date();
               var t2 = vMaxDate.getTime();
               var t1 = vTmpDate.getTime();
@@ -2778,6 +2922,7 @@ JSGantt.GanttChart =  function(pGanttVar, pDiv, pFormat) {
               }else{
                 vTmpDate.setFullYear(vTmpDate.getFullYear(), vTmpDate.getMonth(), vTmpDate.getDate()+ 7);
               }
+              left += vDayWidth;
             } else if (vFormat == 'quarter') {
               var colDate = JSGantt.formatDateStr(vTmpDate,"yyyy-ww",vMonthArr);
               var vRealWork = vWorkPlanList[i].getRealWorkByDate(colDate);
@@ -2787,7 +2932,7 @@ JSGantt.GanttChart =  function(pGanttVar, pDiv, pFormat) {
               vMaxWork = vWork;
               vCapacity = vWorkPlanList[i].getCalendarCapacityByDate(colDate);
               var maxCapacityDateClass = (vMaxWork > vCapacity)?'workPlanSurbookingMaxCapacitySmall':'workPlanPastMaxCapacitySmall';
-              if(showProjectColor && (vWork > vCapacity))maxCapacityDateClass += '_PC';
+              if((showProjectColor || showLateColor) && (vMaxWork > vCapacity))maxCapacityDateClass += '_PC';
               var vResStartDate = new Date();
               if(vWorkPlanList[i].getResourceStartDate(true)){
                 vResStartDate.setTime(vWorkPlanList[i].getResourceStartDate(true));
@@ -2802,17 +2947,36 @@ JSGantt.GanttChart =  function(pGanttVar, pDiv, pFormat) {
               }else{
                 vResEndDate = null;
               }
+              if(cpt == 0 && Date.parse(vTmpDate) < Date.parse(vStartDateView) && vCapacity == 0){
+                var difference = Math.floor((vStartDateView - vTmpDate) / (1000*60*60*24)) + 1;
+                vDayWidth = (vDayWidth*difference)/7;
+              }else{
+                vDayWidth = (vColWidth / vColUnit) + (1/vColUnit);
+              }
               var vDate = Date.parse(vTmpDate);
               if ((vWorkPlanList[i].getCalendarOffdayByDate(colDate) > 0 && vWorkPlanList[i].getNbResource() * 7 == vWorkPlanList[i].getCalendarOffdayByDate(colDate))
                   || (vResStartDate && vDate < vResStartDate) || (vResEndDate && vDate > vResEndDate)) {
                 vScpecificDayCount++;
                 vHighlightSpecificDays+='<DIV class="specificDayWeekEnd" '
-                +'style="top: 0px; left:'+(vDayWidth*cpt)+'px; height:100px; width:'+vDayWidth+'px"></DIV>';
+                +'style="top: 0px; left:'+left+'px; height:100px; width:'+vDayWidth+'px"></DIV>';
                 opacity = 'opacity:0.7;';
               }
-              vNxtDate.setDate(vNxtDate.getDate() + 7);
-              var vMaxCapacity = vCapacity/vMaxWorkLine;
-              vMaxCapacityTop = (vMaxCapacityLine >= vCapacity)?100-((vCapacity/vMaxCapacityLine)*(90*vMaxCapacity)):vMaxCapacityTop;
+              var vMaxCapacity = (vMaxCapacityLine > vMaxWorkLine)?vCapacity/vMaxCapacityLine:vCapacity/vMaxWorkLine;
+              if(Date.parse(vTmpDate) < Date.parse(vStartDateView) && vCapacity == 0){
+                vTempNextDate = new Date();
+                vTempNextDate.setFullYear(vTmpDate.getFullYear(), vTmpDate.getMonth(), vTmpDate.getDate());
+                vTempNextDate.setHours(0);
+                vTempNextDate.setMinutes(0);
+                do {
+                  nextTmpDate.setFullYear(vTempNextDate.getFullYear(), vTempNextDate.getMonth(), vTempNextDate.getDate()+ 7);
+                  var vNextColDate = JSGantt.formatDateStr(nextTmpDate,"yyyy-ww",vMonthArr);
+                  var vNextCapacity = vWorkPlanList[i].getCalendarCapacityByDate(vNextColDate);
+                  vMaxCapacity=(vMaxCapacityLine > vMaxWorkLine)?vNextCapacity/vMaxCapacityLine:vNextCapacity/vMaxWorkLine;
+                  vTempNextDate.setFullYear(vTempNextDate.getFullYear(), vTempNextDate.getMonth(), vTempNextDate.getDate()+ 7);
+                } while (Date.parse(vTempNextDate) < Date.parse(vStartDateView));
+              }
+              vMaxCapacity = (isNaN(vMaxCapacity))?0:vMaxCapacity;
+              vMaxCapacityTop = 100-(90*vMaxCapacity);
               vMaxCapacityTop = (vMaxCapacityTop < 10)?10:vMaxCapacityTop;
               vMaxCapacityTop = (vMaxCapacityTop >= 100)?98:vMaxCapacityTop;
               var vHeight = 100 - vMaxCapacityTop;
@@ -2822,7 +2986,7 @@ JSGantt.GanttChart =  function(pGanttVar, pDiv, pFormat) {
               if(vWork > 0){
                 if(vWorkTop+vWorkHeight < 100)vWorkTop = vWorkTop+(100-(vWorkTop+vWorkHeight));
                 if(vWorkTop+vWorkHeight > 100)vWorkTop = vWorkTop-((vWorkTop+vWorkHeight)-100);
-                vWorkDays += '<DIV id="colDate#'+vWorkPlanList[i].getID()+'_'+colDate+'" style="position:absolute;z-index:1;top: '+vWorkTop+'px; left:'+(vDayWidth*cpt)+'px; height:'+vWorkHeight+'px;width:'+vDayWidth+'px;">';
+                vWorkDays += '<DIV id="colDate#'+vWorkPlanList[i].getID()+'_'+colDate+'" style="position:absolute;z-index:1;top: '+vWorkTop+'px; left:'+left+'px; height:'+vWorkHeight+'px;width:'+vDayWidth+'px;">';
                 var vMaxPlannedHeight = 0;
                 var vMaxRealHeight = 0;
                 var vMaxAdminHeight = 0;
@@ -2877,10 +3041,21 @@ JSGantt.GanttChart =  function(pGanttVar, pDiv, pFormat) {
                   if(plannedWorkDates){
                     plannedWorkDates.forEach(([color, works]) => {
                       var vPlannedWork = works['work'];
+                      var vSurbookedWork = works['surbookedWork'];
+                      var vIsLateColor = works['isLateColor'];
                       if(vPlannedWork > 0){
-                        var plannedHeight = Math.round((vPlannedWork/vMaxWork)*vWorkHeight);
-                        vMaxPlannedHeight += plannedHeight;
-                        vWorkDaySplit += '<DIV class="workPlanDay plannedDay" style="background-color:'+color+';position:relative;height:'+plannedHeight+'px;width:'+vDayWidth+'px;'+opacity+'"></DIV>';
+                        var plannedHeight = Math.round(((vPlannedWork)/vMaxWork)*vWorkHeight);
+                        var surbookedHeight = Math.round((vSurbookedWork/vMaxWork)*vWorkHeight);
+                        plannedHeight = (vPlannedWork - vSurbookedWork > 0)?Math.round(((vPlannedWork - vSurbookedWork)/vMaxWork)*vWorkHeight):plannedHeight;
+                        if(vSurbookedWork > 0){
+                          var subookedColor = (!vIsLateColor)?'#ffc90e':'#ff751a';
+                          vWorkDaySplit += '<DIV class="workPlanDay plannedDaySurbooked" style="background-color:'+subookedColor+';position:relative;height:'+surbookedHeight+'px;width:'+vDayWidth+'px;'+opacity+'"></DIV>';
+                          vMaxPlannedHeight += surbookedHeight;
+                        }
+                        if(vPlannedWork - vSurbookedWork > 0){
+                          vWorkDaySplit += '<DIV class="workPlanDay plannedDay" style="background-color:'+color+';position:relative;height:'+plannedHeight+'px;width:'+vDayWidth+'px;'+opacity+'"></DIV>';
+                          vMaxPlannedHeight += plannedHeight;
+                        }
                       }
                     });
                   }
@@ -2942,10 +3117,19 @@ JSGantt.GanttChart =  function(pGanttVar, pDiv, pFormat) {
                 nextTmpDate.setFullYear(vTmpDate.getFullYear(), vTmpDate.getMonth(), vTmpDate.getDate()+ 7);
                 var vNextColDate = JSGantt.formatDateStr(nextTmpDate,"yyyy-ww",vMonthArr);
                 var vNextCapacity = vWorkPlanList[i].getCalendarCapacityByDate(vNextColDate);
-                var vNextMaxCapacity = vNextCapacity/vMaxWorkLine;
-                nextMaxTop = (vMaxCapacityLine >= vNextCapacity)?100-((vNextCapacity/vMaxCapacityLine)*(90*vNextMaxCapacity)):nextMaxTop;
+                var vNextMaxCapacity = (vMaxCapacityLine > vMaxWorkLine)?vNextCapacity/vMaxCapacityLine:vNextCapacity/vMaxWorkLine;
+                vNextMaxCapacity = (isNaN(vNextMaxCapacity))?0:vNextMaxCapacity;
+                if(Date.parse(nextTmpDate) > Date.parse(vEndDateView) && vNextCapacity == 0){
+                  vNextMaxCapacity=vNextTmpMaxCapacity;
+                }else{
+                  vNextTmpMaxCapacity=vNextMaxCapacity;
+                }
+                nextMaxTop = 100-(90*vNextMaxCapacity);
                 nextMaxTop = (nextMaxTop < 10)?10:nextMaxTop;
                 nextMaxTop = (nextMaxTop >= 100)?98:nextMaxTop;
+                if(Date.parse(nextTmpDate) > Date.parse(vEndDateView) && vNextCapacity == 0){
+                  vMaxCapacityTop=nextMaxTop;
+                }
                 if((previousMaxTop < vMaxCapacityTop) && (nextMaxTop < vMaxCapacityTop)){
                   vMaxCapacityHeight = (vMaxCapacityTop - previousMaxTop)+2;
                   vMaxCapacityHeight = (vMaxCapacityHeight > 91)?91:vMaxCapacityHeight;
@@ -2953,16 +3137,16 @@ JSGantt.GanttChart =  function(pGanttVar, pDiv, pFormat) {
                     splitMaxCapacityDiv=true;
                     var splitWidth = vDayWidth/2;
                     vMaxCapacityTop = previousMaxTop;
-                    maxCapacityDateClass = (vMaxWork > vCapacity)?'workPlanSurbookingMaxCapacityLeft':'workPlanPastMaxCapacityLeft';
-                    if(showProjectColor && (vWork > vCapacity))maxCapacityDateClass += '_PC';
-                    vMaxCapacityDays += '<DIV class="'+maxCapacityDateClass+'" style="top: '+vMaxCapacityTop+'px; left:'+(vDayWidth*cpt)+'px;width:'+splitWidth+'px;height:'+vMaxCapacityHeight+'px"></DIV>';
+                    maxCapacityDateClass = (vMaxWork > vCapacity)?'workPlanSurbookingMaxCapacityLeftSmall':'workPlanPastMaxCapacityLeftSmall';
+                    if((showProjectColor || showLateColor) && (vMaxWork > vCapacity))maxCapacityDateClass += '_PC';
+                    vMaxCapacityDays += '<DIV class="capacity#'+vWorkPlanList[i].getID()+'_'+colDate+' '+maxCapacityDateClass+'" style="top: '+vMaxCapacityTop+'px; left:'+left+'px;width:'+splitWidth+'px;height:'+vMaxCapacityHeight+'px"></DIV>';
                     vMaxCapacityHeight = (vMaxCapacityTop + vMaxCapacityHeight) - nextMaxTop;
                     tmpMaxCapacityTop = vMaxCapacityTop;
                     vMaxCapacityTop = nextMaxTop;
                     tmpMaxCapacityTop = nextMaxTop;
-                    maxCapacityDateClass = (vMaxWork > vCapacity)?'workPlanSurbookingMaxCapacityRight':'workPlanPastMaxCapacityRight';
-                    if(showProjectColor && (vWork > vCapacity))maxCapacityDateClass += '_PC';
-                    vMaxCapacityDays += '<DIV class="'+maxCapacityDateClass+'" style="top: '+vMaxCapacityTop+'px; left:'+((vDayWidth*cpt)+splitWidth)+'px;width:'+splitWidth+'px;height:'+vMaxCapacityHeight+'px"></DIV>';
+                    maxCapacityDateClass = (vMaxWork > vCapacity)?'workPlanSurbookingMaxCapacityRightSmall':'workPlanPastMaxCapacityRightSmall';
+                    if((showProjectColor || showLateColor) && (vMaxWork > vCapacity))maxCapacityDateClass += '_PC';
+                    vMaxCapacityDays += '<DIV class="capacity#'+vWorkPlanList[i].getID()+'_'+colDate+' '+maxCapacityDateClass+'" style="top: '+vMaxCapacityTop+'px; left:'+(left+splitWidth)+'px;width:'+splitWidth+'px;height:'+vMaxCapacityHeight+'px"></DIV>';
                   }else{
                     vMaxCapacityTop = previousMaxTop;
                   }
@@ -2971,20 +3155,24 @@ JSGantt.GanttChart =  function(pGanttVar, pDiv, pFormat) {
                   vMaxCapacityHeight = (vMaxCapacityHeight > 91)?91:vMaxCapacityHeight;
                   vMaxCapacityTop = previousMaxTop;
                   maxCapacityDateClass = (vMaxWork > vCapacity)?'workPlanSurbookingMaxCapacityLeftSmall':'workPlanPastMaxCapacityLeftSmall';
-                  if(showProjectColor && (vWork > vCapacity))maxCapacityDateClass += '_PC';
+                  if((showProjectColor || showLateColor) && (vMaxWork > vCapacity))maxCapacityDateClass += '_PC';
                 }else if(((previousMaxTop == vMaxCapacityTop) && (nextMaxTop < vMaxCapacityTop)) || ((previousMaxTop > vMaxCapacityTop) && (nextMaxTop < vMaxCapacityTop))){
                   vMaxCapacityHeight = (vMaxCapacityTop - nextMaxTop)+2;
                   vMaxCapacityHeight = (vMaxCapacityHeight > 91)?91:vMaxCapacityHeight;
                   vMaxCapacityTop = nextMaxTop;
                   maxCapacityDateClass = (vMaxWork > vCapacity)?'workPlanSurbookingMaxCapacityRightSmall':'workPlanPastMaxCapacityRightSmall';
-                  if(showProjectColor && (vWork > vCapacity))maxCapacityDateClass += '_PC';
+                  if((showProjectColor || showLateColor) && (vMaxWork > vCapacity))maxCapacityDateClass += '_PC';
                 }
                 if(vMaxCapacityHeight){
                   vMaxCapacityHeight = 'height:'+vMaxCapacityHeight+'px';
                 }
               }
               previousMaxTop = tmpMaxCapacityTop;
-              if(!splitMaxCapacityDiv)vMaxCapacityDays += '<DIV class="'+maxCapacityDateClass+'" style="top: '+vMaxCapacityTop+'px; left:'+(vDayWidth*cpt)+'px;width:'+vDayWidth+'px;'+vMaxCapacityHeight+'"></DIV>';
+              if(!splitMaxCapacityDiv){
+                if(vMaxCapacityDays.indexOf('capacity#'+vWorkPlanList[i].getID()+'_'+colDate) == -1){
+                  vMaxCapacityDays += '<DIV class="capacity#'+vWorkPlanList[i].getID()+'_'+colDate+' '+maxCapacityDateClass+'" style="top: '+vMaxCapacityTop+'px; left:'+left+'px;width:'+vDayWidth+'px;'+vMaxCapacityHeight+'"></DIV>';
+                }
+              }
               var vTmpNextDate = new Date();
               var t2 = vMaxDate.getTime();
               var t1 = vTmpDate.getTime();
@@ -2996,38 +3184,45 @@ JSGantt.GanttChart =  function(pGanttVar, pDiv, pFormat) {
               }else{
                 vTmpDate.setFullYear(vTmpDate.getFullYear(), vTmpDate.getMonth(), vTmpDate.getDate()+ 7);
               }
+              left += vDayWidth;
             }
             cpt++;
           }
           
           var vSumCapacity = 0;
           var rangeWork = 0;
+          var globalWork = 0;
           vTmpDate.setFullYear(vStartDateView.getFullYear(), vStartDateView.getMonth(), vStartDateView.getDate());
           vTmpDate.setHours(0);
           vTmpDate.setMinutes(0);
           cpt=0;
           while(Date.parse(vTmpDate) <= Date.parse(vEndDateView)) {
             var vCapacity = 0;
+            var vIsAdministrative = vWorkPlanList[i].getIsAdministrative();
             if(vFormat == 'day' || vFormat == 'week') {
               var colDate = JSGantt.formatDateStr(vTmpDate,'yyyy-mm-dd');
-              vCapacity = vWorkPlanList[i].getCalendarCapacityByDate(colDate);
-              vOffDay = vWorkPlanList[i].getCalendarOffdayByDate(colDate);
-              vSumCapacity += (!vOffDay)?vCapacity:0;
               var vRealWork = vWorkPlanList[i].getRealWorkByDate(colDate);
               var vPlannedWork = vWorkPlanList[i].getPlannedWorkByDate(colDate);
               var vAdminWork = vWorkPlanList[i].getAdminWorkByDate(colDate);
-              vWork = vPlannedWork+vRealWork+vAdminWork;
+              vCapacity = vWorkPlanList[i].getCalendarCapacityByDate(colDate);
+              vOffDay = vWorkPlanList[i].getCalendarOffdayByDate(colDate);
+              vCapacity = (vAdminWork > 0 && !vIsAdministrative)?vCapacity-vAdminWork:vCapacity;
+              vSumCapacity += (!vOffDay)?vCapacity:0;
+              vWork = (!vIsAdministrative)?vPlannedWork+vRealWork:vPlannedWork+vRealWork+vAdminWork;
               rangeWork += vWork;
+              globalWork += vPlannedWork+vRealWork+vAdminWork;
               vTmpDate.setDate(vTmpDate.getDate() + 1);
             } else if (vFormat == 'month' || vFormat == 'quarter') {
               var colDate = JSGantt.formatDateStr(vTmpDate,"yyyy-ww",vMonthArr);
-              vCapacity = vWorkPlanList[i].getCalendarCapacityByDate(colDate);
-              vSumCapacity += vCapacity;
               var vRealWork = vWorkPlanList[i].getRealWorkByDate(colDate);
               var vPlannedWork = vWorkPlanList[i].getPlannedWorkByDate(colDate);
               var vAdminWork = vWorkPlanList[i].getAdminWorkByDate(colDate);
-              vWork = vPlannedWork+vRealWork+vAdminWork;
+              vCapacity = vWorkPlanList[i].getCalendarCapacityByDate(colDate);
+              vCapacity = (vAdminWork > 0 && !vIsAdministrative)?vCapacity-vAdminWork:vCapacity;
+              vSumCapacity += vCapacity;
+              vWork = (!vIsAdministrative)?vPlannedWork+vRealWork:vPlannedWork+vRealWork+vAdminWork;
               rangeWork += vWork;
+              globalWork += vPlannedWork+vRealWork+vAdminWork;
               vTmpDate.setDate(vTmpDate.getDate() + 7);
             }
             cpt++;
@@ -3068,7 +3263,7 @@ JSGantt.GanttChart =  function(pGanttVar, pDiv, pFormat) {
         vRightTable += '<DIV class="ganttUnselectable" id=workPlanDiv_'+vID+' style="position:relative;'+display+'width:' + vChartWidth + 'px;min-width: '+vMinWidth+'px;">';
         
         if(vWorkPlanList[i].getLevel() == 1){
-          if(vWorkPlanList[i].getShowResourceWithoutWork() != 1 && rangeWork <= 0)continue;
+          if(vWorkPlanList[i].getShowResourceWithoutWork() != 1 && globalWork <= 0)continue;
           vDateRowStr = JSGantt.formatDateStr(vTaskStart,vDateDisplayFormat) + ' - ' 
           + JSGantt.formatDateStr(vTaskEnd,vDateDisplayFormat);
           var firstLineTitle = '';
@@ -3106,7 +3301,7 @@ JSGantt.GanttChart =  function(pGanttVar, pDiv, pFormat) {
           }else if(level == 0){
             level = 4;
           }
-          if( vWorkPlanList[i].getIsParent() && vWorkPlanList[i].getGroup() && rangeWork > 0) {
+          if( vWorkPlanList[i].getIsParent() && vWorkPlanList[i].getGroup() && globalWork > 0) {
             vRightTable += '<TD style="width:16px;background-color:white;">';
             if( vWorkPlanList[i].getOpen() == 1) {
               vRightTable += '<div id="workPlanGroup_'+vID+'" class="ganttExpandOpened"' 
@@ -3155,7 +3350,7 @@ JSGantt.GanttChart =  function(pGanttVar, pDiv, pFormat) {
             + '</DIV>';
         }
         vRightTable += '</DIV>';
-        if(vWorkPlanList[i].getShowResourceWithoutWork() != 1 && rangeWork <= 0){
+        if(vWorkPlanList[i].getShowResourceWithoutWork() != 1 && globalWork <= 0){
           if(planningType == 'workPlan'){
             showAlert(i18n('noDataToDisplay'));
           }else{
@@ -3528,7 +3723,7 @@ JSGantt.changeFormat = function(pFormat,ganttObj) {
         var msg=dojo.byId('divMessageLimitedDisplay').value;
       }
       var dontDraw=false;
-      var versionPlaning = (dojo.byId('workPlanJsonData'))?'workPlan':'';
+      var versionPlaning = (dojo.byId('workPlan'))?'workPlan':'';
       if(dojo.byId('workPlan'))dontDraw=true;
       if (ganttObj.getFormat()=='month' && ganttObj.getEndDateView() ) {
         ganttObj.setFormat(pFormat, dontDraw);
@@ -4009,7 +4204,7 @@ JSGantt.openPlanningContextMenu = function(taskId, refId, refType, idProject){
     if(dojo.byId('cm_removeFromTimeline'))dojo.byId('cm_removeFromTimeline').style.display = '';
     if(dojo.byId('cm_removeFromTimeline'))dojo.byId('cm_removeFromTimeline').setAttribute('onClick', 'removeFromTimeline('+refId+', \''+refType+'\')');
   }else {
-    if(refType == 'Activity' || refType == 'Project'){
+    if(refType == 'Activity' || refType == 'Project' || refType == 'Milestone' ){
       if(dojo.byId('cm_sectionTimeline'))dojo.byId('cm_sectionTimeline').style.display = '';
       if(dojo.byId('cm_addToTimeline'))dojo.byId('cm_addToTimeline').style.display = '';
       if(dojo.byId('cm_removeFromTimeline'))dojo.byId('cm_removeFromTimeline').style.display = 'none';
@@ -4340,9 +4535,15 @@ JSGantt.ganttMouseOver = function( pID, pPos, pType) {
   }
   if (pID==vGanttCurrentLine) return;
   var vRowObj1 = JSGantt.findObj('child_' + pID);
-  if (vRowObj1) vRowObj1.className = "dojoDndItem ganttTask" + pType + " ganttRowHover";
+  if (vRowObj1){
+    dojo.addClass(vRowObj1, 'ganttRowHover');
+//    vRowObj1.className = "dojoDndItem ganttTask" + pType + " ganttRowHover";
+  }
   var vRowObj2 = JSGantt.findObj('childrow_' + pID);
-  if (vRowObj2) vRowObj2.className = "ganttTask" + pType + " ganttRowHover"+ ((ongoingJsLink>=0)?" ganttDndLink":"");
+  if (vRowObj2){
+    dojo.addClass(vRowObj2, 'ganttRowHover');
+//    vRowObj2.className = "ganttTask" + pType + " ganttRowHover"+ ((ongoingJsLink>=0)?" ganttDndLink":"");
+  }
   //var vRowObj3 = JSGantt.findObj('child_row_' + pID);
   //if (vRowObj3) vRowObj3.className = "ganttTask" + pType + " ganttRowHover"
   if (pType && ongoingJsLink>=0) {  
@@ -4365,9 +4566,17 @@ JSGantt.ganttMouseOut = function(pID, pPos, pType) {
   } 
   if (pID==vGanttCurrentLine) return; 
   var vRowObj1 = JSGantt.findObj('child_' + pID);
-  if (vRowObj1) vRowObj1.className = "dojoDndItem ganttTask" + pType;
+  if (vRowObj1){
+    dojo.removeClass(vRowObj1, 'ganttRowHover');
+    dojo.removeClass(vRowObj1, 'dojoxGridRowSelected');
+    //vRowObj1.className = "dojoDndItem ganttTask" + pType;
+  }
   var vRowObj2 = JSGantt.findObj('childrow_' + pID);
-  if (vRowObj2) vRowObj2.className = "ganttTask" + pType + ((ongoingJsLink>=0)?" ganttDndLink":"");
+  if (vRowObj2){
+    dojo.removeClass(vRowObj2, 'ganttRowHover');
+    dojo.removeClass(vRowObj2, 'dojoxGridRowSelected');
+    //vRowObj2.className = "ganttTask" + pType + ((ongoingJsLink>=0)?" ganttDndLink":"");
+  }
 //  JSGantt.destroyEditRowButton(pID);
 };
 
@@ -4661,7 +4870,7 @@ function drawLimitedDisplayMessage(msg){
   divRight.insertAdjacentHTML('afterend', inputInfoLimited.outerHTML);
 }
 
-JSGantt.editRowSaveCallback = function(pId, refId, refClass, idProject, noSave){
+JSGantt.editRowSaveCallback = function(pId, refId, refClass, idProject, noSave, recall){
   if (refClass=='Replan' || refClass=='Construction' || refClass=='Fixed') refClass='Project';
   if(!noSave){
     if(dijit.byId('dialogEditRowObjectUpdate'))dijit.byId('dialogEditRowObjectUpdate').hide();
@@ -4678,7 +4887,7 @@ JSGantt.editRowSaveCallback = function(pId, refId, refClass, idProject, noSave){
       currentRowToEdit = pId;
       vGanttCurrentLine = null;
     }
-    cachedEditRowPlanningClick = 'JSGantt.planningRowClickAction(\''+pId+'\', '+refId+', \''+refClass+'\', '+idProject+')';
+    cachedEditRowPlanningClick = 'JSGantt.planningRowClickAction(\''+pId+'\', '+refId+', \''+refClass+'\', '+idProject+', '+recall+')';
   }else{
     enableWidget('planButton');
     enableWidget('automaticRunPlanSwitch');
@@ -4690,12 +4899,32 @@ JSGantt.editRowSaveCallback = function(pId, refId, refClass, idProject, noSave){
     enableWidget('menuLayoutScreenButton');
     formChangeInProgress=false;
     cachedEditRowPlanningClick = null;
-    JSGantt.planningRowClickAction(pId, refId, refClass, idProject);
+    JSGantt.planningRowClickAction(pId, refId, refClass, idProject, recall);
   }
 }
 
 var clickPlanningTimeout = null;
 JSGantt.planningRowClickAction = function(pId, refId, refClass, idProject, recall){
+  //if shift or crtl + click
+  if(multiSelectionInputPressed){
+    return;
+  //if only select
+  }else{
+    //suppr Old selection DnD visual
+      dndSourceTable.getSelectedNodes().forEach(function(node){
+        dojo.removeClass(node, 'dojoDndItemSelected');
+        dojo.removeClass(node, 'dojoDndItemAnchor');
+      });
+
+    //force selection DnD to only current
+    //add anchor DnD at current 
+    var currentChild='child_'+pId;
+    var vRowObjForDnD = JSGantt.findObj('child_' + pId);
+    dndSourceTable.selection={};
+    dndSourceTable.selection[currentChild]=1;   
+    dndSourceTable.anchor=vRowObjForDnD;
+  }
+  if(recall == undefined)recall=false;
   if(waitingForReply){
     waitingForReply = false;
     return;
@@ -4705,11 +4934,11 @@ JSGantt.planningRowClickAction = function(pId, refId, refClass, idProject, recal
   var planningEditMode = (dojo.byId('buttonEditRowDetail'))?true:false;
   if (refClass=='Replan' || refClass=='Construction' || refClass=='Fixed') refClass='Project';
   var saveCallback = function(){
-    JSGantt.editRowSaveCallback(pId, refId, refClass, idProject, false);
+    JSGantt.editRowSaveCallback(pId, refId, refClass, idProject, false, recall);
   };
   var noSaveCallback = function(){
     if(!formChangeInProgress)return false;
-    JSGantt.editRowSaveCallback(pId, refId, refClass, idProject, true);
+    JSGantt.editRowSaveCallback(pId, refId, refClass, idProject, true, recall);
   };
   var callback = function () {
     if(coverListAction == 'CLOSE'){
@@ -4940,7 +5169,8 @@ JSGantt.editRowObjectPlanning = function(pId, refId, refClass, idProject, recall
                     var setDefaultPrio = (name == 'Type' && refClass == 'Activity')?'setDefaultPriority(this.value, true);':'';
                     var colScript = 
                       '<script type="dojo/method" event="onFocus" args="evt">'
-                      +'  dojo.addClass(dojo.byId(\'widget_\'+this.id), \'editInputFieldFocus\');';
+                      +'  dojo.addClass(dojo.byId(\'widget_\'+this.id), \'editInputFieldFocus\');'
+                      +'  lastSelectedFocus = this.name;';
                     if(field.type == 'select'){
                       colScript +='  dijit.byId(this.id).toggleDropDown();';
                     }
@@ -4970,7 +5200,7 @@ JSGantt.editRowObjectPlanning = function(pId, refId, refClass, idProject, recall
                     colScript +=
                       '<script type="dojo/method" event="onKeyDown" args="evt">'
                       +'  if(evt.keyCode == 9){'
-                      +'    JSGantt.updateEditableInputFieldFocus(\''+refClass+'\', '+refId+', \''+pId+'\', \'this.id\');'
+                      +'    JSGantt.updateEditableInputFieldFocus(\''+refClass+'\', '+refId+', \''+pId+'\', this.name);'
                       +'    if(dojo.byId(\'editModeCurrentInputFocus\')){dojo.byId(\'editModeCurrentInputFocus\').value = this.id;}'
                       +'    var firstField = (dojo.byId(\'editModeFirstInputFocus\'))?dojo.byId(\'editModeFirstInputFocus\').value:null;'
                       +'    var lastField = (dojo.byId(\'editModeLastInputFocus\'))?dojo.byId(\'editModeLastInputFocus\').value:null;' 
@@ -4978,7 +5208,7 @@ JSGantt.editRowObjectPlanning = function(pId, refId, refClass, idProject, recall
                       +'      if(lastField){'
                       +'        evt.preventDefault();'
                       +'        dojo.byId(lastField).focus();'
-                      +'        if(dojo.byId(\'editModeCurrentInputFocus\')){dojo.byId(\'editModeCurrentInputFocus\').value = lastField;}' 
+                      +'        if(dojo.byId(\'editModeCurrentInputFocus\')){dojo.byId(\'editModeCurrentInputFocus\').value = lastField;}'
                       +'      }'
                       +'    }else if(evt.shiftKey == false && lastField == this.id){'
                       +'      if(firstField){'
@@ -5123,7 +5353,7 @@ JSGantt.editRowObjectPlanning = function(pId, refId, refClass, idProject, recall
     dojo.query('.ganttEditableFieldHidden').forEach(function(node){
       dojo.removeClass(node, 'ganttEditableFieldHidden');
     });
-    JSGantt.updateEditableInputFieldFocus(objectClass, objectId, pId);
+    JSGantt.updateEditableInputFieldFocus(objectClass, objectId, pId, lastSelectedFocus);
     isEditRowFinishDisplay = true;
   }
 };
@@ -5135,6 +5365,7 @@ function finalizeEditRowDefaultValue(){
   getExtraRequiredFields(true);
 }
 
+var lastSelectedFocus = 'Name';
 JSGantt.updateEditableInputFieldFocus = function(refClass, refId, pId, currentFocus){
   var firstField = null;
   var lastField = null;
@@ -5232,11 +5463,12 @@ JSGantt.SetEditableInputFieldFocus = function(field, pId, refId, refClass, idPro
         value : nameField,
       }, planningListform);
     }
+    lastSelectedFocus = nameField;
   }
   if(isEditModeActive && isEditRowFinishDisplay)return;
   hideDetailScreen();
-  cachedEditRowPlanningClick = 'JSGantt.planningRowClickAction(\''+pId+'\', '+refId+', \''+refClass+'\', '+idProject+')';
-  JSGantt.editRowObjectPlanning(pId, refId, refClass, idProject);
+  cachedEditRowPlanningClick = 'JSGantt.planningRowClickAction(\''+pId+'\', '+refId+', \''+refClass+'\', '+idProject+', false)';
+  JSGantt.editRowObjectPlanning(pId, refId, refClass, idProject, false);
 }
 
 function focusCurrentEditRowInput(){
@@ -5245,7 +5477,9 @@ function focusCurrentEditRowInput(){
     if(dojo.byId('editModeCurrentInputFocus') && dojo.byId('editModeCurrentInputFocus').value){
       var nameField = dojo.byId('editModeCurrentInputFocus').value;
       var idField = 'editInput'+nameField.charAt(0).toUpperCase() + nameField.slice(1);
-      if(dojo.byId(idField))dojo.byId(idField).focus();
+      if(dojo.byId(idField)){
+        dojo.byId(idField).focus();
+      }
     }
   }
 }
@@ -5319,7 +5553,6 @@ JSGantt.saveEditRowObject = function(noReplan, callback) {
   }
   
   var validationType = (noReplan)?'quickPlanningEditSave':null;
-  
   if(formName == 'editRowObjectResultForm'){
       callback = function(){
         if(dojo.byId('lastOperationStatus') && (dojo.byId('lastOperationStatus').value == 'OK' || dojo.byId('lastOperationStatus').value == 'NO_CHANGE')){
@@ -5446,6 +5679,36 @@ JSGantt.closeAndSelectEditRow = function(rowId, refId, refClass, idProject, reca
   JSGantt.planningRowClickAction(rowId, refId, refClass, idProject, recall);
 }
 
+JSGantt.getNextLineItem = function(event){
+  if(event==undefined)event=null;
+  var currentLocation = 0;
+  var vList = g.getList();
+  var TaskItem = null;
+  if(currentRowToEdit){
+    currentLocation = g.getArrayLocationByID(currentRowToEdit);
+  }
+  if(event){
+    if(event.keyCode == 38){
+      if(currentRowToEdit && currentLocation > 0 && currentLocation-1 >= 0){
+        currentLocation--;
+        TaskItem = vList[currentLocation];
+      }else{
+        currentLocation = vList.length-1;
+        TaskItem = vList[currentLocation];
+      }
+    }else if(event.keyCode == 40){
+      if(currentRowToEdit && currentLocation >= 0 && currentLocation < (vList.length-1)){
+        currentLocation++;
+        TaskItem = vList[currentLocation];
+      }else{
+        currentLocation = 0;
+        TaskItem = vList[currentLocation];
+      }
+    }
+  }
+  return TaskItem;
+}
+
 JSGantt.drawLeftPart = function (i) {
   var ganttObj=g;
   var vGanttVar='g';
@@ -5517,15 +5780,18 @@ JSGantt.drawLeftPart = function (i) {
     }
   }
 //florent ticket 4397
+  var idProject = vTaskList[i].getProjectId();
   if (planningPage=='ResourcePlanning' || planningPage=='VersionsPlanning' || planningPage=='ContractGantt') {
-    vLeftTable += '<span class="">'
+    vLeftTable += '<span class=""'
+      + ' onclick="JSGantt.planningRowClickAction(\''+vID+'\',\'' + vTaskList[i].getId()+ '\', \'' + vTaskList[i].getClass() + '\',\'' + idProject + '\');">'
       + '<table><tr><td>&nbsp;</td><td class="ganttIconBackground">'
       + '<div class="icon'+iconName+' icon'+iconName+'16 iconSize16" style="width:16px;height:16px;" >&nbsp;</div>'
       + '</td></tr></table>'
       +'</span>';
   } else {
     vLeftTable += 
-        '<span class="dojoDndHandle handleCursor">'
+        '<span class="dojoDndHandle handleCursor"'
+      + ' onclick="JSGantt.planningRowClickAction(\''+vID+'\',\'' + vTaskList[i].getId()+ '\', \'' + vTaskList[i].getClass() + '\',\'' + idProject + '\');">'
       + ' <table><tr>'
       + '  <td class="ganttIconBackground">'
       + '   <div class="icon'+ iconName +'16 icon'+ iconName +' iconSize16" style="width:16px;height:16px;" >&nbsp;</div>'
@@ -5539,7 +5805,6 @@ JSGantt.drawLeftPart = function (i) {
   if( vTaskList[i].getMile() && dojo.byId('contractGantt')){
     vLeftTable+='<div class="ganttLeftMileContract" style="width:'+(vLeftWidth-25)+'px;" ';
   }else{
-    var idProject = vTaskList[i].getProjectId();
     vLeftTable+='<div class="ganttLeftHover" id="ganttLeftHover_'+vID+'" style="width:100%;" ';
     vLeftTable+=' oncontextmenu=event.preventDefault();JSGantt.openPlanningContextMenu("'+vID+'","'+vTaskList[i].getId()+'","' + vTaskList[i].getClass() + '",\'' + idProject + '\');';
     vLeftTable+=' onclick="JSGantt.planningRowClickAction(\''+vID+'\',\'' + vTaskList[i].getId()+ '\', \'' + vTaskList[i].getClass() + '\',\'' + idProject + '\');"';
@@ -5715,8 +5980,8 @@ JSGantt.drawRightPart = function (i,onlyParentPart) {
   var vDateInputFormat = "yyyy-mm-dd";
   var vDateDisplayFormat = "yyyy-mm-dd";
   var ffSpecificHeight=(dojo.isFF<16)?' class="ganttHeight"':'';
-  var vBaseTopName=this.vBaseTopName;
-  var vBaseBottomName=this.vBaseBottomName;
+  var vBaseTopName=g.getBaseTopName();
+  var vBaseBottomName=g.getBaseBottomName();
   
   g.resetEndDateView();
   vMinDate = JSGantt.getMinDate(vTaskList, vFormat,g.getStartDateView());
@@ -6273,7 +6538,6 @@ JSGantt.drawWorkPlanDetail = function (i,onlyParentPart) {
   var vStartDateView = new Date();
   var vEndDateView = new Date();
   var vTmpDate = new Date();
-  var vNxtDate = new Date();
   var vCurrDate = new Date();
   var vID = 0;
   var VId = 0;
@@ -6308,15 +6572,16 @@ JSGantt.drawWorkPlanDetail = function (i,onlyParentPart) {
     if(onlyParentPart && vWorkPlanList[i].getLevel() != 1)return;
     gwp.resetStartDateView();
     gwp.resetEndDateView();
-    var vTaskList=(isPlanning)?g.getList():null;
-    vMinDate = (isPlanning)?JSGantt.getMinDate(vTaskList, vFormat, g.getStartDateView()):JSGantt.getMinDate(vWorkPlanList, vFormat,gwp.getStartDateView());
+    // Get planning min and max date removed due to display lag    
+    // var vTaskList=(isPlanning)?g.getList():null;
+    vMinDate = JSGantt.getMinDate(vWorkPlanList, vFormat,gwp.getStartDateView());//(isPlanning)?JSGantt.getMinDate(vTaskList, vFormat, g.getStartDateView()):
     vDefaultMinDate = JSGantt.getMinDate(vWorkPlanList, vFormat);
-    vMaxDate = (isPlanning)?JSGantt.getMaxDate(vTaskList, vFormat, g.getEndDateView()):JSGantt.getMaxDate(vWorkPlanList, vFormat, gwp.getEndDateView());
+    vMaxDate = JSGantt.getMaxDate(vWorkPlanList, vFormat, gwp.getEndDateView());//(isPlanning)?JSGantt.getMaxDate(vTaskList, vFormat, g.getEndDateView()):
     vDefaultMaxDate = JSGantt.getMaxDate(vWorkPlanList, vFormat);
     gwp.resetStartDateView();
     gwp.resetEndDateView();
-    vStartDateView = (isPlanning)?JSGantt.getMinDate(vTaskList, 'week',g.getStartDateView(), true):JSGantt.getMinDate(vWorkPlanList, 'week',gwp.getStartDateView(), true);
-    vEndDateView = (isPlanning)?JSGantt.getMaxDate(vTaskList, 'week',g.getEndDateView(), true):JSGantt.getMaxDate(vWorkPlanList, 'week', gwp.getEndDateView(), true);
+    vStartDateView = JSGantt.getMinDate(vWorkPlanList, 'week',gwp.getStartDateView(), true);//(isPlanning)?JSGantt.getMinDate(vTaskList, 'week',g.getStartDateView(), true):
+    vEndDateView = JSGantt.getMaxDate(vWorkPlanList, 'week', gwp.getEndDateView(), true);//(isPlanning)?JSGantt.getMaxDate(vTaskList, 'week',g.getEndDateView(), true):
     if(vFormat == 'day') {
       vColWidth = 18;
       vColUnit = 1;
@@ -6341,8 +6606,13 @@ JSGantt.drawWorkPlanDetail = function (i,onlyParentPart) {
     vNumUnits = vNumDays / vColUnit;
     vNumUnits=Math.round(vNumUnits);
     vChartWidth = (vNumUnits * (vColWidth + 1))+1;
-    vMinWidth = (planningType == 'workPlan')?window.screen.width-265:dojo.byId('rightside').offsetWidth;
-    vChartWidth = (planningType != 'workPlan' || vChartWidth < vMinWidth)?vMinWidth:vChartWidth;
+    if(isPlanning){
+      vMinWidth = dojo.byId('workPlanRightGanttChartDIV').offsetWidth-10;
+      vChartWidth = (dojo.byId('rightside').offsetWidth > vMinWidth)?dojo.byId('rightside').offsetWidth:vMinWidth;
+    }else{
+      vMinWidth = window.screen.width-265;
+      vChartWidth = (vChartWidth < vMinWidth)?vMinWidth:vChartWidth;
+    }
     vDayWidth = (vColWidth / vColUnit) + (1/vColUnit);
     
     var vScpecificDayCount=0;
@@ -6357,9 +6627,6 @@ JSGantt.drawWorkPlanDetail = function (i,onlyParentPart) {
     vTmpDate.setFullYear(vMinDate.getFullYear(), vMinDate.getMonth(), vMinDate.getDate());
     vTmpDate.setHours(0);
     vTmpDate.setMinutes(0);
-    vNxtDate.setFullYear(vMinDate.getFullYear(), vMinDate.getMonth(), vMinDate.getDate());
-    vNxtDate.setHours(0);
-    vNxtDate.setMinutes(0);
     
     var vHighlightSpecificDays="";
     var vMaxCapacityDays = "";
@@ -6367,6 +6634,8 @@ JSGantt.drawWorkPlanDetail = function (i,onlyParentPart) {
     var previousMaxTop = null;
     var showProjectColor = vWorkPlanList[i].getShowProjectColor();
     var showLateColor = vWorkPlanList[i].getShowLateColor();
+    var vNextTmpMaxCapacity = 0;
+    var left = 0;
     
     while(Date.parse(vTmpDate) <= Date.parse(vMaxDate)) {
       var vWork = 0;
@@ -6392,9 +6661,17 @@ JSGantt.drawWorkPlanDetail = function (i,onlyParentPart) {
         vMaxWork = vWork;
         vCapacity = vWorkPlanList[i].getCalendarCapacityByDate(colDate);
         var maxCapacityDateClass = (vMaxWork > vCapacity)?'workPlanSurbookingMaxCapacity':'workPlanPastMaxCapacity';
-        if(showProjectColor && (vWork > vCapacity))maxCapacityDateClass += '_PC';
+        if((showProjectColor || showLateColor) && (vMaxWork > vCapacity))maxCapacityDateClass += '_PC';
         var vResStartDate = vWorkPlanList[i].getResourceStartDate(true);
         var vResEndDate = vWorkPlanList[i].getResourceEndDate(true);
+        if(cpt == 0 && Date.parse(vTmpDate) < Date.parse(vStartDateView) && vCapacity == 0){
+          var difference = Math.floor((vStartDateView - vTmpDate) / (1000*60*60*24)) + 1;
+          vWidth = (vWidth*difference)/7;
+          vDayWidth = vWidth;
+        }else{
+          vWidth = vColWidth+1;
+          vDayWidth = (vColWidth / vColUnit) + (1/vColUnit);
+        }
         var vDate = Date.parse(colDate);
         if ((vResStartDate && vDate < vResStartDate) || (vResEndDate && vDate > vResEndDate) || vWorkPlanList[i].getCalendarOffdayByDate(colDate)) {
           vTaskLeft = Math.ceil((Date.parse(vTmpDate) - Date.parse(vMinDate) + (1000*60*60)) / (24 * 60 * 60 * 1000) );
@@ -6410,9 +6687,23 @@ JSGantt.drawWorkPlanDetail = function (i,onlyParentPart) {
           vScpecificDayCount++;
           vHighlightSpecificDays+='<DIV class="specificDayCurrent" '
             +'style="top: 0px; left:'+vDayLeft+'px; height:100px; width:'+vColWidth+'px"></DIV>';  
+        } 
+        var vMaxCapacity = (vMaxCapacityLine > vMaxWorkLine)?vCapacity/vMaxCapacityLine:vCapacity/vMaxWorkLine;
+        if(Date.parse(vTmpDate) < Date.parse(vStartDateView) && vCapacity == 0){
+          vTempNextDate = new Date();
+          vTempNextDate.setFullYear(vTmpDate.getFullYear(), vTmpDate.getMonth(), vTmpDate.getDate());
+          vTempNextDate.setHours(0);
+          vTempNextDate.setMinutes(0);
+          do {
+            nextTmpDate.setFullYear(vTempNextDate.getFullYear(), vTempNextDate.getMonth(), vTempNextDate.getDate()+ 1);
+            var vNextColDate = JSGantt.formatDateStr(nextTmpDate,"yyyy-ww",vMonthArr);
+            var vNextCapacity = vWorkPlanList[i].getCalendarCapacityByDate(vNextColDate);
+            vMaxCapacity=(vMaxCapacityLine > vMaxWorkLine)?vNextCapacity/vMaxCapacityLine:vNextCapacity/vMaxWorkLine;
+            vTempNextDate.setFullYear(vTempNextDate.getFullYear(), vTempNextDate.getMonth(), vTempNextDate.getDate()+ 1);
+          } while (Date.parse(vTempNextDate) < Date.parse(vStartDateView));
         }
-        var vMaxCapacity = vCapacity/vMaxWorkLine;
-        vMaxCapacityTop = (vMaxCapacityLine >= vCapacity)?100-((vCapacity/vMaxCapacityLine)*(90*vMaxCapacity)):vMaxCapacityTop;
+        vMaxCapacity = (isNaN(vMaxCapacity))?0:vMaxCapacity;
+        vMaxCapacityTop = 100-(90*vMaxCapacity);
         vMaxCapacityTop = (vMaxCapacityTop < 10)?10:vMaxCapacityTop;
         vMaxCapacityTop = (vMaxCapacityTop >= 100)?98:vMaxCapacityTop;
         var vHeight = 100 - vMaxCapacityTop;
@@ -6422,7 +6713,7 @@ JSGantt.drawWorkPlanDetail = function (i,onlyParentPart) {
         if(vWork > 0){
           if(vWorkTop+vWorkHeight < 100)vWorkTop = vWorkTop+(100-(vWorkTop+vWorkHeight));
           if(vWorkTop+vWorkHeight > 100)vWorkTop = vWorkTop-((vWorkTop+vWorkHeight)-100);
-          vWorkDays += '<DIV id="colDate#'+vWorkPlanList[i].getID()+'_'+colDate+'" style="position:absolute;z-index:1;top: '+vWorkTop+'px; left:'+(vWidth*cpt)+'px; height:'+vWorkHeight+'px;width:'+vWidth+'px;">';
+          vWorkDays += '<DIV id="colDate#'+vWorkPlanList[i].getID()+'_'+colDate+'" style="position:absolute;z-index:1;top: '+vWorkTop+'px; left:'+left+'px; height:'+vWorkHeight+'px;width:'+vWidth+'px;">';
           var vMaxPlannedHeight = 0;
           var vMaxRealHeight = 0;
           var vMaxAdminHeight = 0;
@@ -6477,10 +6768,21 @@ JSGantt.drawWorkPlanDetail = function (i,onlyParentPart) {
             if(plannedWorkDates){
               plannedWorkDates.forEach(([color, works]) => {
                 var vPlannedWork = works['work'];
+                var vSurbookedWork = works['surbookedWork'];
+                var vIsLateColor = works['isLateColor'];
                 if(vPlannedWork > 0){
-                  var plannedHeight = Math.round((vPlannedWork/vMaxWork)*vWorkHeight);
-                  vMaxPlannedHeight += plannedHeight;
-                  vWorkDaySplit += '<DIV class="workPlanDay plannedDay" style="background-color:'+color+';position:relative;height:'+plannedHeight+'px;width:'+vWidth+'px;'+opacity+'"></DIV>';
+                  var plannedHeight = Math.round(((vPlannedWork)/vMaxWork)*vWorkHeight);
+                  var surbookedHeight = Math.round((vSurbookedWork/vMaxWork)*vWorkHeight);
+                  plannedHeight = (vPlannedWork - vSurbookedWork > 0)?Math.round(((vPlannedWork - vSurbookedWork)/vMaxWork)*vWorkHeight):plannedHeight;
+                  if(vSurbookedWork > 0){
+                    var subookedColor = (!vIsLateColor)?'#ffc90e':'#ff751a';
+                    vWorkDaySplit += '<DIV class="workPlanDay plannedDaySurbooked" style="background-color:'+subookedColor+';position:relative;height:'+surbookedHeight+'px;width:'+vWidth+'px;'+opacity+'"></DIV>';
+                    vMaxPlannedHeight += surbookedHeight;
+                  }
+                  if(vPlannedWork - vSurbookedWork > 0){
+                    vWorkDaySplit += '<DIV class="workPlanDay plannedDay" style="background-color:'+color+';position:relative;height:'+plannedHeight+'px;width:'+vWidth+'px;'+opacity+'"></DIV>';
+                    vMaxPlannedHeight += plannedHeight;
+                  }
                 }
               });
             }
@@ -6542,10 +6844,19 @@ JSGantt.drawWorkPlanDetail = function (i,onlyParentPart) {
           nextTmpDate.setFullYear(vTmpDate.getFullYear(), vTmpDate.getMonth(), vTmpDate.getDate()+ 1);
           var vNextColDate = JSGantt.formatDateStr(nextTmpDate,'yyyy-mm-dd');
           var vNextCapacity = vWorkPlanList[i].getCalendarCapacityByDate(vNextColDate);
-          var vNextMaxCapacity = vNextCapacity/vMaxWorkLine;
-          nextMaxTop = (vMaxCapacityLine >= vNextCapacity)?100-((vNextCapacity/vMaxCapacityLine)*(90*vNextMaxCapacity)):nextMaxTop;
+          var vNextMaxCapacity = (vMaxCapacityLine > vMaxWorkLine)?vNextCapacity/vMaxCapacityLine:vNextCapacity/vMaxWorkLine;
+          vNextMaxCapacity = (isNaN(vNextMaxCapacity))?0:vNextMaxCapacity;
+          if(Date.parse(nextTmpDate) > Date.parse(vEndDateView) && vNextCapacity == 0){
+            vNextMaxCapacity=vNextTmpMaxCapacity;
+          }else{
+            vNextTmpMaxCapacity=vNextMaxCapacity;
+          }
+          nextMaxTop = 100-(90*vNextMaxCapacity);
           nextMaxTop = (nextMaxTop < 10)?10:nextMaxTop;
           nextMaxTop = (nextMaxTop >= 100)?98:nextMaxTop;
+          if(Date.parse(nextTmpDate) > Date.parse(vEndDateView) && vNextCapacity == 0){
+            vMaxCapacityTop=nextMaxTop;
+          }
           if((previousMaxTop < vMaxCapacityTop) && (nextMaxTop < vMaxCapacityTop)){
             vMaxCapacityHeight = (vMaxCapacityTop - previousMaxTop)+3;
             vMaxCapacityHeight = (vMaxCapacityHeight > 91)?91:vMaxCapacityHeight;
@@ -6554,15 +6865,15 @@ JSGantt.drawWorkPlanDetail = function (i,onlyParentPart) {
               var splitWidth = vDayWidth/2;
               vMaxCapacityTop = previousMaxTop;
               maxCapacityDateClass = (vMaxWork > vCapacity)?'workPlanSurbookingMaxCapacityLeft':'workPlanPastMaxCapacityLeft';
-              if(showProjectColor && (vWork > vCapacity))maxCapacityDateClass += '_PC';
-              vMaxCapacityDays += '<DIV class="'+maxCapacityDateClass+'" style="top: '+vMaxCapacityTop+'px; left:'+(vDayWidth*cpt)+'px;width:'+splitWidth+'px;height:'+vMaxCapacityHeight+'px"></DIV>';
+              if((showProjectColor || showLateColor) && (vMaxWork > vCapacity))maxCapacityDateClass += '_PC';
+              vMaxCapacityDays += '<DIV class="capacity#'+vWorkPlanList[i].getID()+'_'+colDate+' '+maxCapacityDateClass+'" style="top: '+vMaxCapacityTop+'px; left:'+left+'px;width:'+splitWidth+'px;height:'+vMaxCapacityHeight+'px"></DIV>';
               vMaxCapacityHeight = (vMaxCapacityTop + vMaxCapacityHeight) - nextMaxTop;
               tmpMaxCapacityTop = vMaxCapacityTop;
               vMaxCapacityTop = nextMaxTop;
               tmpMaxCapacityTop = nextMaxTop;
               maxCapacityDateClass = (vMaxWork > vCapacity)?'workPlanSurbookingMaxCapacityRight':'workPlanPastMaxCapacityRight';
-              if(showProjectColor && (vWork > vCapacity))maxCapacityDateClass += '_PC';
-              vMaxCapacityDays += '<DIV class="'+maxCapacityDateClass+'" style="top: '+vMaxCapacityTop+'px; left:'+((vDayWidth*cpt)+splitWidth)+'px;width:'+splitWidth+'px;height:'+vMaxCapacityHeight+'px"></DIV>';
+              if((showProjectColor || showLateColor) && (vMaxWork > vCapacity))maxCapacityDateClass += '_PC';
+              vMaxCapacityDays += '<DIV class="capacity#'+vWorkPlanList[i].getID()+'_'+colDate+' '+maxCapacityDateClass+'" style="top: '+vMaxCapacityTop+'px; left:'+(left+splitWidth)+'px;width:'+splitWidth+'px;height:'+vMaxCapacityHeight+'px"></DIV>';
             }else{
               vMaxCapacityTop = previousMaxTop;
             }
@@ -6571,21 +6882,26 @@ JSGantt.drawWorkPlanDetail = function (i,onlyParentPart) {
             vMaxCapacityHeight = (vMaxCapacityHeight > 91)?91:vMaxCapacityHeight;
             vMaxCapacityTop = previousMaxTop;
             maxCapacityDateClass = (vMaxWork > vCapacity)?'workPlanSurbookingMaxCapacityLeft':'workPlanPastMaxCapacityLeft';
-            if(showProjectColor && (vWork > vCapacity))maxCapacityDateClass += '_PC';
+            if((showProjectColor || showLateColor) && (vMaxWork > vCapacity))maxCapacityDateClass += '_PC';
           }else if(((previousMaxTop == vMaxCapacityTop) && (nextMaxTop < vMaxCapacityTop)) || ((previousMaxTop > vMaxCapacityTop) && (nextMaxTop < vMaxCapacityTop))){
             vMaxCapacityHeight = (vMaxCapacityTop - nextMaxTop)+3;
             vMaxCapacityHeight = (vMaxCapacityHeight > 91)?91:vMaxCapacityHeight;
             vMaxCapacityTop = nextMaxTop;
             maxCapacityDateClass = (vMaxWork > vCapacity)?'workPlanSurbookingMaxCapacityRight':'workPlanPastMaxCapacityRight';
-            if(showProjectColor && (vWork > vCapacity))maxCapacityDateClass += '_PC';
+            if((showProjectColor || showLateColor) && (vMaxWork > vCapacity))maxCapacityDateClass += '_PC';
           }
           if(vMaxCapacityHeight){
             vMaxCapacityHeight = 'height:'+vMaxCapacityHeight+'px';
           }
         }
         previousMaxTop = tmpMaxCapacityTop;
-        if(!splitMaxCapacityDiv)vMaxCapacityDays += '<DIV class="'+maxCapacityDateClass+'" style="top: '+vMaxCapacityTop+'px; left:'+(vWidth*cpt)+'px;width:'+vWidth+'px;'+vMaxCapacityHeight+'"></DIV>';
+        if(!splitMaxCapacityDiv){
+          if(vMaxCapacityDays.indexOf('capacity#'+vWorkPlanList[i].getID()+'_'+colDate) == -1){
+            vMaxCapacityDays += '<DIV class="capacity#'+vWorkPlanList[i].getID()+'_'+colDate+' '+maxCapacityDateClass+'" style="top: '+vMaxCapacityTop+'px; left:'+left+'px;width:'+vWidth+'px;'+vMaxCapacityHeight+'"></DIV>';
+          }
+        }
         vTmpDate.setFullYear(vTmpDate.getFullYear(), vTmpDate.getMonth(), vTmpDate.getDate()+ 1);
+        left += vWidth;
       } else if (vFormat == 'week') {
         var colDate = JSGantt.formatDateStr(vTmpDate,'yyyy-mm-dd');
         var vRealWork = vWorkPlanList[i].getRealWorkByDate(colDate);
@@ -6595,9 +6911,15 @@ JSGantt.drawWorkPlanDetail = function (i,onlyParentPart) {
         vMaxWork = vWork;
         vCapacity = vWorkPlanList[i].getCalendarCapacityByDate(colDate);
         var maxCapacityDateClass = (vMaxWork > vCapacity)?'workPlanSurbookingMaxCapacity':'workPlanPastMaxCapacity';
-        if(showProjectColor && (vWork > vCapacity))maxCapacityDateClass += '_PC';
+        if((showProjectColor || showLateColor) && (vMaxWork > vCapacity))maxCapacityDateClass += '_PC';
         var vResStartDate = vWorkPlanList[i].getResourceStartDate(true);
         var vResEndDate = vWorkPlanList[i].getResourceEndDate(true);
+        if(cpt == 0 && Date.parse(vTmpDate) < Date.parse(vStartDateView) && vCapacity == 0){
+          var difference = Math.floor((vStartDateView - vTmpDate) / (1000*60*60*24)) + 1;
+          vDayWidth = (vDayWidth*difference)/7;
+        }else{
+          vDayWidth = (vColWidth / vColUnit) + (1/vColUnit);
+        }
         var vDate = Date.parse(colDate);
         if ((vResStartDate && vDate < vResStartDate) || (vResEndDate && vDate > vResEndDate) || vWorkPlanList[i].getCalendarOffdayByDate(colDate)) {
           vTaskLeft = Math.ceil((Date.parse(vTmpDate) - Date.parse(vMinDate) + (1000*60*60)) / (24 * 60 * 60 * 1000) );
@@ -6614,8 +6936,22 @@ JSGantt.drawWorkPlanDetail = function (i,onlyParentPart) {
           vHighlightSpecificDays+='<DIV class="specificDayCurrent" '
             +'style="top: 0px; left:'+vDayLeft+'px; height:100px; width:'+vDayWidth+'px"></DIV>';  
         }
-        var vMaxCapacity = vCapacity/vMaxWorkLine;
-        vMaxCapacityTop = (vMaxCapacityLine >= vCapacity)?100-((vCapacity/vMaxCapacityLine)*(90*vMaxCapacity)):vMaxCapacityTop;
+        var vMaxCapacity = (vMaxCapacityLine > vMaxWorkLine)?vCapacity/vMaxCapacityLine:vCapacity/vMaxWorkLine;
+        if(Date.parse(vTmpDate) < Date.parse(vStartDateView) && vCapacity == 0){
+          vTempNextDate = new Date();
+          vTempNextDate.setFullYear(vTmpDate.getFullYear(), vTmpDate.getMonth(), vTmpDate.getDate());
+          vTempNextDate.setHours(0);
+          vTempNextDate.setMinutes(0);
+          do {
+            nextTmpDate.setFullYear(vTempNextDate.getFullYear(), vTempNextDate.getMonth(), vTempNextDate.getDate()+ 1);
+            var vNextColDate = JSGantt.formatDateStr(nextTmpDate,"yyyy-ww",vMonthArr);
+            var vNextCapacity = vWorkPlanList[i].getCalendarCapacityByDate(vNextColDate);
+            vMaxCapacity=(vMaxCapacityLine > vMaxWorkLine)?vNextCapacity/vMaxCapacityLine:vNextCapacity/vMaxWorkLine;
+            vTempNextDate.setFullYear(vTempNextDate.getFullYear(), vTempNextDate.getMonth(), vTempNextDate.getDate()+ 1);
+          } while (Date.parse(vTempNextDate) < Date.parse(vStartDateView));
+        }
+        vMaxCapacity = (isNaN(vMaxCapacity))?0:vMaxCapacity;
+        vMaxCapacityTop = 100-(90*vMaxCapacity);
         vMaxCapacityTop = (vMaxCapacityTop < 10)?10:vMaxCapacityTop;
         vMaxCapacityTop = (vMaxCapacityTop >= 100)?98:vMaxCapacityTop;
         var vHeight = 100 - vMaxCapacityTop;
@@ -6625,7 +6961,7 @@ JSGantt.drawWorkPlanDetail = function (i,onlyParentPart) {
         if(vWork > 0){
           if(vWorkTop+vWorkHeight < 100)vWorkTop = vWorkTop+(100-(vWorkTop+vWorkHeight));
           if(vWorkTop+vWorkHeight > 100)vWorkTop = vWorkTop-((vWorkTop+vWorkHeight)-100);
-          vWorkDays += '<DIV id="colDate#'+vWorkPlanList[i].getID()+'_'+colDate+'" style="position:absolute;z-index:1;top: '+vWorkTop+'px; left:'+(vDayWidth*cpt)+'px; height:'+vWorkHeight+'px;width:'+vDayWidth+'px;">';
+          vWorkDays += '<DIV id="colDate#'+vWorkPlanList[i].getID()+'_'+colDate+'" style="position:absolute;z-index:1;top: '+vWorkTop+'px; left:'+left+'px; height:'+vWorkHeight+'px;width:'+vDayWidth+'px;">';
           var vMaxPlannedHeight = 0;
           var vMaxRealHeight = 0;
           var vMaxAdminHeight = 0;
@@ -6680,10 +7016,21 @@ JSGantt.drawWorkPlanDetail = function (i,onlyParentPart) {
             if(plannedWorkDates){
               plannedWorkDates.forEach(([color, works]) => {
                 var vPlannedWork = works['work'];
+                var vSurbookedWork = works['surbookedWork'];
+                var vIsLateColor = works['isLateColor'];
                 if(vPlannedWork > 0){
-                  var plannedHeight = Math.round((vPlannedWork/vMaxWork)*vWorkHeight);
-                  vMaxPlannedHeight += plannedHeight;
-                  vWorkDaySplit += '<DIV class="workPlanDay plannedDay" style="background-color:'+color+';position:relative;height:'+plannedHeight+'px;width:'+vDayWidth+'px;'+opacity+'"></DIV>';
+                  var plannedHeight = Math.round(((vPlannedWork)/vMaxWork)*vWorkHeight);
+                  var surbookedHeight = Math.round((vSurbookedWork/vMaxWork)*vWorkHeight);
+                  plannedHeight = (vPlannedWork - vSurbookedWork > 0)?Math.round(((vPlannedWork - vSurbookedWork)/vMaxWork)*vWorkHeight):plannedHeight;
+                  if(vSurbookedWork > 0){
+                    var subookedColor = (!vIsLateColor)?'#ffc90e':'#ff751a';
+                    vWorkDaySplit += '<DIV class="workPlanDay plannedDaySurbooked" style="background-color:'+subookedColor+';position:relative;height:'+surbookedHeight+'px;width:'+vDayWidth+'px;'+opacity+'"></DIV>';
+                    vMaxPlannedHeight += surbookedHeight;
+                  }
+                  if(vPlannedWork - vSurbookedWork > 0){
+                    vWorkDaySplit += '<DIV class="workPlanDay plannedDay" style="background-color:'+color+';position:relative;height:'+plannedHeight+'px;width:'+vDayWidth+'px;'+opacity+'"></DIV>';
+                    vMaxPlannedHeight += plannedHeight;
+                  }
                 }
               });
             }
@@ -6745,10 +7092,19 @@ JSGantt.drawWorkPlanDetail = function (i,onlyParentPart) {
           nextTmpDate.setFullYear(vTmpDate.getFullYear(), vTmpDate.getMonth(), vTmpDate.getDate()+ 1);
           var vNextColDate = JSGantt.formatDateStr(nextTmpDate,'yyyy-mm-dd');
           var vNextCapacity = vWorkPlanList[i].getCalendarCapacityByDate(vNextColDate);
-          var vNextMaxCapacity = vNextCapacity/vMaxWorkLine;
-          nextMaxTop = (vMaxCapacityLine >= vNextCapacity)?100-((vNextCapacity/vMaxCapacityLine)*(90*vNextMaxCapacity)):nextMaxTop;
+          var vNextMaxCapacity = (vMaxCapacityLine > vMaxWorkLine)?vNextCapacity/vMaxCapacityLine:vNextCapacity/vMaxWorkLine;
+          vNextMaxCapacity = (isNaN(vNextMaxCapacity))?0:vNextMaxCapacity;
+          if(Date.parse(nextTmpDate) > Date.parse(vEndDateView) && vNextCapacity == 0){
+            vNextMaxCapacity=vNextTmpMaxCapacity;
+          }else{
+            vNextTmpMaxCapacity=vNextMaxCapacity;
+          }
+          nextMaxTop = 100-(90*vNextMaxCapacity);
           nextMaxTop = (nextMaxTop < 10)?10:nextMaxTop;
           nextMaxTop = (nextMaxTop >= 100)?98:nextMaxTop;
+          if(Date.parse(nextTmpDate) > Date.parse(vEndDateView) && vNextCapacity == 0){
+            vMaxCapacityTop=nextMaxTop;
+          }
           if((previousMaxTop < vMaxCapacityTop) && (nextMaxTop < vMaxCapacityTop)){
             vMaxCapacityHeight = (vMaxCapacityTop - previousMaxTop)+3;
             vMaxCapacityHeight = (vMaxCapacityHeight > 91)?91:vMaxCapacityHeight;
@@ -6757,15 +7113,15 @@ JSGantt.drawWorkPlanDetail = function (i,onlyParentPart) {
               var splitWidth = vDayWidth/2;
               vMaxCapacityTop = previousMaxTop;
               maxCapacityDateClass = (vMaxWork > vCapacity)?'workPlanSurbookingMaxCapacityLeft':'workPlanPastMaxCapacityLeft';
-              if(showProjectColor && (vWork > vCapacity))maxCapacityDateClass += '_PC';
-              vMaxCapacityDays += '<DIV class="'+maxCapacityDateClass+'" style="top: '+vMaxCapacityTop+'px; left:'+(vDayWidth*cpt)+'px;width:'+splitWidth+'px;height:'+vMaxCapacityHeight+'px"></DIV>';
+              if((showProjectColor || showLateColor) && (vMaxWork > vCapacity))maxCapacityDateClass += '_PC';
+              vMaxCapacityDays += '<DIV class="capacity#'+vWorkPlanList[i].getID()+'_'+colDate+' '+maxCapacityDateClass+'" style="top: '+vMaxCapacityTop+'px; left:'+left+'px;width:'+splitWidth+'px;height:'+vMaxCapacityHeight+'px"></DIV>';
               vMaxCapacityHeight = (vMaxCapacityTop + vMaxCapacityHeight) - nextMaxTop;
               tmpMaxCapacityTop = vMaxCapacityTop;
               vMaxCapacityTop = nextMaxTop;
               tmpMaxCapacityTop = nextMaxTop;
               maxCapacityDateClass = (vMaxWork > vCapacity)?'workPlanSurbookingMaxCapacityRight':'workPlanPastMaxCapacityRight';
-              if(showProjectColor && (vWork > vCapacity))maxCapacityDateClass += '_PC';
-              vMaxCapacityDays += '<DIV class="'+maxCapacityDateClass+'" style="top: '+vMaxCapacityTop+'px; left:'+((vDayWidth*cpt)+splitWidth)+'px;width:'+splitWidth+'px;height:'+vMaxCapacityHeight+'px"></DIV>';
+              if((showProjectColor || showLateColor) && (vMaxWork > vCapacity))maxCapacityDateClass += '_PC';
+              vMaxCapacityDays += '<DIV class="capacity#'+vWorkPlanList[i].getID()+'_'+colDate+' '+maxCapacityDateClass+'" style="top: '+vMaxCapacityTop+'px; left:'+(left+splitWidth)+'px;width:'+splitWidth+'px;height:'+vMaxCapacityHeight+'px"></DIV>';
             }else{
               vMaxCapacityTop = previousMaxTop;
             }
@@ -6774,21 +7130,26 @@ JSGantt.drawWorkPlanDetail = function (i,onlyParentPart) {
             vMaxCapacityHeight = (vMaxCapacityHeight > 91)?91:vMaxCapacityHeight;
             vMaxCapacityTop = previousMaxTop;
             maxCapacityDateClass = (vMaxWork > vCapacity)?'workPlanSurbookingMaxCapacityLeft':'workPlanPastMaxCapacityLeft';
-            if(showProjectColor && (vWork > vCapacity))maxCapacityDateClass += '_PC';
+            if((showProjectColor || showLateColor) && (vMaxWork > vCapacity))maxCapacityDateClass += '_PC';
           }else if(((previousMaxTop == vMaxCapacityTop) && (nextMaxTop < vMaxCapacityTop)) || ((previousMaxTop > vMaxCapacityTop) && (nextMaxTop < vMaxCapacityTop))){
             vMaxCapacityHeight = (vMaxCapacityTop - nextMaxTop)+3;
             vMaxCapacityHeight = (vMaxCapacityHeight > 91)?91:vMaxCapacityHeight;
             vMaxCapacityTop = nextMaxTop;
             maxCapacityDateClass = (vMaxWork > vCapacity)?'workPlanSurbookingMaxCapacityRight':'workPlanPastMaxCapacityRight';
-            if(showProjectColor && (vWork > vCapacity))maxCapacityDateClass += '_PC';
+            if((showProjectColor || showLateColor) && (vMaxWork > vCapacity))maxCapacityDateClass += '_PC';
           }
           if(vMaxCapacityHeight){
             vMaxCapacityHeight = 'height:'+vMaxCapacityHeight+'px';
           }
         }
         previousMaxTop = tmpMaxCapacityTop;
-        if(!splitMaxCapacityDiv)vMaxCapacityDays += '<DIV class="'+maxCapacityDateClass+'" style="top: '+vMaxCapacityTop+'px; left:'+(vDayWidth*cpt)+'px;width:'+vDayWidth+'px;'+vMaxCapacityHeight+'"></DIV>';
+        if(!splitMaxCapacityDiv){
+          if(vMaxCapacityDays.indexOf('capacity#'+vWorkPlanList[i].getID()+'_'+colDate) == -1){
+            vMaxCapacityDays += '<DIV class="capacity#'+vWorkPlanList[i].getID()+'_'+colDate+' '+maxCapacityDateClass+'" style="top: '+vMaxCapacityTop+'px; left:'+left+'px;width:'+vDayWidth+'px;'+vMaxCapacityHeight+'"></DIV>';
+          }
+        }
         vTmpDate.setFullYear(vTmpDate.getFullYear(), vTmpDate.getMonth(), vTmpDate.getDate()+ 1);
+        left += vDayWidth;
       } else if (vFormat == 'month') {
         var colDate = JSGantt.formatDateStr(vTmpDate,"yyyy-ww",vMonthArr);
         var vRealWork = vWorkPlanList[i].getRealWorkByDate(colDate);
@@ -6798,7 +7159,7 @@ JSGantt.drawWorkPlanDetail = function (i,onlyParentPart) {
         vMaxWork = vWork;
         vCapacity = vWorkPlanList[i].getCalendarCapacityByDate(colDate);
         var maxCapacityDateClass = (vMaxWork > vCapacity)?'workPlanSurbookingMaxCapacity':'workPlanPastMaxCapacity';
-        if(showProjectColor && (vWork > vCapacity))maxCapacityDateClass += '_PC';
+        if((showProjectColor || showLateColor) && (vMaxWork > vCapacity))maxCapacityDateClass += '_PC';
         var vResStartDate = new Date();
         if(vWorkPlanList[i].getResourceStartDate(true)){
           vResStartDate.setTime(vWorkPlanList[i].getResourceStartDate(true));
@@ -6813,17 +7174,36 @@ JSGantt.drawWorkPlanDetail = function (i,onlyParentPart) {
         }else{
           vResEndDate = null;
         }
+        if(cpt == 0 && Date.parse(vTmpDate) < Date.parse(vStartDateView) && vCapacity == 0){
+          var difference = Math.floor((vStartDateView - vTmpDate) / (1000*60*60*24)) + 1;
+          vDayWidth = (vDayWidth*difference)/7;
+        }else{
+          vDayWidth = (vColWidth / vColUnit) + (1/vColUnit);
+        }
         var vDate = Date.parse(vTmpDate);
         if ((vWorkPlanList[i].getCalendarOffdayByDate(colDate) > 0 && vWorkPlanList[i].getNbResource() * 7 == vWorkPlanList[i].getCalendarOffdayByDate(colDate))
             || (vResStartDate && vDate < vResStartDate) || (vResEndDate && vDate > vResEndDate)) {
           vScpecificDayCount++;
           vHighlightSpecificDays+='<DIV class="specificDayWeekEnd" '
-          +'style="top: 0px; left:'+(vDayWidth*cpt)+'px; height:100px; width:'+vDayWidth+'px"></DIV>';
+          +'style="top: 0px; left:'+left+'px; height:100px; width:'+vDayWidth+'px"></DIV>';
           opacity = 'opacity:0.7;';
         }
-        vNxtDate.setDate(vNxtDate.getDate() + 7);
-        var vMaxCapacity = vCapacity/vMaxWorkLine;
-        vMaxCapacityTop = (vMaxCapacityLine >= vCapacity)?100-((vCapacity/vMaxCapacityLine)*(90*vMaxCapacity)):vMaxCapacityTop;
+        var vMaxCapacity = (vMaxCapacityLine > vMaxWorkLine)?vCapacity/vMaxCapacityLine:vCapacity/vMaxWorkLine;
+        if(Date.parse(vTmpDate) < Date.parse(vStartDateView) && vCapacity == 0){
+          vTempNextDate = new Date();
+          vTempNextDate.setFullYear(vTmpDate.getFullYear(), vTmpDate.getMonth(), vTmpDate.getDate());
+          vTempNextDate.setHours(0);
+          vTempNextDate.setMinutes(0);
+          do {
+            nextTmpDate.setFullYear(vTempNextDate.getFullYear(), vTempNextDate.getMonth(), vTempNextDate.getDate()+ 7);
+            var vNextColDate = JSGantt.formatDateStr(nextTmpDate,"yyyy-ww",vMonthArr);
+            var vNextCapacity = vWorkPlanList[i].getCalendarCapacityByDate(vNextColDate);
+            vMaxCapacity=(vMaxCapacityLine > vMaxWorkLine)?vNextCapacity/vMaxCapacityLine:vNextCapacity/vMaxWorkLine;
+            vTempNextDate.setFullYear(vTempNextDate.getFullYear(), vTempNextDate.getMonth(), vTempNextDate.getDate()+ 7);
+          } while (Date.parse(vTempNextDate) < Date.parse(vStartDateView));
+        }
+        vMaxCapacity = (isNaN(vMaxCapacity))?0:vMaxCapacity;
+        vMaxCapacityTop = 100-(90*vMaxCapacity);
         vMaxCapacityTop = (vMaxCapacityTop < 10)?10:vMaxCapacityTop;
         vMaxCapacityTop = (vMaxCapacityTop >= 100)?98:vMaxCapacityTop;
         var vHeight = 100 - vMaxCapacityTop;
@@ -6833,7 +7213,7 @@ JSGantt.drawWorkPlanDetail = function (i,onlyParentPart) {
         if(vWork > 0){
           if(vWorkTop+vWorkHeight < 100)vWorkTop = vWorkTop+(100-(vWorkTop+vWorkHeight));
           if(vWorkTop+vWorkHeight > 100)vWorkTop = vWorkTop-((vWorkTop+vWorkHeight)-100);
-          vWorkDays += '<DIV id="colDate#'+vWorkPlanList[i].getID()+'_'+colDate+'" style="position:absolute;z-index:1;top: '+vWorkTop+'px; left:'+(vDayWidth*cpt)+'px; height:'+vWorkHeight+'px;width:'+vDayWidth+'px;">';
+          vWorkDays += '<DIV id="colDate#'+vWorkPlanList[i].getID()+'_'+colDate+'" style="position:absolute;z-index:1;top: '+vWorkTop+'px; left:'+left+'px; height:'+vWorkHeight+'px;width:'+vDayWidth+'px;">';
           var vMaxPlannedHeight = 0;
           var vMaxRealHeight = 0;
           var vMaxAdminHeight = 0;
@@ -6888,10 +7268,21 @@ JSGantt.drawWorkPlanDetail = function (i,onlyParentPart) {
             if(plannedWorkDates){
               plannedWorkDates.forEach(([color, works]) => {
                 var vPlannedWork = works['work'];
+                var vSurbookedWork = works['surbookedWork'];
+                var vIsLateColor = works['isLateColor'];
                 if(vPlannedWork > 0){
-                  var plannedHeight = Math.round((vPlannedWork/vMaxWork)*vWorkHeight);
-                  vMaxPlannedHeight += plannedHeight;
-                  vWorkDaySplit += '<DIV class="workPlanDay plannedDay" style="background-color:'+color+';position:relative;height:'+plannedHeight+'px;width:'+vDayWidth+'px;'+opacity+'"></DIV>';
+                  var plannedHeight = Math.round(((vPlannedWork)/vMaxWork)*vWorkHeight);
+                  var surbookedHeight = Math.round((vSurbookedWork/vMaxWork)*vWorkHeight);
+                  plannedHeight = (vPlannedWork - vSurbookedWork > 0)?Math.round(((vPlannedWork - vSurbookedWork)/vMaxWork)*vWorkHeight):plannedHeight;
+                  if(vSurbookedWork > 0){
+                    var subookedColor = (!vIsLateColor)?'#ffc90e':'#ff751a';
+                    vWorkDaySplit += '<DIV class="workPlanDay plannedDaySurbooked" style="background-color:'+subookedColor+';position:relative;height:'+surbookedHeight+'px;width:'+vDayWidth+'px;'+opacity+'"></DIV>';
+                    vMaxPlannedHeight += surbookedHeight;
+                  }
+                  if(vPlannedWork - vSurbookedWork > 0){
+                    vWorkDaySplit += '<DIV class="workPlanDay plannedDay" style="background-color:'+color+';position:relative;height:'+plannedHeight+'px;width:'+vDayWidth+'px;'+opacity+'"></DIV>';
+                    vMaxPlannedHeight += plannedHeight;
+                  }
                 }
               });
             }
@@ -6953,10 +7344,19 @@ JSGantt.drawWorkPlanDetail = function (i,onlyParentPart) {
           nextTmpDate.setFullYear(vTmpDate.getFullYear(), vTmpDate.getMonth(), vTmpDate.getDate()+ 7);
           var vNextColDate = JSGantt.formatDateStr(nextTmpDate,"yyyy-ww",vMonthArr);
           var vNextCapacity = vWorkPlanList[i].getCalendarCapacityByDate(vNextColDate);
-          var vNextMaxCapacity = vNextCapacity/vMaxWorkLine;
-          nextMaxTop = (vMaxCapacityLine >= vNextCapacity)?100-((vNextCapacity/vMaxCapacityLine)*(90*vNextMaxCapacity)):nextMaxTop;
+          var vNextMaxCapacity = (vMaxCapacityLine > vMaxWorkLine)?vNextCapacity/vMaxCapacityLine:vNextCapacity/vMaxWorkLine;
+          vNextMaxCapacity = (isNaN(vNextMaxCapacity))?0:vNextMaxCapacity;
+          if(Date.parse(nextTmpDate) > Date.parse(vEndDateView) && vNextCapacity == 0){
+            vNextMaxCapacity=vNextTmpMaxCapacity;
+          }else{
+            vNextTmpMaxCapacity=vNextMaxCapacity;
+          }
+          nextMaxTop = 100-(90*vNextMaxCapacity);
           nextMaxTop = (nextMaxTop < 10)?10:nextMaxTop;
           nextMaxTop = (nextMaxTop >= 100)?98:nextMaxTop;
+          if(Date.parse(nextTmpDate) > Date.parse(vEndDateView) && vNextCapacity == 0){
+            vMaxCapacityTop=nextMaxTop;
+          }
           if((previousMaxTop < vMaxCapacityTop) && (nextMaxTop < vMaxCapacityTop)){
             vMaxCapacityHeight = (vMaxCapacityTop - previousMaxTop)+3;
             vMaxCapacityHeight = (vMaxCapacityHeight > 91)?91:vMaxCapacityHeight;
@@ -6965,15 +7365,15 @@ JSGantt.drawWorkPlanDetail = function (i,onlyParentPart) {
               var splitWidth = vDayWidth/2;
               vMaxCapacityTop = previousMaxTop;
               maxCapacityDateClass = (vMaxWork > vCapacity)?'workPlanSurbookingMaxCapacityLeft':'workPlanPastMaxCapacityLeft';
-              if(showProjectColor && (vWork > vCapacity))maxCapacityDateClass += '_PC';
-              vMaxCapacityDays += '<DIV class="'+maxCapacityDateClass+'" style="top: '+vMaxCapacityTop+'px; left:'+(vDayWidth*cpt)+'px;width:'+splitWidth+'px;height:'+vMaxCapacityHeight+'px"></DIV>';
+              if((showProjectColor || showLateColor) && (vMaxWork > vCapacity))maxCapacityDateClass += '_PC';
+              vMaxCapacityDays += '<DIV class="capacity#'+vWorkPlanList[i].getID()+'_'+colDate+' '+maxCapacityDateClass+'" style="top: '+vMaxCapacityTop+'px; left:'+left+'px;width:'+splitWidth+'px;height:'+vMaxCapacityHeight+'px"></DIV>';
               vMaxCapacityHeight = (vMaxCapacityTop + vMaxCapacityHeight) - nextMaxTop;
               tmpMaxCapacityTop = vMaxCapacityTop;
               vMaxCapacityTop = nextMaxTop;
               tmpMaxCapacityTop = nextMaxTop;
               maxCapacityDateClass = (vMaxWork > vCapacity)?'workPlanSurbookingMaxCapacityRight':'workPlanPastMaxCapacityRight';
-              if(showProjectColor && (vWork > vCapacity))maxCapacityDateClass += '_PC';
-              vMaxCapacityDays += '<DIV class="'+maxCapacityDateClass+'" style="top: '+vMaxCapacityTop+'px; left:'+((vDayWidth*cpt)+splitWidth)+'px;width:'+splitWidth+'px;height:'+vMaxCapacityHeight+'px"></DIV>';
+              if((showProjectColor || showLateColor) && (vMaxWork > vCapacity))maxCapacityDateClass += '_PC';
+              vMaxCapacityDays += '<DIV class="capacity#'+vWorkPlanList[i].getID()+'_'+colDate+' '+maxCapacityDateClass+'" style="top: '+vMaxCapacityTop+'px; left:'+(left+splitWidth)+'px;width:'+splitWidth+'px;height:'+vMaxCapacityHeight+'px"></DIV>';
             }else{
               vMaxCapacityTop = previousMaxTop;
             }
@@ -6982,20 +7382,24 @@ JSGantt.drawWorkPlanDetail = function (i,onlyParentPart) {
             vMaxCapacityHeight = (vMaxCapacityHeight > 91)?91:vMaxCapacityHeight;
             vMaxCapacityTop = previousMaxTop;
             maxCapacityDateClass = (vMaxWork > vCapacity)?'workPlanSurbookingMaxCapacityLeft':'workPlanPastMaxCapacityLeft';
-            if(showProjectColor && (vWork > vCapacity))maxCapacityDateClass += '_PC';
+            if((showProjectColor || showLateColor) && (vMaxWork > vCapacity))maxCapacityDateClass += '_PC';
           }else if(((previousMaxTop == vMaxCapacityTop) && (nextMaxTop < vMaxCapacityTop)) || ((previousMaxTop > vMaxCapacityTop) && (nextMaxTop < vMaxCapacityTop))){
             vMaxCapacityHeight = (vMaxCapacityTop - nextMaxTop)+3;
             vMaxCapacityHeight = (vMaxCapacityHeight > 91)?91:vMaxCapacityHeight;
             vMaxCapacityTop = nextMaxTop;
             maxCapacityDateClass = (vMaxWork > vCapacity)?'workPlanSurbookingMaxCapacityRight':'workPlanPastMaxCapacityRight';
-            if(showProjectColor && (vWork > vCapacity))maxCapacityDateClass += '_PC';
+            if((showProjectColor || showLateColor) && (vMaxWork > vCapacity))maxCapacityDateClass += '_PC';
           }
           if(vMaxCapacityHeight){
             vMaxCapacityHeight = 'height:'+vMaxCapacityHeight+'px';
           }
         }
         previousMaxTop = tmpMaxCapacityTop;
-        if(!splitMaxCapacityDiv)vMaxCapacityDays += '<DIV class="'+maxCapacityDateClass+'" style="top: '+vMaxCapacityTop+'px; left:'+(vDayWidth*cpt)+'px;width:'+vDayWidth+'px;'+vMaxCapacityHeight+'"></DIV>';
+        if(!splitMaxCapacityDiv){
+          if(vMaxCapacityDays.indexOf('capacity#'+vWorkPlanList[i].getID()+'_'+colDate) == -1){
+            vMaxCapacityDays += '<DIV class="capacity#'+vWorkPlanList[i].getID()+'_'+colDate+' '+maxCapacityDateClass+'" style="top: '+vMaxCapacityTop+'px; left:'+left+'px;width:'+vDayWidth+'px;'+vMaxCapacityHeight+'"></DIV>';
+          }
+        }
         var vTmpNextDate = new Date();
         var t2 = vMaxDate.getTime();
         var t1 = vTmpDate.getTime();
@@ -7007,6 +7411,7 @@ JSGantt.drawWorkPlanDetail = function (i,onlyParentPart) {
         }else{
           vTmpDate.setFullYear(vTmpDate.getFullYear(), vTmpDate.getMonth(), vTmpDate.getDate()+ 7);
         }
+        left += vDayWidth;
       } else if (vFormat == 'quarter') {
         var colDate = JSGantt.formatDateStr(vTmpDate,"yyyy-ww",vMonthArr);
         var vRealWork = vWorkPlanList[i].getRealWorkByDate(colDate);
@@ -7016,7 +7421,7 @@ JSGantt.drawWorkPlanDetail = function (i,onlyParentPart) {
         vMaxWork = vWork;
         vCapacity = vWorkPlanList[i].getCalendarCapacityByDate(colDate);
         var maxCapacityDateClass = (vMaxWork > vCapacity)?'workPlanSurbookingMaxCapacitySmall':'workPlanPastMaxCapacitySmall';
-        if(showProjectColor && (vWork > vCapacity))maxCapacityDateClass += '_PC';
+        if((showProjectColor || showLateColor) && (vMaxWork > vCapacity))maxCapacityDateClass += '_PC';
         var vResStartDate = new Date();
         if(vWorkPlanList[i].getResourceStartDate(true)){
           vResStartDate.setTime(vWorkPlanList[i].getResourceStartDate(true));
@@ -7031,17 +7436,36 @@ JSGantt.drawWorkPlanDetail = function (i,onlyParentPart) {
         }else{
           vResEndDate = null;
         }
+        if(cpt == 0 && Date.parse(vTmpDate) < Date.parse(vStartDateView) && vCapacity == 0){
+          var difference = Math.floor((vStartDateView - vTmpDate) / (1000*60*60*24)) + 1;
+          vDayWidth = (vDayWidth*difference)/7;
+        }else{
+          vDayWidth = (vColWidth / vColUnit) + (1/vColUnit);
+        }
         var vDate = Date.parse(vTmpDate);
         if ((vWorkPlanList[i].getCalendarOffdayByDate(colDate) > 0 && vWorkPlanList[i].getNbResource() * 7 == vWorkPlanList[i].getCalendarOffdayByDate(colDate))
             || (vResStartDate && vDate < vResStartDate) || (vResEndDate && vDate > vResEndDate)) {
           vScpecificDayCount++;
           vHighlightSpecificDays+='<DIV class="specificDayWeekEnd" '
-          +'style="top: 0px; left:'+(vDayWidth*cpt)+'px; height:100px; width:'+vDayWidth+'px"></DIV>';
+          +'style="top: 0px; left:'+left+'px; height:100px; width:'+vDayWidth+'px"></DIV>';
           opacity = 'opacity:0.7;';
         }
-        vNxtDate.setDate(vNxtDate.getDate() + 7);
-        var vMaxCapacity = vCapacity/vMaxWorkLine;
-        vMaxCapacityTop = (vMaxCapacityLine >= vCapacity)?100-((vCapacity/vMaxCapacityLine)*(90*vMaxCapacity)):vMaxCapacityTop;
+        var vMaxCapacity = (vMaxCapacityLine > vMaxWorkLine)?vCapacity/vMaxCapacityLine:vCapacity/vMaxWorkLine;
+        if(Date.parse(vTmpDate) < Date.parse(vStartDateView) && vCapacity == 0){
+          vTempNextDate = new Date();
+          vTempNextDate.setFullYear(vTmpDate.getFullYear(), vTmpDate.getMonth(), vTmpDate.getDate());
+          vTempNextDate.setHours(0);
+          vTempNextDate.setMinutes(0);
+          do {
+            nextTmpDate.setFullYear(vTempNextDate.getFullYear(), vTempNextDate.getMonth(), vTempNextDate.getDate()+ 7);
+            var vNextColDate = JSGantt.formatDateStr(nextTmpDate,"yyyy-ww",vMonthArr);
+            var vNextCapacity = vWorkPlanList[i].getCalendarCapacityByDate(vNextColDate);
+            vMaxCapacity=(vMaxCapacityLine > vMaxWorkLine)?vNextCapacity/vMaxCapacityLine:vNextCapacity/vMaxWorkLine;
+            vTempNextDate.setFullYear(vTempNextDate.getFullYear(), vTempNextDate.getMonth(), vTempNextDate.getDate()+ 7);
+          } while (Date.parse(vTempNextDate) < Date.parse(vStartDateView));
+        }
+        vMaxCapacity = (isNaN(vMaxCapacity))?0:vMaxCapacity;
+        vMaxCapacityTop = 100-(90*vMaxCapacity);
         vMaxCapacityTop = (vMaxCapacityTop < 10)?10:vMaxCapacityTop;
         vMaxCapacityTop = (vMaxCapacityTop >= 100)?98:vMaxCapacityTop;
         var vHeight = 100 - vMaxCapacityTop;
@@ -7051,7 +7475,7 @@ JSGantt.drawWorkPlanDetail = function (i,onlyParentPart) {
         if(vWork > 0){
           if(vWorkTop+vWorkHeight < 100)vWorkTop = vWorkTop+(100-(vWorkTop+vWorkHeight));
           if(vWorkTop+vWorkHeight > 100)vWorkTop = vWorkTop-((vWorkTop+vWorkHeight)-100);
-          vWorkDays += '<DIV id="colDate#'+vWorkPlanList[i].getID()+'_'+colDate+'" style="position:absolute;z-index:1;top: '+vWorkTop+'px; left:'+(vDayWidth*cpt)+'px; height:'+vWorkHeight+'px;width:'+vDayWidth+'px;">';
+          vWorkDays += '<DIV id="colDate#'+vWorkPlanList[i].getID()+'_'+colDate+'" style="position:absolute;z-index:1;top: '+vWorkTop+'px; left:'+left+'px; height:'+vWorkHeight+'px;width:'+vDayWidth+'px;">';
           var vMaxPlannedHeight = 0;
           var vMaxRealHeight = 0;
           var vMaxAdminHeight = 0;
@@ -7106,10 +7530,21 @@ JSGantt.drawWorkPlanDetail = function (i,onlyParentPart) {
             if(plannedWorkDates){
               plannedWorkDates.forEach(([color, works]) => {
                 var vPlannedWork = works['work'];
+                var vSurbookedWork = works['surbookedWork'];
+                var vIsLateColor = works['isLateColor'];
                 if(vPlannedWork > 0){
-                  var plannedHeight = Math.round((vPlannedWork/vMaxWork)*vWorkHeight);
-                  vMaxPlannedHeight += plannedHeight;
-                  vWorkDaySplit += '<DIV class="workPlanDay plannedDay" style="background-color:'+color+';position:relative;height:'+plannedHeight+'px;width:'+vDayWidth+'px;'+opacity+'"></DIV>';
+                  var plannedHeight = Math.round(((vPlannedWork)/vMaxWork)*vWorkHeight);
+                  var surbookedHeight = Math.round((vSurbookedWork/vMaxWork)*vWorkHeight);
+                  plannedHeight = (vPlannedWork - vSurbookedWork > 0)?Math.round(((vPlannedWork - vSurbookedWork)/vMaxWork)*vWorkHeight):plannedHeight;
+                  if(vSurbookedWork > 0){
+                    var subookedColor = (!vIsLateColor)?'#ffc90e':'#ff751a';
+                    vWorkDaySplit += '<DIV class="workPlanDay plannedDaySurbooked" style="background-color:'+subookedColor+';position:relative;height:'+surbookedHeight+'px;width:'+vDayWidth+'px;'+opacity+'"></DIV>';
+                    vMaxPlannedHeight += surbookedHeight;
+                  }
+                  if(vPlannedWork - vSurbookedWork > 0){
+                    vWorkDaySplit += '<DIV class="workPlanDay plannedDay" style="background-color:'+color+';position:relative;height:'+plannedHeight+'px;width:'+vDayWidth+'px;'+opacity+'"></DIV>';
+                    vMaxPlannedHeight += plannedHeight;
+                  }
                 }
               });
             }
@@ -7171,10 +7606,19 @@ JSGantt.drawWorkPlanDetail = function (i,onlyParentPart) {
           nextTmpDate.setFullYear(vTmpDate.getFullYear(), vTmpDate.getMonth(), vTmpDate.getDate()+ 7);
           var vNextColDate = JSGantt.formatDateStr(nextTmpDate,"yyyy-ww",vMonthArr);
           var vNextCapacity = vWorkPlanList[i].getCalendarCapacityByDate(vNextColDate);
-          var vNextMaxCapacity = vNextCapacity/vMaxWorkLine;
-          nextMaxTop = (vMaxCapacityLine >= vNextCapacity)?100-((vNextCapacity/vMaxCapacityLine)*(90*vNextMaxCapacity)):nextMaxTop;
+          var vNextMaxCapacity = (vMaxCapacityLine > vMaxWorkLine)?vNextCapacity/vMaxCapacityLine:vNextCapacity/vMaxWorkLine;
+          vNextMaxCapacity = (isNaN(vNextMaxCapacity))?0:vNextMaxCapacity;
+          if(Date.parse(nextTmpDate) > Date.parse(vEndDateView) && vNextCapacity == 0){
+            vNextMaxCapacity=vNextTmpMaxCapacity;
+          }else{
+            vNextTmpMaxCapacity=vNextMaxCapacity;
+          }
+          nextMaxTop = 100-(90*vNextMaxCapacity);
           nextMaxTop = (nextMaxTop < 10)?10:nextMaxTop;
           nextMaxTop = (nextMaxTop >= 100)?98:nextMaxTop;
+          if(Date.parse(nextTmpDate) > Date.parse(vEndDateView) && vNextCapacity == 0){
+            vMaxCapacityTop=nextMaxTop;
+          }
           if((previousMaxTop < vMaxCapacityTop) && (nextMaxTop < vMaxCapacityTop)){
             vMaxCapacityHeight = (vMaxCapacityTop - previousMaxTop)+2;
             vMaxCapacityHeight = (vMaxCapacityHeight > 91)?91:vMaxCapacityHeight;
@@ -7183,15 +7627,15 @@ JSGantt.drawWorkPlanDetail = function (i,onlyParentPart) {
               var splitWidth = vDayWidth/2;
               vMaxCapacityTop = previousMaxTop;
               maxCapacityDateClass = (vMaxWork > vCapacity)?'workPlanSurbookingMaxCapacityLeft':'workPlanPastMaxCapacityLeft';
-              if(showProjectColor && (vWork > vCapacity))maxCapacityDateClass += '_PC';
-              vMaxCapacityDays += '<DIV class="'+maxCapacityDateClass+'" style="top: '+vMaxCapacityTop+'px; left:'+(vDayWidth*cpt)+'px;width:'+splitWidth+'px;height:'+vMaxCapacityHeight+'px"></DIV>';
+              if((showProjectColor || showLateColor) && (vMaxWork > vCapacity))maxCapacityDateClass += '_PC';
+              vMaxCapacityDays += '<DIV class="capacity#'+vWorkPlanList[i].getID()+'_'+colDate+' '+maxCapacityDateClass+'" style="top: '+vMaxCapacityTop+'px; left:'+left+'px;width:'+splitWidth+'px;height:'+vMaxCapacityHeight+'px"></DIV>';
               vMaxCapacityHeight = (vMaxCapacityTop + vMaxCapacityHeight) - nextMaxTop;
               tmpMaxCapacityTop = vMaxCapacityTop;
               vMaxCapacityTop = nextMaxTop;
               tmpMaxCapacityTop = nextMaxTop;
               maxCapacityDateClass = (vMaxWork > vCapacity)?'workPlanSurbookingMaxCapacityRight':'workPlanPastMaxCapacityRight';
-              if(showProjectColor && (vWork > vCapacity))maxCapacityDateClass += '_PC';
-              vMaxCapacityDays += '<DIV class="'+maxCapacityDateClass+'" style="top: '+vMaxCapacityTop+'px; left:'+((vDayWidth*cpt)+splitWidth)+'px;width:'+splitWidth+'px;height:'+vMaxCapacityHeight+'px"></DIV>';
+              if((showProjectColor || showLateColor) && (vMaxWork > vCapacity))maxCapacityDateClass += '_PC';
+              vMaxCapacityDays += '<DIV class="capacity#'+vWorkPlanList[i].getID()+'_'+colDate+' '+maxCapacityDateClass+'" style="top: '+vMaxCapacityTop+'px; left:'+(left+splitWidth)+'px;width:'+splitWidth+'px;height:'+vMaxCapacityHeight+'px"></DIV>';
             }else{
               vMaxCapacityTop = previousMaxTop;
             }
@@ -7200,20 +7644,24 @@ JSGantt.drawWorkPlanDetail = function (i,onlyParentPart) {
             vMaxCapacityHeight = (vMaxCapacityHeight > 91)?91:vMaxCapacityHeight;
             vMaxCapacityTop = previousMaxTop;
             maxCapacityDateClass = (vMaxWork > vCapacity)?'workPlanSurbookingMaxCapacityLeftSmall':'workPlanPastMaxCapacityLeftSmall';
-            if(showProjectColor && (vWork > vCapacity))maxCapacityDateClass += '_PC';
+            if((showProjectColor || showLateColor) && (vMaxWork > vCapacity))maxCapacityDateClass += '_PC';
           }else if(((previousMaxTop == vMaxCapacityTop) && (nextMaxTop < vMaxCapacityTop)) || ((previousMaxTop > vMaxCapacityTop) && (nextMaxTop < vMaxCapacityTop))){
             vMaxCapacityHeight = (vMaxCapacityTop - nextMaxTop)+2;
             vMaxCapacityHeight = (vMaxCapacityHeight > 91)?91:vMaxCapacityHeight;
             vMaxCapacityTop = nextMaxTop;
             maxCapacityDateClass = (vMaxWork > vCapacity)?'workPlanSurbookingMaxCapacityRightSmall':'workPlanPastMaxCapacityRightSmall';
-            if(showProjectColor && (vWork > vCapacity))maxCapacityDateClass += '_PC';
+            if((showProjectColor || showLateColor) && (vMaxWork > vCapacity))maxCapacityDateClass += '_PC';
           }
           if(vMaxCapacityHeight){
             vMaxCapacityHeight = 'height:'+vMaxCapacityHeight+'px';
           }
         }
         previousMaxTop = tmpMaxCapacityTop;
-        if(!splitMaxCapacityDiv)vMaxCapacityDays += '<DIV class="'+maxCapacityDateClass+'" style="top: '+vMaxCapacityTop+'px; left:'+(vDayWidth*cpt)+'px;width:'+vDayWidth+'px;'+vMaxCapacityHeight+'"></DIV>';
+        if(!splitMaxCapacityDiv){
+          if(vMaxCapacityDays.indexOf('capacity#'+vWorkPlanList[i].getID()+'_'+colDate) == -1){
+            vMaxCapacityDays += '<DIV class="capacity#'+vWorkPlanList[i].getID()+'_'+colDate+' '+maxCapacityDateClass+'" style="top: '+vMaxCapacityTop+'px; left:'+left+'px;width:'+vDayWidth+'px;'+vMaxCapacityHeight+'"></DIV>';
+          }
+        }
         var vTmpNextDate = new Date();
         var t2 = vMaxDate.getTime();
         var t1 = vTmpDate.getTime();
@@ -7225,38 +7673,45 @@ JSGantt.drawWorkPlanDetail = function (i,onlyParentPart) {
         }else{
           vTmpDate.setFullYear(vTmpDate.getFullYear(), vTmpDate.getMonth(), vTmpDate.getDate()+ 7);
         }
+        left += vDayWidth;
       }
       cpt++;
     }
     
     var vSumCapacity = 0;
     var rangeWork = 0;
+    var globalWork = 0;
     vTmpDate.setFullYear(vStartDateView.getFullYear(), vStartDateView.getMonth(), vStartDateView.getDate());
     vTmpDate.setHours(0);
     vTmpDate.setMinutes(0);
     cpt=0;
     while(Date.parse(vTmpDate) <= Date.parse(vEndDateView)) {
       var vCapacity = 0;
+      var vIsAdministrative = vWorkPlanList[i].getIsAdministrative();
       if(vFormat == 'day' || vFormat == 'week') {
         var colDate = JSGantt.formatDateStr(vTmpDate,'yyyy-mm-dd');
-        vCapacity = vWorkPlanList[i].getCalendarCapacityByDate(colDate);
-        vOffDay = vWorkPlanList[i].getCalendarOffdayByDate(colDate);
         var vRealWork = vWorkPlanList[i].getRealWorkByDate(colDate);
         var vPlannedWork = vWorkPlanList[i].getPlannedWorkByDate(colDate);
         var vAdminWork = vWorkPlanList[i].getAdminWorkByDate(colDate);
-        vWork = vPlannedWork+vRealWork+vAdminWork;
+        vCapacity = vWorkPlanList[i].getCalendarCapacityByDate(colDate);
+        vCapacity = (vAdminWork > 0 && !vIsAdministrative)?vCapacity-vAdminWork:vCapacity;
+        vOffDay = vWorkPlanList[i].getCalendarOffdayByDate(colDate);
+        vWork = (!vIsAdministrative)?vPlannedWork+vRealWork:vPlannedWork+vRealWork+vAdminWork;
         rangeWork += vWork;
+        globalWork += vPlannedWork+vRealWork+vAdminWork;
         vSumCapacity += (!vOffDay)?vCapacity:0;
         vTmpDate.setDate(vTmpDate.getDate() + 1);
       } else if (vFormat == 'month' || vFormat == 'quarter') {
         var colDate = JSGantt.formatDateStr(vTmpDate,"yyyy-ww",vMonthArr);
-        vCapacity = vWorkPlanList[i].getCalendarCapacityByDate(colDate);
-        vSumCapacity += vCapacity;
         var vRealWork = vWorkPlanList[i].getRealWorkByDate(colDate);
         var vPlannedWork = vWorkPlanList[i].getPlannedWorkByDate(colDate);
         var vAdminWork = vWorkPlanList[i].getAdminWorkByDate(colDate);
-        vWork = vPlannedWork+vRealWork+vAdminWork;
+        vCapacity = vWorkPlanList[i].getCalendarCapacityByDate(colDate);
+        vCapacity = (vAdminWork > 0 && !vIsAdministrative)?vCapacity-vAdminWork:vCapacity;
+        vSumCapacity += vCapacity;
+        vWork = (!vIsAdministrative)?vPlannedWork+vRealWork:vPlannedWork+vRealWork+vAdminWork;
         rangeWork += vWork;
+        globalWork += vPlannedWork+vRealWork+vAdminWork;
         vTmpDate.setDate(vTmpDate.getDate() + 7);
       }
       cpt++;
@@ -7289,7 +7744,7 @@ JSGantt.drawWorkPlanDetail = function (i,onlyParentPart) {
     vTaskRealEnd = vWorkPlanList[i].getRealEnd();
     vTaskPlanStart = vWorkPlanList[i].getPlanStart();
     
-    if(vWorkPlanList[i].getShowResourceWithoutWork() != 1 && rangeWork <= 0){
+    if(vWorkPlanList[i].getShowResourceWithoutWork() != 1 && globalWork <= 0){
       if(drawWorkPlanTimeOut){
         clearTimeout(drawWorkPlanTimeOut);
       }
@@ -7341,7 +7796,7 @@ JSGantt.drawWorkPlanDetail = function (i,onlyParentPart) {
     }
     var spacing = 16*(level-1);
     vRightTable += '<td style="width:'+spacing+'px;background-color:white;"><div class="ganttSpacingDiv"></div></td>';
-    if( vWorkPlanList[i].getIsParent() && vWorkPlanList[i].getGroup() && rangeWork > 0) {
+    if( vWorkPlanList[i].getIsParent() && vWorkPlanList[i].getGroup() && globalWork > 0) {
       vRightTable += '<TD style="width:16px;background-color:white;">';
       if( vWorkPlanList[i].getOpen() == 1) {
         vRightTable += '<div id="workPlanGroup_'+vID+'" class="ganttExpandOpened"' 

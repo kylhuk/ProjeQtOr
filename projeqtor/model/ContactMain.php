@@ -39,6 +39,7 @@ class ContactMain extends SqlElement {
   public $initials;
   public $email;
   public $idProfile;
+  public $idOrganization;
   public $idClient;
   public $idProvider;
   public $contactFunction;
@@ -77,7 +78,6 @@ class ContactMain extends SqlElement {
   public $password;
   public $crypto;
   public $idTeam;
-  public $idOrganization;
   public $_sec_Link;
   public $_Link=array();
   public $_nbColMax=3;
@@ -105,8 +105,7 @@ class ContactMain extends SqlElement {
                                           "crypto"=>"hidden",
                                           "startDate"=>"nobr",
                                           'idTeam'=>'hidden',
-                                          'idRole'=>'hidden',
-                                          'idOrganization'=>'hidden'
+                                          'idRole'=>'hidden'
   );    
   
   private static $_databaseTableName = 'resource';
@@ -377,7 +376,6 @@ class ContactMain extends SqlElement {
     }
     $old=$this->getOld(true);
     if (!$this->isResource) {
-      $this->idOrganization=null;
       $this->idTeam=null;
     }
     if(!$this->id){

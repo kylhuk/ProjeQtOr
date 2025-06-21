@@ -126,10 +126,10 @@ class SqlList {
     $query .=')';
     if (pq_trim($selectedValue)) {
       if (pq_strpos($selectedValue, ',') !== false){
-        $query .= " or " . $obj->getDatabaseColumnName('id') .' IN (' . Sql::str($selectedValue).')' ;
+        $query .= " or " . $obj->getDatabaseColumnName('id') .' IN (' . Sql::fmtStr($selectedValue).')' ;
       }else{
         if ($selectedValue!='*' and $selectedValue!='all' and intval($selectedValue) ) {
-          $query .= " or " . $obj->getDatabaseColumnName('id') .'= ' . Sql::str($selectedValue) ;
+          $query .= " or " . $obj->getDatabaseColumnName('id') .'= ' . Sql::fmtStr($selectedValue) ;
         }
       }
     }

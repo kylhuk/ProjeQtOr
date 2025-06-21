@@ -31,7 +31,7 @@ function drawOptionAutomatic() {
   }
   $disabled = (getSessionValue('lockPlanningSaveRefresh') and getSessionValue('lockPlanningSaveRefresh') == '1')?true:false;
   ?>
-  <div style="white-space:nowrap;">
+  <div style="white-space:nowrap;position:absolute; top:5px" title="<?php echo i18n('automaticRunPlan');?>">
   <?php if (isNewGui()) htmlDrawSwitch('automaticRunPlan',$automaticRunPlanning, true, true, $disabled);?>
     <span title="<?php echo i18n('automaticRunPlanHelp');?>" dojoType="dijit.form.CheckBox" 
       <?php if (isNewGui()) echo 'style="display:none"';?>
@@ -40,7 +40,7 @@ function drawOptionAutomatic() {
       <script type="dojo/connect" event="onChange" args="evt">
         saveUserParameter('automaticRunPlanning',((this.checked)?'1':'0'));
       </script>                    
-    </span>&nbsp;<?php if ($displayWidthPlan>1250) echo i18n('automaticRunPlan'); else echo i18n('automaticRunPlanShort');?>
+    </span><div style="font-size:90%;margin:auto"><?php if (0 and $displayWidthPlan>1250) echo i18n('automaticRunPlan'); else echo i18n('automaticRunPlanShort');?></div>
   </div>
 <?php 
 }
@@ -52,7 +52,10 @@ function drawDisplayField($planning) {
     <table style="width:100%;" class="planningDialogArea">
       <tr>
         <td colspan="2" style="padding-top:3px;padding-left:5px;padding-right:3px">
-          <table style="width:<?php echo $tableWidth;?>;"><tr><td style="width:40px;"><div class="iconChangeLayout iconSize32 imageColorNewGuiNoSelection" style="border:0"></div></td><td class="dependencyHeader planningDialogTitle" style="text-align:left;"> &nbsp;&nbsp;<?php echo i18n('displayOnGantt');?></td></tr></table>
+          <table style="width:<?php echo $tableWidth;?>;"><tr>
+            <td style="width:40px;"><div class="iconChangeLayout iconSize32 imageColorNewGuiNoSelection" style="border:0"></div></td>
+            <td class="dependencyHeader planningDialogTitle" style="text-align:left;"> &nbsp;&nbsp;<?php echo ($planning=='workPlan')?i18n('displayOnWorkPlan'):i18n('displayOnGantt');?></td>
+          </tr></table>
         </td>
       </tr>
       
@@ -1388,7 +1391,7 @@ function drawOptionsDisplaySwitch($planning) {
      <tr title="<?php echo pq_ucfirst(i18n('showProjectModelSwitch'));?>">
       <td style="padding-top:6px;">
         <div   id="showProjectModel" class="colorSwitch" data-dojo-type="dojox/mobile/Switch"
-                <?php if (Parameter::getUserParameter('showProjectModel')=='0') {echo 'value="off"'; }else{echo 'value="on"';} ?>   
+                <?php if (Parameter::getUserParameter('showProjectModel')!='1') {echo 'value="off"'; }else{echo 'value="on"';} ?>   
                  leftLabel="" rightLabel="" style="width:25px;" >
             <script type="dojo/method" event="onStateChanged" >
               saveUserParameter('showProjectModel',((this.value=='off')?'0':'1'));
@@ -1676,10 +1679,10 @@ function drawOptionResource() {
 function drawResourceTeamOrga($planningType='resource', $withPool=true) {
   global $displayWidthPlan, $displayListDiv;
   $sizeSelect=($displayListDiv>1400)?150:100;
-  $showOrga=($displayListDiv>1180)?true:false;
-  $showTeam=($displayListDiv>980)?true:false;
-  $showPool=($displayListDiv>780)?true:false;
-  $showRes=($displayListDiv>780)?true:false;
+  $showOrga=($displayWidthPlan>1180)?true:false;
+  $showTeam=($displayWidthPlan>980)?true:false;
+  $showPool=($displayWidthPlan>780)?true:false;
+  $showRes=($displayWidthPlan>780)?true:false;
   ?>
   <table>
     <tr>
@@ -1769,6 +1772,8 @@ function drawResourceTeamOrga($planningType='resource', $withPool=true) {
             refreshJsonPlanning();
           </script>
           <?php 
+          global $showHierarchy;
+          $showHierarchy=true;
           htmlDrawOptionForReference('idOrganization', null)?>  
         </select>
       </td>

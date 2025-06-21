@@ -99,6 +99,7 @@ class ActivityMain extends SqlElement {
   public $_nbColMax = 3;
   
   private static $_subTasksList=array();
+  private static $_cacheColor=array();
   
   // Define the layout that will be used for lists
   private static $_layout = '
@@ -434,6 +435,13 @@ class ActivityMain extends SqlElement {
           $result .= '<br/>' . i18n ( 'cantAssociateAnActivityWithLeadProject' );
       }
     }
+    // default duration
+    $pmName='idActivityPlanningMode';
+    if (! $this->ActivityPlanningElement->validatedDuration and PlanningMode::isFixedDuration($this->ActivityPlanningElement->$pmName)) {
+      $type=new ActivityType($this->idActivityType);
+      if ($type->defaultDuration) $this->ActivityPlanningElement->validatedDuration=$type->defaultDuration;
+    }
+    
     //Gautier #2505
     if ($this->id && $old->idProject != $this->idProject) {
       $ass = new Assignment();
@@ -1169,6 +1177,18 @@ class ActivityMain extends SqlElement {
       }
     }
     return $result;
+  }
+  
+  public function getColor() {
+    if (isset(self::$_cacheColor[$this->id])) return self::$_cacheColor[$this->id];
+    $color="#FFFFFF";
+    $critArray=array('refType'=>'Activity', 'refId'=>$this->id);
+    $planningElement = SqlElement::getSingleSqlElementFromCriteria('PlanningElement', $critArray);
+    if ($planningElement && $planningElement->color) {
+      $color=$planningElement->color;
+    }
+    self::$_cacheColor[$this->id]=$color;
+    return $color;
   }
   
 }

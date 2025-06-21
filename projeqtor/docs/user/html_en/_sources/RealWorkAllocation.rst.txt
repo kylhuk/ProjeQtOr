@@ -122,7 +122,7 @@ The toggle buttons help you filter the information visible on your timesheet.
    
 Switch the button to the right (green button) to activate the display.
 
-.. rubric:: Weekly meetings only**
+.. rubric:: Weekly meetings only
    
 Recurring meetings display all meetings with one meeting per line. Depending on the period and frequency of your recurring meetings, many lines may be displayed.
    
@@ -172,7 +172,15 @@ You can limit the display of the :ref:`resource selection<resourceselection>` dr
 If you have selected a project in your :ref:`project selector<project-selector>` then you will only see the resources assigned to that project.    
    
 
+.. rubric:: Projects Color en Activity color
+   
+Ability to display project and/or activity colors directly on the timesheet. 
 
+
+.. figure:: /images/GUI/REALWORK_ZONE_ProjectsColor.png
+   :alt: Planned work displayed zone
+      
+   Planned work
 
 Filter
 ------

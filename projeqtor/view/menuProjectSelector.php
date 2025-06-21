@@ -48,13 +48,13 @@ $limitProjectLevel=Parameter::getUserParameter('projectSelectorLimitProjectLevel
 $subProjectsToDraw=$prj->drawSubProjects('selectedProject', false, true, $limitToActiveProjects,0,$limitProjectLevel);     
 $cpt=substr_count($subProjectsToDraw,'<tr>');
 $displayMode="standard";
-$paramDisplayMode=Parameter::getUserParameter('projectSelectorDisplayMode');
-if ($paramDisplayMode) {
-  setSessionValue('projectSelectorDisplayMode', $paramDisplayMode);
-}
-if (sessionValueExists('projectSelectorDisplayMode')) {
-  $displayMode=getSessionValue('projectSelectorDisplayMode');
-}
+// $paramDisplayMode=Parameter::getUserParameter('projectSelectorDisplayMode');
+// if ($paramDisplayMode) {
+//   setSessionValue('projectSelectorDisplayMode', $paramDisplayMode);
+// }
+// if (sessionValueExists('projectSelectorDisplayMode')) {
+//   $displayMode=getSessionValue('projectSelectorDisplayMode');
+// }
 $nbProj=0;
 $arrProj=pq_explode(',', $proj);
 $first=null;
@@ -74,6 +74,8 @@ if ($displayMode!='standard' and $nbProj>1) {
   setSessionValue('project',$proj);
 }
 $idFavoriteProjectList = pq_trim(getSessionValue('idFavoriteProjectList'));
+$editFavoriteProject = pq_trim(getSessionValue('editFavoriteProject'));
+$favoriteProjectArray = pq_trim(Parameter::getUserParameter('favoriteProjectsArray'));
 ?>
 <?php if ($displayMode=='standard' or $idFavoriteProjectList) {?>
 <span maxsize="160px" style="position: absolute; left:0px; top:px; height: 20px; width: 241px; color:#202020;" 
@@ -97,22 +99,22 @@ $idFavoriteProjectList = pq_trim(getSessionValue('idFavoriteProjectList'));
     ?>
     </div>
   </span>
-  <span dojoType="dijit.TooltipDialog" class="white" <?php echo ($cpt>25)?'style="max-width:900px;"':'';?>> 
+  <span id="projectListTooltip" dojoType="dijit.TooltipDialog" class="white" <?php echo ($cpt>25)?'style="min-width:275px;max-width:900px;"':'style="min-width:275px;"';?>>
+     <div id='saveFavoriteProjectResult' style='width:98%;z-index:9999;position: absolute;display:none'>
+          <div id="saveFavoriteMessage" style="text-align:center;padding:20px 0px;" class="messageINVALID"></div>
+          <div class="closeBoxIcon" style="right:14px;top:1px;" onClick="dojo.byId('saveFavoriteProjectResult').style.display='none';">&nbsp;</div>
+     </div>
      <div style="position: relative; display: flex; align-items: center;">
-        <input type="text" id="projectFilterInput" placeholder=<?php echo ucfirst(i18n('searchProject'));?> onkeyup="filterProjects()" style="width: 100%; border: 1px solid var(--color-medium); border-radius: 5px; margin-bottom: 15px; padding: 5px;" />
+        <input type="text" id="projectFilterInput" placeholder="<?php echo ucfirst(i18n('searchProject'));?>" onkeydown="validateSearchProject()" onkeyup="filterProjects()" style="width: 100%; border: 1px solid var(--color-medium); border-radius: 5px; margin-bottom: 15px; padding: 5px;" />
         <div class="iconCancel iconSize16 imageColorNewGui" onclick="clearSearchInputSelectorProject();" id="clearSearchSelectorProject" style="padding-top: 14px; position: absolute; right: 10px; cursor: pointer;display:none;"></div>
      </div>
-     <button id="multiProjectSelectButton" dojoType="dijit.form.Button" style="right:25px;position:absolute;"><?php echo i18n('buttonOK')?>
-       <script type="dojo/connect" event="onClick" args="evt">
-          selectedMultiProject();
-       </script>
-     </button>
      <?php $heightSelectorList=(sessionValueExists('screenHeight'))?round(intval(getSessionValue('screenHeight'))*0.80):500; ?>
-    <div style="max-height: <?php echo $heightSelectorList;?>px; overflow-x: hidden; overflow-y: auto;">
+    <div style="max-height: <?php echo $heightSelectorList;?>px; overflow: hidden">
+    <input type="hidden" id="projectSelectorMaxHeight" name="projectSelectorMaxHeight" value="<?php echo $heightSelectorList;?>" />
     <?php 
       echo $subProjectsToDraw;
     ?>
-    </div> 
+    </div>
   </span>
 </span>
     <div id="multiProjectSelector"  dojoType="dijit.form.TextBox" style="display:none" value="">

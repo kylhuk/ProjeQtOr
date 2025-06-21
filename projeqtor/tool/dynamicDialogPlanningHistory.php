@@ -39,13 +39,14 @@ include_once '../tool/formatter.php';
   }else {
     $plHistoryList = [];
   }
-  echo '<div style="width: 1000px;">';
+  echo '<div style="width: 1100px;">';
     echo '<table style="width:100%;margin-right:10px;position:relative;">';
       echo '<tr>';
+        echo '<td class="historyHeader" style="width:15%">'.i18n('colName').'</td>';
         echo '<td class="historyHeader" style="width:10%">'.i18n('colDate').'</td>';
         echo '<td class="historyHeader" style="width:15%">'.i18n('Project').'</td>';
         echo '<td class="historyHeader" style="width:10%">'.i18n('colDuration').'</td>';
-        echo '<td class="historyHeader" style="width:7%">'.i18n('colOperation').'</td>';
+        echo '<td class="historyHeader" style="width:15%">'.i18n('colOperation').'</td>';
      echo '</tr>';
      $i=1;
      foreach ($plHistoryList as $PlHist ){
@@ -61,10 +62,11 @@ include_once '../tool/formatter.php';
        //$plHistProjName = pq_substr($plHistProjName,0,-1);
        $plHistProjName = rtrim($plHistProjName, ', ');
      echo '<tr>';
+        echo '<td class="historyData" style="width:15%">'.SqlList::getNameFromId("User", $PlHist->idUser).'</td>';
         echo '<td class="historyData" style="width:10%">'.htmlFormatDateTime($PlHist->date).'</td>';
         echo '<td class="historyData" style="width:15%" onmouseenter="showDetailPlanningHistory(this, '. htmlEncode(json_encode($plHistProjName)) .',null,'.$i.')" onwheel="scrollDetailPlanningHistory('.$i.',this);"  onmouseleave="hideTooltip(this)"><div style=" width:650px; position:relative; text-overflow: ellipsis; overflow:hidden; white-space: nowrap;">'.$plHistProjName.'</div></td>';
         echo '<td class="historyData" style="width:10%">'.$duration.'&nbsp'.i18n('second').'</td>';
-        echo '<td class="historyData" style="width:7%" onmouseenter="showDetailPlanningHistory(this, '. htmlEncode(json_encode($PlHist->resultDescription )).', \''.$PlHist->result.'\','.$i.')" onwheel="scrollDetailPlanningHistory('.$i.',this);" onmouseleave="hideTooltip(this)">'.i18n('planningShortResult'.$PlHist->result).'</td>';
+        echo '<td class="historyData" style="width:15%" onmouseenter="showDetailPlanningHistory(this, '. htmlEncode(json_encode($PlHist->resultDescription )).', \''.$PlHist->result.'\','.$i.')" onwheel="scrollDetailPlanningHistory('.$i.',this);" onmouseleave="hideTooltip(this)">'.i18n('planningShortResult'.$PlHist->result).'</td>';
      echo '</tr>';
      $i++;
      }

@@ -384,7 +384,7 @@
         $queryWhere.= ')';
       }
     }
-    if ($objectClass=='Resource' or $objectClass=='ResourceTeam') {
+    if ($objectClass=='Resource' or $objectClass=='ResourceTeam' or $objectClass=='ResourceMaterial') {
       $scope=Affectable::getVisibilityScope('Screen');
       if ($scope!="all") {
         $queryWhere.= ($queryWhere=='')?'':' and ';
@@ -584,7 +584,7 @@
         $array[]='<th field="'.$sumFld.'" formatter="'.$format.'" from="'.$from.'">';
         }
       
-      
+        
 	    foreach ($array as $val) {
 	      //$sp=preg_split('field=', $val);
 	      //$sp=pq_explode('field=', $val);
@@ -711,23 +711,62 @@
               $queryFrom .= ' left join ' . $externalTableName . ' as ' . $externalTableAliasName .
                   ' on ' . $externalTableAlias . "." . $externalObj->getDatabaseColumnName('id' . $externalClassName) . 
                   ' = ' . $externalTableAliasName . '.' . $externalObjName->getDatabaseColumnName('id');   
-            } else {
-            	$querySelect .=  $externalTableAlias . '.' . $externalObj->getDatabaseColumnName($fld) . ' as ' . ((Sql::isPgsql())?'"'.$fld.'"':$fld);
-            } 	
-            if ($fld=='validatedEndDate') {
-              $querySelect .= ', '.$externalTableAlias . '.' . $externalObj->getDatabaseColumnName('inheritedEndDate') . ' as ' . ((Sql::isPgsql())?'"inheritedEndDate"':'inheritedEndDate');
+              } else {
+              	$querySelect .=  $externalTableAlias . '.' . $externalObj->getDatabaseColumnName($fld) . ' as ' . ((Sql::isPgsql())?'"'.$fld.'"':$fld);
+              } 	
+              if ($fld=='validatedEndDate') {
+                $querySelect .= ', '.$externalTableAlias . '.' . $externalObj->getDatabaseColumnName('inheritedEndDate') . ' as ' . ((Sql::isPgsql())?'"inheritedEndDate"':'inheritedEndDate');
+              }
+  	          if ( property_exists($externalObj,'wbsSortable') 
+  	            and pq_strpos($queryOrderBy,$externalTableAlias . "." . $externalObj->getDatabaseColumnName('wbsSortable'))===false) {
+  	            $queryOrderBy .= ($queryOrderBy=='')?'':', ';
+  	            $queryOrderBy .= " " . $externalTableAlias . "." . $externalObj->getDatabaseColumnName('wbsSortable') . " ";
+  	          }
+  	      }else if ($fld == 'indicatorFileNoteLink'){
+  	        $aff=new Affectable(getSessionUser()->id,true);
+  	        $idTeamCurrentUser = $aff->idTeam;
+  	        $userId = getSessionUser()->id;
+  	        $note = new Note();
+  	        $noteTable = $note->getDatabaseTableName();
+  	        $link = new Link();
+  	        $linkTable = $link->getDatabaseTableName();
+  	        $attachment = new Attachment();
+  	        $attachmentTable = $attachment->getDatabaseTableName();
+  	        $querySelect .= ' CONCAT(\'#Note#\',
+	                                   (SELECT COUNT(n.id) FROM '.$noteTable.' n WHERE n.refType = \'' . $objectClass . '\' AND n.refId = ' . $table . '.id 
+	                                       AND ( n.idPrivacy=1 OR (n.idPrivacy=2 and n.idTeam=' . Sql::fmtId($idTeamCurrentUser) . ') OR (n.idPrivacy=3 and n.idUser=' . Sql::fmtId($userId) . '))),
+                                       \'#Link#\',
+                                       (SELECT COUNT(l.id) FROM '.$linkTable.' l WHERE (l.ref1Type = \'' . $objectClass . '\' AND l.ref1Id = ' . $table . '.id 
+                                           OR l.ref2Type = \'' . $objectClass . '\' AND l.ref2Id = ' . $table . '.id)),
+                                       \'#Attach#\',
+                                       (SELECT COUNT(a.id) FROM '.$attachmentTable.' a WHERE a.refType = \'' . $objectClass . '\' AND a.refId = ' . $table . '.id  
+                                           AND ( a.idPrivacy=1 OR (a.idPrivacy=2 and a.idTeam=' . Sql::fmtId($idTeamCurrentUser) . ') OR (a.idPrivacy=3 and a.idUser=' . Sql::fmtId($userId) . '))))
+                                AS ' . ((Sql::isPgsql())?'"indicatorFileNoteLink"':'indicatorFileNoteLink');
+	      }else if ($fld == 'itemName') {
+	        $queryRefTypes=sql::query("SELECT DISTINCT refType FROM assignment");
+	        $refTypes = [];
+            foreach ($queryRefTypes as $row) {
+                if (isset($row['refType']) && !in_array($row['refType'], $refTypes)) {
+                    if (class_exists($row['refType'])) $refTypes[] = $row['refType'];
+                }
             }
-	          if ( property_exists($externalObj,'wbsSortable') 
-	            and pq_strpos($queryOrderBy,$externalTableAlias . "." . $externalObj->getDatabaseColumnName('wbsSortable'))===false) {
-	            $queryOrderBy .= ($queryOrderBy=='')?'':', ';
-	            $queryOrderBy .= " " . $externalTableAlias . "." . $externalObj->getDatabaseColumnName('wbsSortable') . " ";
-	          } 
-	        } else {      
-	          // Simple field to add to request 
-	          $querySelect .= $table . '.' . $obj->getDatabaseColumnName($fld) . ' as ' . ((Sql::isPgsql())?'"'.strtr($fld,'.','_').'"':strtr($fld,'.','_'));
-	        }
+            $querySelect .= ' CASE';
+            foreach ($refTypes as $item) {
+                $itemAlias = strtoupper(substr($item, 0, 2));
+                $querySelect .= " WHEN $table.refType = '$item' THEN $itemAlias.name";
+            }
+            $querySelect .= ' ELSE NULL END AS itemName';
+            foreach ($refTypes as $item) {
+              $itemAlias = strtoupper(substr($item, 0, 2));
+              $itemLower= strtolower($item);
+              $queryFrom .= " LEFT JOIN $itemLower AS $itemAlias ON $table.refType = '$item' AND $table.refId = $itemAlias.id ";
+            }
+          }else {      
+	        // Simple field to add to request 
+	        $querySelect .= $table . '.' . $obj->getDatabaseColumnName($fld) . ' as ' . ((Sql::isPgsql())?'"'.strtr($fld,'.','_').'"':strtr($fld,'.','_'));
 	      }
 	    }
+	  }
 	    if (property_exists($obj,'idProject')) {
 	      $querySelect.=','.$table.'.idProject as idproject';
 	    }
@@ -1341,6 +1380,10 @@
             } else if ($formatter[$nbFields]=='numericFormatter') {
             	$numericLength=9;
             	if ($val<0) $numericLength=0;
+            	if ( (pq_strtolower($id)=='warningvalue' or pq_strtolower($id)=='alertvalue') and ! $val) {
+            	  $numericLength=null;
+            	  $val='NaN';
+            	}
             } else if ($formatter[$nbFields]=='dateTimeFormatter') {
                 if (($id=='initialDueDateTime' || $id=='actualDueDateTime') and $hideHoursTicketDueDates=='YES' and $val){
                   $val = date('Y-m-d', pq_strtotime($val));

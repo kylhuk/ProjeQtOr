@@ -391,7 +391,9 @@ function getJsonPlanningUrl (versionsPlanning) {
   } else if (dojo.byId("contractGantt")) {
     url="../tool/jsonContractGantt.php";
   } else if (dojo.byId("planningJsonData")) {
-    url="../tool/jsonPlanning.php";
+    var objectClassManual= dojo.byId('objectClassManual').value;
+    url="../tool/jsonPlanning.php?objectClassManual="+objectClassManual;
+    param=true;
     needTimelineRefresh = true;
   } else {
     return null;
@@ -507,7 +509,7 @@ function getJsonPlanningUrl (versionsPlanning) {
     } 
   }
   
-  if (dijit.byId('listShowProject') && versionsPlanning == 'workPlan') {
+  if (dijit.byId('listShowProject') && versionsPlanning != 'workPlan') {
     if(dijit.byId('listShowProject').get("value")=='on'){
       url+=(param) ? "&" : "?";
       url+="showProject=true";
@@ -598,6 +600,17 @@ function getJsonPlanningUrl (versionsPlanning) {
       param=true;
     }
   }
+  if (dijit.byId('hideAssignationWihtoutLeftWork') && versionsPlanning == 'workPlan') {
+    if(dijit.byId('hideAssignationWihtoutLeftWork').get("value")=='on'){
+      url+=(param) ? "&" : "?";
+      url+="hideAssignationWihtoutLeftWork=false";
+      param=true;
+    }else{
+      url+=(param) ? "&" : "?";
+      url+="hideAssignationWihtoutLeftWork=true";
+      param=true;
+    }
+  }
   
   if (dijit.byId('listShowMilestone') && versionsPlanning != 'workPlan') {
     url+=(param) ? "&" : "?";
@@ -624,12 +637,13 @@ function getJsonPlanningUrl (versionsPlanning) {
     }
   }
   
-  if(dojo.byId("planningJsonData") && dojo.byId("workPlanJsonData")){
-    var startDateView = JSGantt.formatDateStr(g.getPlanningMinDate(),'yyyy-mm-dd');
-    var endDateView = JSGantt.formatDateStr(g.getPlanningMaxDate(),'yyyy-mm-dd');
-    dojo.byId('planningStartDateView').value = htmlEncode(startDateView);
-    dojo.byId('planningEndDateView').value = htmlEncode(endDateView);
-  }
+// Get planning min and max date removed due to display lag   
+//  if(dojo.byId("planningJsonData") && dojo.byId("workPlanJsonData")){
+//    var startDateView = JSGantt.formatDateStr(g.getPlanningMinDate(),'yyyy-mm-dd');
+//    var endDateView = JSGantt.formatDateStr(g.getPlanningMaxDate(),'yyyy-mm-dd');
+//    dojo.byId('planningStartDateView').value = htmlEncode(startDateView);
+//    dojo.byId('planningEndDateView').value = htmlEncode(endDateView);
+//  }
   
   if (dijit.byId('listShowNullAssignment') && versionsPlanning != 'workPlan') {
     if (dojo.byId('listShowNullAssignment').checked) {
@@ -873,6 +887,18 @@ function refreshGridSum(){
 	}
 	 dojo.byId('listSumOnFilterSpan').innerHTML= i18n("sumOnColumn")+"&nbsp;"+i18n("col"+fldSum.charAt(0).toUpperCase() + fldSum.slice(1))+"&nbsp;:&nbsp;";
 	 dojo.byId('listSumOnFilter').innerHTML=sumValue;
+   if (dijit.byId('listTypeFilterQuickSw') && dijit.byId('listTypeFilterQuickSw').get('value') == 'off') {
+     dojo.byId('listTypeFilterSpan').style.display="none";
+     dijit.byId('listTypeFilter').domNode.style.display='none';
+   }
+   if (dijit.byId('listClientFilterQuickSw') && dijit.byId('listClientFilterQuickSw').get('value') == 'off') {
+     dojo.byId('listClientFilterSpan').style.display="none";
+     dijit.byId('listClientFilter').domNode.style.display='none';
+   }
+   if (dijit.byId('listBudgetParentFilterQuickSw') && dijit.byId('listBudgetParentFilterQuickSw').get('value') == 'off') {
+     dojo.byId('listBudgetParentFilterSpan').style.display="none";
+     dijit.byId('listBudgetParentFilter').domNode.style.display='none';
+   }
 }
 /**
  * ============================================================================
@@ -3346,11 +3372,23 @@ function selectAllRows(gridName) {
   if (!grid) {
     return;
   }
+  $idx=-1;
   grid.store.fetch({
     onComplete:function(items) {
       dojo.forEach(items,function(item,index) {
-        grid.selection.setSelected(index,true);
+        idx++;
+        grid.scrollToRow(idx);
       });
+      var executeSelectNow=function() { 
+        grid.store.fetch({
+          onComplete:function(items) {
+            dojo.forEach(items,function(item,index) {
+              grid.selection.setSelected(index,true);
+            });
+          }
+        });
+      };
+      setTimeout(executeSelectNow,100);
     }
   });
 }
@@ -3585,6 +3623,7 @@ function setSelectedProject(idProject,nameProject,selectionField,resetPrevious,g
   currentSelectedProject=idProject;
   if (idProject != "") {
     var callBack=function() {
+      refreshProjectSelectorList();
       if (nameProject) addMessage(i18n("Project") + "=" + nameProject);
       if (dojo.byId("GanttChartDIV")) {
         if (dojo.byId("resourcePlanning")) {
@@ -4155,6 +4194,50 @@ function globalSave() {
     if (dojo.byId('formDiv')) dojo.byId('formDiv').scrollPosition=formDivPosition;
     var id=button.get('id');
     setTimeout("dijit.byId('" + id + "').onClick();",20);
+  }
+}
+
+function inlineSave(){
+  var button=null;
+  var selectFieldOpen = false;
+  dojo.query('.ganttEditableField .dijitHasDropDownOpen').forEach(function(node){
+    if(node){
+      selectFieldOpen=true;
+    }
+  });
+  if(selectFieldOpen)return;
+  if (dojo.byId('editRowMode') && dojo.byId('editRowMode').value == 'true' && isEditRowFinishDisplay) {
+    button=dijit.byId('buttonEditRowSave');
+  }
+  if (isNewGui && displayFullScreenCKfield && CKEDITOR.instances[displayFullScreenCKfield] && CKEDITOR.instances[displayFullScreenCKfield].readOnly) return;
+  if (button && button.isFocusable()) {
+    if (dojo.byId('formDiv')) formDivPosition=dojo.byId('formDiv').scrollPosition;
+    button.focus(); // V5.1 : attention, may loose scroll position on formDiv
+    // (see above and below lines)
+    if (dojo.byId('formDiv')) dojo.byId('formDiv').scrollPosition=formDivPosition;
+    var id=button.get('id');
+    setTimeout("dijit.byId('" + id + "').onClick();",20);
+  }
+}
+
+var switchEditRowLineTimeout = null;
+var recallCached = null;
+function switchEditRowLine(event){
+  if(recallCached && recallCached != isEditRowFinishDisplay){
+    recallCached = true;
+  }else{
+    recallCached = isEditRowFinishDisplay;
+  }
+  var TaskItem = JSGantt.getNextLineItem(event);
+  if(TaskItem){
+    var rowId = TaskItem.getID();
+    var refId = TaskItem.getId();
+    var refClass = TaskItem.getClass();
+    var idProject = TaskItem.getProjectId();
+    if (refClass=='Replan' || refClass=='Construction' || refClass=='Fixed') refClass='Project';
+    JSGantt.planningRowClickAction(rowId, refId, refClass, idProject, recallCached);
+    clearTimeout(switchEditRowLineTimeout);
+    switchEditRowLineTimeout = setTimeout('finalizeEditRowDefaultValue()', 10);
   }
 }
 
@@ -6105,25 +6188,25 @@ function refreshActivityStreamList() {
     dojox.fx.combine([dojox.fx.animateProperty({
       node:"activityStreamParameterDiv",
       properties:{
-        height:(author.trim() != "" && showNot == 'on') ? 156 : 126
+        height:(author.trim() != "" && showNot == 'on') ? 186 : 156
       },
       duration:0
     }),dojox.fx.animateProperty({
       node:"containerActcityStream",
       properties:{
-        height:(author.trim() != "" && showNot == 'on') ? 123 : 93
+        height:(author.trim() != "" && showNot == 'on') ? 145 : 115
       },
       duration:0
     }),dojox.fx.animateProperty({
       node:"filterElement",
       properties:{
-        height:(author.trim() != "" && showNot == 'on') ? 150 : 120
+        height:(author.trim() != "" && showNot == 'on') ? 174 : 144
       },
       duration:0
     }),dojox.fx.animateProperty({
       node:"filterOnEdit",
       properties:{
-        height:(author.trim() != "" && showNot == 'on') ? 150 : 120
+        height:(author.trim() != "" && showNot == 'on') ? 174 : 144
       },
       duration:0
     }),dojox.fx.animateProperty({
@@ -6236,6 +6319,25 @@ function showOnlyNoteStream() {
   saveUserParameter('showOnlyNotes',val);
   setTimeout("refreshActivityStreamList();",100);
 }
+
+function hideEmailsSentStream() {
+  val=dojo.byId('hideEmailsSentValue').value;
+  if (val == 'NO') {
+    val="YES";
+    if (dojo.byId('hideEmailsSent')) {
+      dojo.byId('hideEmailsSent').style.display='inline-block';
+    }
+  } else {
+    val="NO";
+    if (dojo.byId('hideEmailsSent')) {
+      dojo.byId('hideEmailsSent').style.display='none';
+    }
+  }
+  dojo.byId('hideEmailsSentValue').value=val;
+  saveUserParameter('hideEmailsSent',val);
+  setTimeout("refreshActivityStreamList();",100);
+}
+
 
 function activityStreamTypeRead() {
   var typeNote=dijit.byId("activityStreamTypeNote").get('value');
@@ -7985,9 +8087,11 @@ function showActionSelect(selectClass,selectId,selectField,canCreate,canUpdate) 
     }
     if (canCreate && width < maxWidth && !(dojo.attr(selectField,'readonly'))) {
       width+=25;
-      buttons+='<div title="' + i18n('buttonNew',new Array(i18n(selectClassTitle))) + '" style="float:right;margin-right:3px;" class="roundedButton roundedIconButton generalColClass ' + selectField
+      selectClassTitleCreate=(selectClassTitle=='Affectable')?'Contact':selectClassTitle;
+      selectClassCreate=(selectClass=='Affectable')?'Contact':selectClass;
+      buttons+='<div title="' + i18n('buttonNew',new Array(i18n(selectClassTitleCreate))) + '" style="float:right;margin-right:3px;" class="roundedButton roundedIconButton generalColClass ' + selectField
           + 'Class">';
-      buttons+='  <div class="imageColorNewGui iconToolbarAdd" onclick="actionSelectAdd(\'' + selectClass + '\', \'' + selectId + '\', \'' + selectField + '\');"></div>';
+      buttons+='  <div class="imageColorNewGui iconToolbarAdd" onclick="actionSelectAdd(\'' + selectClassCreate + '\', \'' + selectId + '\', \'' + selectField + '\');"></div>';
       buttons+='</div>';
     }
     if (selectId && width < maxWidth) {
@@ -10342,4 +10446,22 @@ function addTokenIndexToUrl(urlParam) {
     paramAddStart='no';
   }
   return urlParamExt;
+}
+
+function resizeTitlePanProjectSelector(forcedValue){
+  var FavoriteTitlePan = dijit.byId('projectSelectorFavoriteTitlePane');
+  var ProjectTitlePan = dijit.byId('projectSelectorProjectTitlePane');
+  var isOpen=(forcedValue == undefined)?FavoriteTitlePan.get('open'):forcedValue;
+  var baseMaxHeight = dojo.byId('projectSelectorMaxHeight').value;
+  var favNameInput = dojo.byId('favoriteNameListDiv');
+  if(dojo.byId('projectTitlePaneDiv')){
+    if(isOpen){
+      var nameHeight = (favNameInput)?favNameInput.offsetHeight+55:55;
+      var listHeight = dojo.byId('favoriteListDiv').offsetHeight;
+      maxHeight = baseMaxHeight - (nameHeight+listHeight+70);
+    }else{
+      maxHeight = baseMaxHeight;
+    }
+    dojo.byId('projectTitlePaneDiv').style = 'max-height:'+maxHeight+'px;overflow-y:auto;overflow-x:hidden;';
+  }
 }

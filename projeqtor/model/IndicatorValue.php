@@ -144,8 +144,8 @@ class IndicatorValue extends SqlElement {
       errorLog("ERROR in IndicatorValue::addIndicatorValue() => more than 1 (exactely $cpt) line of IndicatorValue for refType=$class, refId=$obj->id, idIndicatorDefinition=$def->id");
       return;  		
   	}
-  	if ($indVal->id and $def->idle==1) {
-  	  $indVal->delete();
+  	if ($def->idle==1) {
+  	  if ($indVal->id) $indVal->delete();
   	  return;
   	}
   	$fld="";
@@ -277,14 +277,14 @@ class IndicatorValue extends SqlElement {
   	$targetValue=floatval($this->targetValue);
   	$value=floatval($value);
   	$this->_currentValue=$value;
-  	if ($value>$this->warningTargetValue and $targetValue and $def->warningValue!==null and $def->warningValue!==0) { // V4.5.0 : raise warning only if target value is set
+  	if ($value>$this->warningTargetValue and $targetValue and $def->warningValue) { // V4.5.0 : raise warning only if target value is set
   		if (! $this->warningSent) {
         $this->sendWarning();
   		}		
   	} else {
   		$this->warningSent='0';  
   	}
-    if ($value>$this->alertTargetValue and $targetValue and $def->alertValue!==null and $def->alertValue!==0) { // V4.5.0 : raise alert only if target value is set
+  	if ($value>$this->alertTargetValue and $targetValue and $def->alertValue) { // V4.5.0 : raise alert only if target value is set
     	if (! $this->alertSent) {
         $this->sendAlert();
       }      
@@ -662,7 +662,6 @@ class IndicatorValue extends SqlElement {
       return false; // exit no addressees 
     }
     $dest=pq_str_replace('###','',$dest);
-    
     $paramMailMessage='${type} - ${item} #${id} - ${name}';
     $paramMailMessage.='<BR/>' . i18n('indicator') . ' : ${indicator}'; 
     
@@ -735,7 +734,7 @@ class IndicatorValue extends SqlElement {
       '</body>' . "\n" .
       '</html>';
     $messageMail = wordwrap($messageMail, 70); // wrapt text so that line do not exceed 70 cars per line
-    if ($dest!="") {     
+    if ($dest!="") { 
       $resultMail=sendMail($dest, $title, $messageMail, $obj);
     }
     if (count($arrayAlertDest)>0) {

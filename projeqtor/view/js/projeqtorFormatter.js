@@ -313,7 +313,7 @@ function dayFormatter(value) {
  */
 function numericFormatter(value, align) {
   var result=value;
-  if (value === null) result='';
+  if (value === null || value=='NaN') result='';
   else result=dojo.number.format(value);
   // var result = value.replace(/^0+/g, '');
   // result = value.replace(/^0+/g,'');
@@ -714,8 +714,8 @@ function simpleDecrypt(inStr) {
   return outStr;
 }
 
-function formatSmallButton(classname) {
-  var result="<span class='roundedButtonSmall' style='top:0px;display:inline-block;width:16px;height:16px;'><div class='iconButton" + classname + "16 iconButton" + classname
+function formatSmallButton(classname,imageColorNewGuiNoSelection) {
+  var result="<span class='" + (imageColorNewGuiNoSelection ? '' : 'roundedButtonSmall') + "' style='top:0px;display:inline-block;width:16px;height:16px;'><div class='iconButton" + classname + "16 iconButton" + classname
       + " iconSize16' style='' >&nbsp;</div></span>";
   return result;
 }
@@ -751,6 +751,43 @@ function formatUpperName(name) {
     spl = spl[0];
   }
   return spl;
+}
+
+function indicatorFormatter(value) {
+  var parts = value.split('#');
+  var note = 0;
+  var link = 0;
+  var attach = 0;
+  for (var i = 0; i < parts.length; i++) {
+    if (parts[i] === 'Note' && parts[i+1]) {
+      note = parts[i+1];
+    } else if (parts[i] === 'Link' && parts[i+1]) {
+      link = parts[i+1];
+    } else if (parts[i] === 'Attach' && parts[i+1]) {
+      attach = parts[i+1];
+    }
+  }
+  var result = '';
+
+  if (link != 0) {
+    result += '<div style="display: flex; align-items: center;flex-direction: column;">';
+    result += '<div style="font-size:9px;padding-left: 3px;">' + link + '</div>';
+    result += "<div class='imageColorNewGuiNoSelection'>" + formatSmallButton('ListLnk', true) + "</div>";
+    result += '</div>';
+  }
+  if (attach != 0) {
+    result += '<div style="display: flex; align-items: center;flex-direction: column;">';
+    result += '<div style="font-size:9px;padding-left: 3px;">' + attach + '</div>';
+    result += "<div class='imageColorNewGuiNoSelection'>" + formatSmallButton('ListAtt', true) + "</div>"; 
+    result += '</div>';
+  }
+  if (note != 0) {
+    result += '<div style="display: flex;align-items: center;flex-direction: column;">';
+    result += '<div style="font-size:9px;padding-left: 3px;">' + note + '</div>';
+    result += "<div class='imageColorNewGuiNoSelection'>" + formatSmallButton('ListNot', true) + "</div>";
+    result += '</div>';
+  }
+  return '<div style="display: flex; justify-content: flex-end; width: 100%;gap:4px;">' + result + '</div>';
 }
 
 // var konamiMsg = [ '5ùhmuôçYgluêYuôYgluû',

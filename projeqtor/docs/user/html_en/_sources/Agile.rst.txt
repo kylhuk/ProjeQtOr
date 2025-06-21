@@ -64,7 +64,7 @@ In ProjeQtOr, you can create a new Kanban board for:
 Dashboard management
 ********************
 
-The Kanban Dashboard allows you to customize the display of tiles in the kanban.
+The Kanban Dashboard allows you to customize the display of tiles and the differents kanbans.
   
   
 .. figure:: /images/GUI/AGILE_ZONE_KanbanTOP.png
@@ -72,7 +72,7 @@ The Kanban Dashboard allows you to customize the display of tiles in the kanban.
              
    Header area
    
-The Kanban dashboard allows you to create and customize the display of tiles in the kanban, create or modify columns or even create tiles or new kanbans, export or print your tiles...   
+You can create or modify columns or even create tiles or new kanbans, export or print your tiles...   
          
 
 .. _back:
@@ -121,7 +121,7 @@ You can see the shared kanban tables by others users on the shared Kanbans secti
 * Click on |Share| to share this kanban. The icon is fill |Shared| when it is already shared.
 * Click on |Delete| to delete this kanban 
   
-|Back|:ref:`BACK<back>`  
+:ref:`BACK<back>`  
    
    
    
@@ -176,9 +176,9 @@ When you share a Kanban, other users will see your share in the list of shared K
 
 Each time you access the Kanban screen, the last selected Kanban map is displayed.   
 
-.. seealso:: See :ref:`ticket-planning-activity` on the tickets screen and :ref:`milestone`
+.. seealso:: :ref:`ticket-planning-activity` on the tickets screen and :ref:`milestone`
 
-|Back|:ref:`BACK<back>`     
+:ref:`BACK<back>`     
 
 
       
@@ -220,7 +220,7 @@ Each column indicates the number of elements contained in.
 * Click on |Edit| to edit the column name.
 * Click on |Delete| to delete the column.
    
-|Back|:ref:`BACK<back>`     
+:ref:`BACK<back>`     
    
    
    
@@ -240,7 +240,7 @@ The creation button change depending on the type of the element selected.
   
 * Click on |addRequirementKanban| to add a new action into the Kanban Board
   
-|Back|:ref:`BACK<back>`     
+:ref:`BACK<back>`     
 
 
 
@@ -266,7 +266,7 @@ The advanced filter is used to define a clause to filter and sort
 
 .. seealso:: :ref:`Advanced filters in Graphic User Interface<filters>`
 
-|Back|:ref:`BACK<back>`     
+:ref:`BACK<back>`     
 
 
 
@@ -275,18 +275,66 @@ The advanced filter is used to define a clause to filter and sort
 .. _kanban-infobar:          
             
 .. rubric:: Display options on kanban
-     
-       
+
+Many options allow you to customize the display of your kanban or tiles.
+
+**For the kanban:**
+
+* Show work on elements
+
+  Allows you to display the estimated, actual, and remaining work on each task.
+   
 .. figure:: /images/GUI/AGILE_ZONE_WorkElement.png
    :alt: Work on element
          
    You can view the work information of items on each column.
-         
-The estimated work, actual work, and work remaining information on the selected item can be displayed. If your profile is not allowed to see the job, you will not have access to this option.
+   
+* Show idle elements
+
+  Allows you to display closed items in the columns of your kanban.
+
+* Show large element
+
+  The tiles for each element will adapt to the full width of the column. This allows much more information to be displayed as the project name.
+  
+.. figure:: /images/GUI/AGILE_ZONE_LargeTiles.png
+   :alt: Large tiles
+   
+   Large tiles
+
+* Show backlog
+
+  The backlog column of your kanban is hidden by default. It defines the initial state of your tiles in your kanban. The backlog is the list of pending tasks: these are all the ideas, requests, or work that need to be done but have not yet been planned or started.
+
+**and for the personaliszation of the tiles:**
+
+* Status
+* Product version
+* Planning/Parent activity
+* Manager
+* Priority
+* Urgency
+* Planned end date
+* Type
+* Color by Project / Priority / Urgency
+
+
+.. figure:: /images/GUI/AGILE_ZONE_TilesEmpty&Plain.png
+   :alt: empty tile and filled tile 
+   
+   difference between tickets tile and Activity without display options and with all options
+   
+   
+All these options allow you to have simple tiles or tiles offering maximum information.     
+
+The estimated work, actual work, and work remaining information on the selected item can be displayed. 
+
+If your profile is not allowed to see the job, you will not have access to this option.
    
 The format for displaying the job (days or hours) depends on the global parameter.
    
 * **unit for real work allocation** for Tickets
+
 * **unit for workload** for Activities
 
 **Show idle elements** allows you to display or not inactive elements (closed, canceled, paused, etc.)       
@@ -298,11 +346,11 @@ By default, Kanban board columns display two tiles side by side. By displaying t
   
    When you create a kanban, you do not yet have columns representing a state, a set of states or even versions.
    
-   The tiles then appear in a Backlog column. You have the option to hide this column.
+   The tiles then appear in a Backlog column. You have the option to display or hide this column.
     
 
     
-|Back|:ref:`BACK<back>`     
+:ref:`BACK<back>`     
     
     
     

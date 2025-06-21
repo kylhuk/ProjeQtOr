@@ -101,10 +101,12 @@ if (! $documentVersionId) { // Get file only on insert
 	    //$error=true; 
 	  }
 	}
-	if ( (! $error and ! $uploadedFile and !$documentVersionLink) or ( $uploadedFile and !$uploadedFile['name']) ) {
+	if (Parameter::getGlobalParameter('versionsWithoutAttachments')!='YES'){
+	  if ( (! $error and ! $uploadedFile and !$documentVersionLink) or ( $uploadedFile and !$uploadedFile['name']) ) {
 	    $error=htmlGetWarningMessage(i18n('errorNoFile'));
 	    errorLog(i18n('errorNoFile'));
-	    //$error=true; 
+	    //$error=true;
+	  } 
 	}
 }
 $documentVersionNewVersion=null;
@@ -114,7 +116,7 @@ if (!$error) {
 	    //$error=true;
 	} else {
 	  $documentVersionNewVersion=$_REQUEST['documentVersionNewVersion'];
-  }
+    }
 }
 
 $documentVersionNewRevision=null;
@@ -214,9 +216,13 @@ if (! $error) {
 	  if ($documentVersionLink) {
 	  	
 	  } else {
-	    $dv->fileName=$uploadedFile['name'];
-	    $dv->mimeType=$uploadedFile['type'];
-	    $dv->fileSize=$uploadedFile['size'];
+	    if (Parameter::getGlobalParameter('versionsWithoutAttachments')!='YES' or $uploadedFile){
+	      $dv->fileName=$uploadedFile['name'];
+	      $dv->mimeType=$uploadedFile['type'];
+	      $dv->fileSize=$uploadedFile['size'];
+	    }else{
+	      $dv->fileName='noFileNameAdmitted';
+	    }
 	  }
   }
   $dv->description=$documentVersionDescription;
@@ -241,22 +247,24 @@ if (! $documentVersionId and ! $error and !$invalidControl) {
 		unset($split[count($split)-1]);
 		$dir='';
 		foreach ($split as $dirElt) { 
-			$dir.=$dirElt.$pathSeparator;
-	    if (! file_exists($dir)) {
-	      mkdir($dir,0777,true);
-	    }
+	      $dir.=$dirElt.$pathSeparator;
+  	      if (! file_exists($dir)) {
+  	        mkdir($dir,0777,true);
+  	      }
 		}
-	  if ( ! move_uploaded_file($uploadedFile['tmp_name'], $uploadfile)) {
-	     $error=htmlGetErrorMessage(i18n('errorUploadFile',array('hacking')));
-	     errorLog(i18n('errorUploadFile',array('hacking')));
-	     //$error=true;
-	     $dv->delete(); 
-	  } else {
-	    Security::checkEvilFile($uploadfile);
-	    //$dv->subDirectory=$uploaddir;
-	    //$otherResult=$dv->save();
-	  }
-	}
+		if (strpos($uploadfile, 'noFileNameAdmitted') == false or Parameter::getGlobalParameter('versionsWithoutAttachments')!='YES'){
+		  if ( ! move_uploaded_file($uploadedFile['tmp_name'], $uploadfile)) {
+		    $error=htmlGetErrorMessage(i18n('errorUploadFile',array('hacking')));
+		  	errorLog(i18n('errorUploadFile',array('hacking')));
+		  	//$error=true;
+		  	$dv->delete();
+		  } else {
+		    Security::checkEvilFile($uploadfile);
+		    //$dv->subDirectory=$uploaddir;
+		    //$otherResult=$dv->save();
+		  }
+		}
+    }
 }
 if (! $error) {
   // Message of correct saving

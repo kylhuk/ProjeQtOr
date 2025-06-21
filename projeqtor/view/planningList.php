@@ -154,7 +154,7 @@ $displayHistory = ($paramHistoryVisible == 'NO')?false:true;
   
 <div id="mainPlanningDivContainer" dojoType="dijit.layout.BorderContainer">
 	<div dojoType="dijit.layout.ContentPane" region="top" id="listHeaderDiv" 
-	 style="z-index: 3; position: relative; overflow: visible !important;padding-bottom:5px;">
+	 style="z-index: 3; position: relative; overflow: visible !important;padding-bottom:5px;min-height: 34px;">
 	  <script type="dojo/method" event="onUnload" >
       if (! drawGanttInProgress) resetPlanningFieldDescription();  
       return true;
@@ -246,10 +246,20 @@ $displayHistory = ($paramHistoryVisible == 'NO')?false:true;
 		        <?php if (isNewGui()) { // ========================================================= NEW GUI?>
 		        <table style="width: 100%;">
 		          <tr>
-		            <td style="width:90%;">&nbsp;
-                </td>
+		            <td style="width:90%;">&nbsp;</td>
+		            <td style="position:relative; min-width:30px">
+		              <div style="position:absolute; top:4px"> 
+		                <button id="todayPlanningScroll" dojoType="dijit.form.Button" 
+                          title="<?php echo i18n('gotoPlanningScroll');?>" class="buttonIconNewGui detailButton"
+                          iconClass="dijitIcon iconToday iconSize22 " >
+                          <script type="dojo/connect" event="onClick" args="evt">
+                            GotoPlanningToday();
+                          </script>
+		                </button>
+		              </div>
+		            </td>
                 <?php if ($canPlan) { ?>
-		            <td style="width:auto;position:relative;min-width:90px;">
+		            <td style="width:auto;position:relative;min-width:100px;">
 		              <div id="predecessorSequence" class="dependencySequence" style="left:0px;"></div>
 		              <div class="iconSucessorPredecessor iconSize60 imageColorNewGuiNoSelection">
 		                <div title="<?php echo i18n('helpPredecessorButton');?>" id="predecessor" class="dependencyPredecessor" onclick="drawButtonPredecessorElement();" style="left: -4px;"></div>
@@ -278,7 +288,7 @@ $displayHistory = ($paramHistoryVisible == 'NO')?false:true;
                     <?php drawButtonPlan(); ?>
                     </div>    
 		            </td>
-		            <td style="width:70px; position:relative;padding-right:20px;">
+		            <td style="width:70px; min-width:22px; position:relative;padding-right:20px;">
                     <?php drawOptionAutomatic();?>
                 </td>
                 <?php } ?>

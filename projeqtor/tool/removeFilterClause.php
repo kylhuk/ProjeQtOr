@@ -74,7 +74,93 @@ if (!$comboDetail and array_key_exists($filterObjectClass,$user->_arrayFilters))
 if ($filterClauseId=='all') {
   $filterArray=array();
 } else {
+  $filterCriteria = new FilterCriteria($filterClauseId);
+  
+  $deleted = $filterArray[$filterClauseId];
   unset($filterArray[$filterClauseId]);
+  $deletedIndent = isset($deleted['indentLevel']) ? $deleted['indentLevel'] : 0;
+  $filterArray = array_values($filterArray);
+  $nextKey = $filterClauseId;
+  if (isset($deleted['isGroup']) && $deleted['isGroup'] == 1) {
+    $hasChildren = false;
+    $countChildren = 0;
+    for ($i = $nextKey; $i < count($filterArray); $i++) {
+      if (array_key_exists('indentLevel', $filterArray[$i]) 
+          && ($filterArray[$i]['indentLevel'] == $deletedIndent
+               || ($filterArray[$i]['indentLevel'] == $deletedIndent-1 && $filterArray[$i]['isGroup']== 2) )) {
+        $hasChildren = true;
+        $countChildren += 1;
+      }
+      if (array_key_exists('isGroup', $filterArray[$i]) && $filterArray[$i]['isGroup'] == 2){
+        break;
+      }
+    }      
+    if (!$hasChildren) {
+      foreach ($filterArray as &$crit) {
+        if (isset($crit['isGroup'], $crit['indentLevel']) && $crit['isGroup'] == 2 && $crit['indentLevel'] == $deletedIndent - 1) {
+          $crit['isGroup'] = 0;
+          $crit['orOperator'] = $deleted['orOperator'];
+          break;
+        }
+      }
+      unset($crit);
+    }
+    if ($hasChildren) {
+      for ($i = $nextKey; $i < count($filterArray); $i++) {
+        if (array_key_exists('indentLevel', $filterArray[$i]) && $filterArray[$i]['indentLevel'] == $deletedIndent || $filterArray[$i]['indentLevel'] == $deletedIndent + 1) {
+          $filterArray[$i]['orOperator'] = $deleted['orOperator'];
+          $filterArray[$i]['isGroup'] = 1;
+          $filterArray[$i]['indentLevel'] = $deletedIndent;         
+          break;
+        }
+        if (array_key_exists('indentLevel', $filterArray[$i]) && $filterArray[$i]['indentLevel'] < $deletedIndent) {
+          if ($countChildren=1){
+            $filterArray[$i]['isGroup'] = 0;
+            $filterArray[$i]['orOperator'] = $deleted['orOperator'];
+          }
+          break;
+        }
+      }
+    }
+  } 
+  if (isset($deleted['isGroup']) && $deleted['isGroup'] == 2) {
+    $deletedIndent = $deleted['indentLevel'];
+    $groupStartIndex = -1;
+    for ($i = $filterClauseId - 1; $i >= 0; $i--) {
+      if (array_key_exists('isGroup', $filterArray[$i]) && $filterArray[$i]['isGroup'] == 1 &&
+        $filterArray[$i]['indentLevel'] == $deletedIndent + 1) {
+        $groupStartIndex = $i;
+        break;
+      }
+    }
+    if ($groupStartIndex !== -1) {
+      $hasOther = false;
+      for ($j = $groupStartIndex + 1; $j < $filterClauseId; $j++) {
+        if (array_key_exists('indentLevel', $filterArray[$j]) && $filterArray[$j]['indentLevel'] >= $deletedIndent + 1) {
+          $hasOther = true;
+          break;
+        }
+      }
+      if (!$hasOther) {
+        $filterArray[$groupStartIndex]['isGroup'] = 0;
+        $filterArray[$groupStartIndex]['indentLevel'] = $deletedIndent;
+      } else {
+        for ($j = $filterClauseId - 1; $j > $groupStartIndex; $j--) {
+          if (array_key_exists('indentLevel', $filterArray[$j]) && $filterArray[$j]['indentLevel'] >= $deletedIndent + 1) {
+            $filterArray[$j]['isGroup'] = 2;
+            $filterArray[$j]['indentLevel'] = $deletedIndent;
+            break;
+          }
+        }
+      }
+    }
+  } 
+  
+  if (isset($deleted['isGroup']) && ($deleted['isGroup'] != 2 || $deleted['isGroup'] != 1)){
+    if ($filterClauseId == 0){
+      $filterArray[0]['orOperator'] = 0;
+    }
+  }
 }
 
 if (! $comboDetail) {
@@ -85,7 +171,6 @@ if (! $comboDetail) {
 	$user->_arrayFiltersDetail[$filterObjectClass]=$filterArray;
   $user->_arrayFiltersDetail[$filterObjectClass . "FilterName"]="";
 }
-
 htmlDisplayFilterCriteria($filterArray,$name,$idLayout,$filterObjectClass);
 
 // save user (for filter saving)

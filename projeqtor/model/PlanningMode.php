@@ -39,6 +39,7 @@ class PlanningMode extends SqlElement {
   public $mandatoryStartDate;
   public $mandatoryEndDate;
   public $mandatoryDuration;
+  public $defaultDuration;
   public $applyTo;
   public $idle ;
   //public $_sec_void;
@@ -64,7 +65,8 @@ class PlanningMode extends SqlElement {
       "mandatoryStartDate"=>"readonly",
       "mandatoryEndDate"=>"readonly",
       "mandatoryDuration"=>"readonly",
-      "applyTo"=>"readonly"
+      "applyTo"=>"readonly",
+      "defaultDuration"=>"hidden"
   );
    /** ==========================================================================
    * Constructor
@@ -108,6 +110,12 @@ class PlanningMode extends SqlElement {
     if (! $idPlanningMode) return false;
     if ($idPlanningMode==8 or $idPlanningMode==14 or $idPlanningMode==27 or $idPlanningMode==28 or $idPlanningMode==29 or $idPlanningMode==30) return true;
     else return false;
+  }
+  
+  public function setAttributes(){
+    if ($this->id and self::isFixedDuration($this->id)) {
+      self::$_fieldsAttributes ['defaultDuration'] = '';
+    }
   }
 }
 ?>

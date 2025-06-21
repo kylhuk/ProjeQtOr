@@ -44,7 +44,7 @@ require_once "../tool/formatter.php";
 // CHANGE BY Marc TABARY - 2017-02-17
 function htmlDrawOptionForReference($col, $selection, $obj=null, $required=false, $critFld=null, $critVal=null, $limitToActiveProjects=true, $limitToActiveOrganizations=true,$showIdle=false,$onProjectSelector=false, $allProjects=false, $typeSelect=false) {
   //scriptLog("      =>htmlDrawOptionForReference(col=$col,selection=$selection,object=" .debugDisplayObj($obj).",required=$required,critFld=".debugDisplayObj($critFld).",critVal=".debugDisplayObj($critVal).")");
-  global $idReport, $idReportCategory;
+  global $idReport, $idReportCategory, $showHierarchy;
   $reportAdminProject=false;
   // Take into account array of $critFld // TODO : check where it is used 
 	$col=pq_str_replace(array('ActivityPlanningElement_','ProjectPlanningElement_','MilestonePlanningElement_','MeetingPlanningElement_','TestSessionPlanningElement_'),'',$col);
@@ -153,7 +153,9 @@ function htmlDrawOptionForReference($col, $selection, $obj=null, $required=false
   if (($col=='idResource' or $col=='idAffectable' or $col=='idResourceAll' or $col=='idResourceAllNoMaterial' or $col=='idAccountable' or $col=='idResponsible' or $col=='idContact') and $critFld=='idProject') {
     // List of "affectable" with restriction to project : restrict on allocation to project (object Affectation)
   	$prj=new Project($critVal, true);
-  	if ($col=='idContact') $col='idAffectable';
+  	if (Parameter::getGlobalParameter('requestorLimitToContact')!="YES"){
+  	  if ($col=='idContact') $col='idAffectable';
+  	}
     $lstTopPrj=$prj->getTopProjectList(true);
     $in=transformValueListIntoInClause($lstTopPrj);
     $today=date('Y-m-d');
@@ -241,16 +243,21 @@ function htmlDrawOptionForReference($col, $selection, $obj=null, $required=false
       }
     }  
     $table=SqlList::getListWithCrit($listType,$critArray,$column,$selection);
-    if ($listType =='WorkCommand' && isset($critArray['idComplexity']) && isset($critArray['idWorkUnit']) ){ 
+    if ($listType =='WorkCommand' && isset($critArray['idComplexity']) && isset($critArray['idWorkUnit']) ){
       $workCommand = new WorkCommand();
       $table=array();
       $critWhere = "idComplexity = " . $critArray['idComplexity'] . " AND idWorkUnit = " . $critArray['idWorkUnit'];
+      if(isset($critArray['elementary']))$critWhere.=" AND elementary = ".$critArray['elementary'];
+      if(isset($critArray['idCommand']))$critWhere.=" AND idCommand = ".$critArray['idCommand'];
       $listWorkCommand = $workCommand->getSqlElementsFromCriteria(null, false, $critWhere);
       foreach ($listWorkCommand as $val){
-        if ($val->elementary == 1){
-          $command = new Command($val->idCommand);
-          $table[$val->id]='#'.$val->id.'-'.$command->reference.' - '.$val->name;
-        }
+          if ($val->elementary == 1 ){
+            $command = new Command($val->idCommand);
+            $table[$val->id]='#'.$val->id.'-'.$command->reference.' - '.$val->name;
+          }else if(isset($critArray['elementary'])){
+            $command = new Command($val->idCommand);
+            $table[$val->id]=$val->name;
+          }
       }      
     }
     if($col == 'idActivity' and $obj and (get_class($obj)=='Activity' or get_class($obj)=='TestSession' or get_class($obj)=='Milestone')){
@@ -542,6 +549,12 @@ function htmlDrawOptionForReference($col, $selection, $obj=null, $required=false
       $table = array();
     }
   
+  }else if($col == "idPaymentDateMode"){
+    $paymentDateMode = new PaymentDateMode();
+    $pmtDateModeList = $paymentDateMode->getSqlElementsFromCriteria(array('idle'=>'0'));
+    foreach ($pmtDateModeList as $paymentDateMode){
+      $table[$paymentDateMode->id]=i18n($paymentDateMode->name);
+    }
   }else {
     // None of the previous cases : no criteria and not of the expected above cases
     $showIdleCriteria=$showIdle;
@@ -1143,7 +1156,7 @@ function htmlDrawOptionForReference($col, $selection, $obj=null, $required=false
     }
 // MTY - LEAVE SYSTEM    
     
-  if ( ($col=='idResource' or $col=='idResourceAll' or $col=='idAccountable' or $col=='idResponsible') and Affectable::getVisibilityScope('List',($critFld=='idProject')?$critVal:null)!="all") {
+  if ( ($col=='idResource' or $col=='idResourceAll' or $col=='idAccountable' or $col=='idResponsible' or $col=='idResourceMaterial') and Affectable::getVisibilityScope('List',($critFld=='idProject')?$critVal:null)!="all") {
     // Restrict List of affectables : restrict visibility (same Organization, or same Team or All)
     $restrictArray = getUserVisibleResourcesList(true, "List",'', false, false, false, false, false,($critFld=='idProject')?$critVal:null);
     if ($selection) $restrictArray[$selection]="OK";
@@ -1272,7 +1285,7 @@ function htmlDrawOptionForReference($col, $selection, $obj=null, $required=false
   foreach ($lstPluginEvt as $script) {
     require $script; // execute code
   }
-  if (! $obj and $col!="planning" and $col!="idProject") $sepChar='no';
+  if (! $obj and $col!="planning" and $col!="idProject" and $showHierarchy!==true) $sepChar='no';
   $selectedFound=false;
   $next="";
   if (!$allProjects) {
@@ -2222,94 +2235,113 @@ function htmlExtractArgument($tag, $arg) {
  */
 function htmlDisplayFilterCriteria($filterArray, $filterName="", $filterLayout="", $class=null) {
   // Display Result
-  echo "<table style='width:99.9%;margin: 0 auto;'>";
-  echo "<tr><td class='dialogLabel'>";
-  echo '<label for="filterNameDisplay" style="'.((isNewGui())?'position:relative;top:5px;':'').'">' . i18n("filterName") . '&nbsp;'.((!isNewGui())?':':'').'&nbsp;</label>';
-  echo '<div type="text" dojoType="dijit.form.ValidationTextBox" ';
-  echo ' name="filterNameDisplay" id="filterNameDisplay"';
-  echo '  style="width: '.((isNewGui())?'520px':'550px;').'" ';
-  echo ' trim="true" maxlength="100" class="input" ';
-  echo ' value="' . $filterName . '" ';
-  echo ' >';
-  echo '</td><td style="text-align:center">';
-  echo '<button title="' . i18n('saveFilter') . '" ';  
-  echo ' dojoType="dijit.form.Button" '; 
-  echo ' id="dialogFilterSave" name="dialogFilterSave" class="resetMargin roundedButton notButton" style="height:24px;width:32px;margin-top:-1px;"';
-  echo ' iconClass="dijitButtonIcon dijitButtonIconSave imageColorNewGui" showLabel="false"> ';
-  echo ' <script type="dojo/connect" event="onClick" args="evt">saveFilter();</script>';
-  echo '</button>';
-  echo "</td></tr>";
-  echo "<tr><td>";
-  echo '<label for="layoutNameDisplay" style="'.((isNewGui())?'position:relative;top:5px;':'').'">' . i18n("layoutName") . '&nbsp;'.((!isNewGui())?':':'').'&nbsp;</label>';
-  echo '<div style="display: flex;">';
-  echo '<select dojoType="dijit.form.FilteringSelect" id="idLayout" name="idLayout" onchange="dojo.byId(\'filterLayout\').value=dijit.byId(\'idLayout\').get(\'value\');" style="width: '.((isNewGui())?'520px':'550px;').'"';
-  echo autoOpenFilteringSelect();
-  echo 'class="input" value="'.(($filterLayout)?$filterLayout:' ').'">';
-  echo '<option value=" " '.((!$filterLayout)?' selected ':'').'></option>';
-  $layout=new Layout();
-  $listLayout=$layout->getSqlElementsFromCriteria(array('objectClass'=>$class,'idUser'=>getCurrentUserId()),null,null,'sortOrder asc');
-  foreach ($listLayout as $layout) {
-    $selected = ($filterLayout == $layout->id) ? 'selected' : '';
-    echo '<option value="'.$layout->id.'" ' . $selected . '>'.$layout->scope.'</option>';
-  }
-  echo '</select>';
-  echo '</div>';
-  echo '</td><td style="text-align:center">';
-  echo "</td></tr>";
+  echo "<table style='width:100%;'>";
   echo "<tr>";
-  echo "<td class='filterHeader' style='width:525px;padding-left:50px'>" . i18n("criteria") . "</td>";
-  echo "<td class='filterHeader' style='width:25px;'>";
-  echo ' <a src="css/images/smallButtonRemove.png" onClick="removefilterClause(\'all\');" title="' . i18n('removeAllFilters') . '" > ';
-  echo formatSmallButton('Remove');
-  echo ' </a>';
-  echo "</td>";
+  echo "<td class='titleFilterCriteria' style=''>" . i18n("criteria") . "</td>";
+  if (count($filterArray)!=0){
+    echo "<td colspan='2' class='' style='text-align: end;width: 15px;padding-right: 10px;'>";
+    echo ' <a src="css/images/smallButtonRemove.png" onClick="removefilterClause(\'all\');" title="' . i18n('removeAllFilters') . '" > ';
+    echo formatSmallButton('Remove');
+    echo ' </a>';
+    echo "</td>";
+  }
   echo "</tr>";
+  echo "<tr class='' style='border-top:solid 1px;color:var(--color-medium);'></tr>";
+  echo "<tr class='' style='height: 5px;'></tr>";
   //ADD qCazelles - Dynamic filter - Ticket #78
   $nbDynamicFilterCriteria=0;
   $nbFilters=0;
   //END ADD qCazelles - Dynamic filter - Ticket #78
   $nbHiddenFilters=0;   //ADD qCazelles - Ticket 165
+  $filterArrayEmpty = false;
   if (count($filterArray)>0) { 
-    foreach ($filterArray as $id=>$filter) {
-      if (isset($filter['hidden']) and $filter['hidden']=='1') {    //ADD qCazelles - Ticket 165
-        $nbHiddenFilters+=1;
-        continue;
+    $lastId = array_key_last($filterArray);
+    $countNbFilters=1;
+    $filterArrayEmpty = false;
+    foreach ($filterArray as $filter) {
+      if (!empty($filter['disp'])) {
+        $filterArrayEmpty = true;
+        break;
       }
-      echo "<tr>";
-      echo "<td class='filterData' style=''>";
-      //ADD qCazelles - Dynamic filter - Ticket #78
-    if (!isset($filter['orOperator'])) $filter['orOperator']=0;
-    if (!isset($filter['isDynamic'])) $filter['isDynamic']=0;
-	  if ($filter['orOperator']=='1') {
-      	echo i18n('OR').' ';
+    }
+    if ($filterArrayEmpty) {
+      foreach ($filterArray as $id=>$filter) {
+        $nextFilter = null;
+        if (isset($filterArray[$id + 1])) {
+          $nextFilter = $filterArray[$id + 1];
+        } 
+        if (isset($filter['hidden']) and $filter['hidden']=='1') {    //ADD qCazelles - Ticket 165
+          $nbHiddenFilters+=1;
+          continue;
+        }
+        $isGroup = isset($filter['isGroup']) ? $filter['isGroup'] : 0;
+        $indentLevel = isset($filter['indentLevel']) ? $filter['indentLevel'] :0;
+        $indentation = ($isGroup==1)? 21 :(isset($filter['indentLevel']) ? $filter['indentLevel'] * 55 : 37);
+        if ($isGroup==2){
+          $indentation += 54;
+        }
+        if ($nbFilters==0) $indentation = ($nextFilter && isset($nextFilter['isGroup']) && $nextFilter['isGroup']==1) ? 55 : 53;
+        if ($indentation < 20) $indentation=21;
+        echo '<tr id="idFilterTr_'.$id.'" style="height:35px;">';
+          echo '<td class="filterData" id="filterData_' . $countNbFilters . '" style="display:flex; align-items:center; gap:5px;padding:3px 0px 0px ' . $indentation . 'px;">';
+  
+        //echo "<td class='filterData' style='display:flex; align-items:center; gap:5px;'>";
+        //ADD qCazelles - Dynamic filter - Ticket #78
+      if (!isset($filter['orOperator'])) $filter['orOperator']=0;
+      if (!isset($filter['isDynamic'])) $filter['isDynamic']=0;
+  	  
+  	  if ($filter['orOperator']=='1') {
+        	echo '<div class="operatorFilterAndOr" style="background-color:#e97c2d;">'.i18n('OR') .'</div>';
+        }
+        	elseif ($nbFilters==0) { //Nothing is displayed on the first criteria
+         	$nbFilters+=1;
+        }else {
+        	echo '<div class="operatorFilterAndOr" style="background-color:#10c621;">'.i18n('AND').'</div>';
+        }
+        
+        if ($isGroup == '1') {
+          echo '<div class="parenthesisFilter" id="parenthesisOpen_' . $countNbFilters . '" style="">(</div>';
+        }
+        
+        //END ADD qCazelles - Dynamic filter - Ticket #78
+        echo $filter['disp']['attribute'] . " " .
+             $filter['disp']['operator'] . " " .
+             //CHANGE qCazelles - Dynamic filter - Ticket #78
+             //Old
+        	   //$filter['disp']['value'] .
+             //New
+             ($filter['isDynamic']=="1" ? '{'.i18n('dynamicValue').'}' : $filter['disp']['value']);
+             //END CHANGE qCazelles - Dynamic filter - Ticket #78     
+        if ($isGroup == '2') {
+          echo '<div class="parenthesisFilter" id="parenthesisClose_' . $countNbFilters . '"style="" >)</div>';
+        }
+        echo "</td>";
+        echo "<td class='filterData' style='text-align: end;width: 15px;'>";
+        echo ' <a onClick="editFilterClause(' . $id . ');" title="' . i18n('editFilter') . '" > ';
+        echo formatSmallButton('Edit');
+        echo ' </a>';
+        echo "</td>";
+        echo "</td>";
+        echo "<td class='filterData' style='text-align: end;width: 15px;'>";
+        echo ' <a src="css/images/smallButtonRemove.png" onClick="removefilterClause(' . $id . ');" title="' . i18n('removeFilter') . '" > ';
+        echo formatSmallButton('Remove');
+        echo ' </a>';
+        echo "</td>";
+        echo "</tr>";
+        //ADD qCazelles - Dynamic filter - Ticket #78
+        if ($filter['isDynamic']=="1") {
+        	$nbDynamicFilterCriteria+=1;
+        }
+        echo '<tr style="width: 95%;border-bottom: 1px solid #c6c3c3;left: 50%;transform: translateX(-50%);"></tr>';
+        //END ADD qCazelles - Dynamic filter - Ticket #78
+        $indentationTab = ($isGroup==1 || $indentLevel!=0) ? 36 : 0;
+        if ($lastId == $id) {
+          echo '<tr><td colspan="2" style="display: flex;flex-direction: row;text-align:center; padding:7px 0 0 0px;align-items:center; gap:5px;">';
+          echo '<span class="imageColorNewGuiNoSelection"><div id="cursorFilter" class="iconButtonTab iconSize16 noRotate" style="transition: margin-left 0.3s;margin-left: '.$indentationTab.'px;"></div></span>';
+          echo '</td></tr>';
+        }
+        $countNbFilters++;
       }
-      	elseif ($nbFilters==0) { //Nothing is displayed on the first criteria
-       	$nbFilters+=1;
-      }
-      else {
-      	echo i18n('AND').' ';
-      }
-      //END ADD qCazelles - Dynamic filter - Ticket #78
-      echo $filter['disp']['attribute'] . " " .
-           $filter['disp']['operator'] . " " .
-           //CHANGE qCazelles - Dynamic filter - Ticket #78
-           //Old
-      	   //$filter['disp']['value'] .
-           //New
-           ($filter['isDynamic']=="1" ? '{'.i18n('dynamicValue').'}' : $filter['disp']['value']) .
-           //END CHANGE qCazelles - Dynamic filter - Ticket #78
-      	   "</td>";
-      echo "<td class='filterData' style='text-align: center;'>";
-      echo ' <a src="css/images/smallButtonRemove.png" onClick="removefilterClause(' . $id . ');" title="' . i18n('removeFilter') . '" > ';
-      echo formatSmallButton('Remove');
-      echo ' </a>';
-      echo "</td>";
-      echo "</tr>";
-      //ADD qCazelles - Dynamic filter - Ticket #78
-      if ($filter['isDynamic']=="1") {
-      	$nbDynamicFilterCriteria+=1;
-      }
-      //END ADD qCazelles - Dynamic filter - Ticket #78
     }
   }
   //CHANGE qCazelles - Ticket 165
@@ -2320,17 +2352,57 @@ function htmlDisplayFilterCriteria($filterArray, $filterName="", $filterLayout="
   //echo "</table>";
   //echo '<input id="nbFilterCriteria" name="nbFilterCriteria" type="hidden" value="' . count($filterArray) . '" />';
   //New
-  if (count($filterArray)==$nbHiddenFilters) {
-    echo "<tr><td class='filterData' colspan='2' style=''><i>" . i18n("noFilterClause") . "</i></td></tr>";
+  if (count($filterArray)==$nbHiddenFilters or !$filterArrayEmpty) {
+    echo "<tr><td class='filterData' colspan='2' style=''><i>" . ucfirst(i18n("noFilterClause")) . "</i></td></tr>";
+    echo '<tr><td colspan="2" style="display: flex;flex-direction: row;text-align:center; padding:7px 0 0 0px;align-items:center; gap:5px;">';
+    echo '<span class="imageColorNewGuiNoSelection"><div id="cursorFilterNoFilterClause" class="iconButtonTab iconSize16 noRotate" style="transition: margin-left 0.3s;margin-left:36px;display:none;"></div></span>';
+    echo '</td></tr>';
   }
-  if (isNewGui()) { echo '<tr><td><div style="height:6px"></div></td></tr>';}
+  //if (isNewGui()) { echo '<tr><td><div style="height:6px"></div></td></tr>';}
   echo "</table>";
   
   echo '<input id="nbFilterCriteria" name="nbFilterCriteria" type="hidden" value="' . (count($filterArray) - $nbHiddenFilters) . '" />';
-  //END CHANGE qCazelles - Ticket 165
+  //END CHANGE qCazelles - Ticket 165 
   //ADD qCazelles - Dynamic filter - Ticket #78
   echo '<input id="nbDynamicFilterCriteria" name="nbDynamicFilterCriteria" type="hidden" value="'.$nbDynamicFilterCriteria.'" />';
   //END ADD qCazelles - Dynamic filter - Ticket #78
+}
+
+function htmldisplayFilterNameLayout ($filterName="", $filterLayout="", $class=null){
+  // Name
+  echo "<div style='display: flex;gap:10px;'>";
+  echo ' <span for="filterNameDisplay" style="font-size: 10pt;color: var(--color-text);vertical-align:middle;'.((isNewGui())?'position:relative;top:10px;':'').'">' . ucfirst(i18n("filterName")) . ((!isNewGui())?':':'').'</span>';
+  echo '<div type="text" dojoType="dijit.form.ValidationTextBox" ';
+  echo '  name="filterNameDisplay" id="filterNameDisplay"';
+  echo '  style="max-width: '.((isNewGui())?'220px':'250px;').';width:60%;" ';
+  echo '  trim="true" maxlength="100" class="input" ';
+  echo '  value="' . $filterName . '" ';
+  echo ' ></div>';
+  echo '</div>';
+  
+  // Layout
+  echo "<div style='display: flex;gap:10px;'>";
+  echo ' <label for="layoutNameDisplay" style="width:40%;min-width:150px;'.((isNewGui())?'position:relative;top:7px;':'').'">' . ucfirst(i18n("layoutName")) . ((!isNewGui())?':':'').'</label>';
+  echo ' <select dojoType="dijit.form.FilteringSelect" id="idLayout" name="idLayout" onchange="dojo.byId(\'filterLayout\').value=dijit.byId(\'idLayout\').get(\'value\');" style="max-width: '.((isNewGui())?'220px':'250px;').';width:60%;"';
+  echo autoOpenFilteringSelect();
+  echo ' class="input" value="'.(($filterLayout)?$filterLayout:' ').'">';
+  echo ' <option value=" " '.((!$filterLayout)?' selected ':'').'></option>';
+  $layout=new Layout();
+  $listLayout=$layout->getSqlElementsFromCriteria(array('objectClass'=>$class,'idUser'=>getCurrentUserId()),null,null,'sortOrder asc');
+  foreach ($listLayout as $layout) {
+    $selected = ($filterLayout == $layout->id) ? 'selected' : '';
+    echo '<option value="'.$layout->id.'" ' . $selected . '>'.$layout->scope.'</option>';
+  }
+  echo ' </select></div>';
+  
+  // Save
+  echo '<div>';
+  echo '<a title="' . i18n('saveFilter') . '" ';
+  echo ' id="dialogFilterSave" name="dialogFilterSave" style="cursor:pointer;" class="buttonIconNewGui" onclick="saveFilter();"';
+  echo formatMediumButton('Save') ;
+  echo '</a>';
+  echo '</div>';
+
 }
 
 /**
@@ -2338,73 +2410,54 @@ function htmlDisplayFilterCriteria($filterArray, $filterName="", $filterLayout="
  * @param $filterArray Array
  * @return Void
  */
-function htmlDisplayStoredFilter($filterArray,$filterObjectClass,$currentFilter="", $context="", $comboDetail=false) {
+function htmlDisplayStoredFilter($filterArray,$filterObjectClass,$currentFilter="", $context="", $comboDetail=false) {  
   // Display Result
   $param=SqlElement::getSingleSqlElementFromCriteria('Parameter', 
        array('idUser'=>getSessionUser()->id, 'parameterCode'=>'Filter'.$filterObjectClass));
   $defaultFilter=($param)?$param->parameterValue:'';
   echo "<div id='displayFilterList' style='overflow:hidden;'>";
-  echo "<table style='width:100%'>";
-  if (!empty($filterArray) and $context!='directFilterList'){
-    echo "<tr style='height:22px;'>";
-    if ($context!='directFilterList') {
-    	echo "<td class='filterHeader' colspan='3' style='width:749px;'>" . (isNewGui()?i18n("storedFiltersQuick"):i18n("storedFilters")) . "</td>";
-      /*echo "<td class='filterHeader' style='width:25px;'>";
-      echo "<td class='filterHeader' style='width:25px;'>";*/
-    }
-    echo "</tr>";
+  if ($context!='directFilterList'){
+    echo "<div class='filterTitleSection' style='width:97%'>" . (isNewGui()?i18n("storedAdvancedFilters"):i18n("storedFilters")) . "</div>";  
   }
-  echo "</table>";
-  
+
   echo "<div style='overflow:hidden;max-height:".(($context=='directFilterList')?202:127)."px;overflow-y:auto'>";
   $handle = (!$comboDetail)?"dojotype='dojo.dnd.Source' withhandles='true' data-dojo-props='accept: [ \"tableauBordLeft\",\"tableauBordRight\" ]'":"";
+  
   if ($context!='directFilterList') {
     echo "<table id='dndListFilterSelector' jsId='dndListFilterSelector' width='100%' ".$handle.">";
   }else{
     echo "<table id='dndListFilterSelector2' jsId='dndListFilterSelector2' width='100%' ".$handle.">";
   }
+  
+  if ($context!='directFilterList') {
+    $handleNotShared = (!$comboDetail)?"dojotype='dojo.dnd.Source' withhandles='true' data-dojo-props='accept: [ \"tableNotSharedFilter\"]'":"";
+  }
   if (count($filterArray)>0) {
     //gautier #filter
-    foreach ($filterArray as $filter) {
-      if ($context!='directFilterList') {
-        echo "<tr class='dojoDndItem' dndType='tableauBordLeft'  id='filter$filter->id' >";
-      }else{
-        echo "<tr class='dojoDndItem' dndType='tableauBordRight'  id='retlif$filter->id' >";
+    if ($context!='directFilterList'){
+      echo '<table style="width:99%" ' . $handleNotShared . '>';
+      $foundStoredAdvancedFilters = false;
+      foreach ($filterArray as $filter) {
+        htmlDisplayFilterRow ($context,$filter,$currentFilter,$comboDetail,$defaultFilter);
+        $foundStoredAdvancedFilters = true;
       }
-      //ADD qCazelles - Dynamic filter - Ticket #78
-      echo ($filter->isDynamic=="1" ? '<input type="hidden" id="dynamicFilterId'.$filter->id.'" />' : ''); //Used for selection of stored filter, to enable the prompt of dynamic value(s)
-      //END ADD qCazelles - Dynamic filter - Ticket #78
-      echo '<td style="'.((!isNewGui())?'font-size:8pt;':''). (($filter->name==$currentFilter and $context=='directFilterList')?'color:var(--color-darker); background-color: var(--color-medium-secondary);':'cursor: pointer;') . '"' 
-           . ' class="filterData" '
-           //. ($filter->name==$currentFilter)?'':'onClick="selectStoredFilter('. "'" . htmlEncode($filter->id) . "'" . ');" ')
-           . 'onClick="selectStoredFilter(\'' . htmlEncode($filter->id) . '\',\'' . htmlEncode($filter->idLayout) . '\',\'' . htmlEncode($context) . '\''.(array_key_exists("contentLoad", $_REQUEST) && array_key_exists("container", $_REQUEST) ? ',\''.$_REQUEST['contentLoad'].'\',\''.$_REQUEST['container'].'\'' : '').');" ' 
-           . ' title="' . i18n("selectStoredFilter") . '" >' ;
-      //Gautier #filter
-      if(!$comboDetail){
-        if ($filter->name==$currentFilter and $context=='directFilterList') echo '<span class="dojoDndHandle handleCursor"><img style="webkit-filter: brightness(0) invert(var(--color-toolbar-invert));filter: brightness(0) invert(var(--color-toolbar-invert));width:'.((isNewGui())?'10px;float:left':'6px;').'" src="css/images/iconDrag.gif" />&nbsp;&nbsp;</span>';
-        else echo '<span class="dojoDndHandle handleCursor"><img style="width:'.((isNewGui())?'10px;float:left':'6px;').'" src="css/images/iconDrag.gif" />&nbsp;&nbsp;</span>';
+      if (!$foundStoredAdvancedFilters){
+        echo "<tr>";
+        echo "<td class='filterData' colspan='3'>" . i18n("noStoredFilter") . "</td>";
+        echo "</tr>";
       }
-      echo  '<span style="position:relative;top:2px;margin:3px">'.htmlEncode($filter->name)
-           . ( ($defaultFilter==$filter->id and $context!='directFilterList')?' (' . i18n('defaultValue') . ')':'')
-           .'</span>'. "</td>";
-      if ($context!='directFilterList') {
-        echo "<td class='filterData dndHidden' style='text-align: center;width:25px'>";      
-        echo ' <a src="css/images/smallButtonRemove.png" onClick="removeStoredFilter('. "'" . htmlEncode($filter->id) . "','" . htmlEncode(htmlEncode($filter->name)) . "'" . ');" title="' . i18n('removeStoredFilter') . '" > ';
-        echo formatSmallButton('Remove');
-        echo ' </a>';
-        echo "</td>";
-        echo "<td class='filterData dndHidden' style='text-align: center;width:25px'>";
-        if($filter->isShared==0)echo ' <img src="css/images/share.png" class="roundedButtonSmall" onClick="shareStoredFilter('. "'" . htmlEncode($filter->id) . "','" . htmlEncode(htmlEncode($filter->name)) . "'" . ');" title="' . i18n('shareStoredFilter') . '" class="smallButton"/> ';
-        if($filter->isShared==1)echo ' <img src="css/images/shared.png" class="roundedButtonSmall" onClick="shareStoredFilter('. "'" . htmlEncode($filter->id) . "','" . htmlEncode(htmlEncode($filter->name)) . "'" . ');" title="' . i18n('unshareStoredFilter') . '" class="smallButton"/> ';
-        echo "</td>";
-      }
-      
-      echo "</tr>";
-    }
+    }else {
+      foreach ($filterArray as $filter) {
+        htmlDisplayFilterRow ($context,$filter,$currentFilter,$comboDetail,$defaultFilter);
+      }   
+    }  
     //gautier #filter
-  } else {
+  }
+  if (count($filterArray)==0) {
   	if ($context!='directFilterList') {
-      echo "<tr><td class='filterData' colspan='3'><i>" . i18n("noStoredFilter") . "</i></td></tr>";
+      echo "<tr>";
+      echo "<td class='filterData' colspan='3'><i style='padding-left: 10px;'>" . ucfirst(i18n("noStoredAdvancedFilter")) . "</i></td>";
+      echo "</tr>";
   	} else if ($context == 'directFilterList'){
   	  echo "<tr><td class='filterData' colspan='3'><i>" . ucfirst(i18n("noStoredAdvancedFilter")) . "</i></td></tr>";
     }
@@ -2412,8 +2465,7 @@ function htmlDisplayStoredFilter($filterArray,$filterObjectClass,$currentFilter=
   echo "</table>";
   echo "</div>";
   if ($context == 'directFilterList') {
-      echo '<div style="display: flex; justify-content: flex-end; gap: 10px; margin-top: 10px;">';
-  
+      echo '<div style="display: flex; justify-content: flex-end; gap: 10px; margin: 10px 0 5px 0;">'; 
       // Button Reset
       echo '<div class="roundedVisibleButton roundedButton dijitButton"';
       echo ' title="' . i18n("selectStoredFilter") . '"';
@@ -2423,61 +2475,118 @@ function htmlDisplayStoredFilter($filterArray,$filterObjectClass,$currentFilter=
           ? ',\'' . $_REQUEST['contentLoad'] . '\',\'' . $_REQUEST['container'] . '\'' 
           : '') . ');">';
       echo '<div style="width:100%;text-align:center;vertical-align:middle;padding:auto;margin:auto">' . i18n("reset") . '</div>';
-      echo '</div>';
-  
+      echo '</div>'; 
       // Button Edit
       echo '<div class="roundedVisibleButton roundedButton dijitButton"';
       echo ' title="' . i18n("advancedFilters") . '"';
       echo ' style="display:flex; align-items:center; justify-content:center; height:30px; width:100px; white-space: nowrap; cursor:pointer;"';
       echo ' onClick="showFilterDialog();">';
       echo '<div>' . i18n("edit") . '</div>';
-      echo '</div>';
-  
+      echo '</div>';  
       echo '</div>'; 
   }
   
   echo "</div>";
 }
 
-function htmlDisplaySharedFilter($filterArray,$filterObjectClass,$currentFilter="", $context="") {
-  if (count($filterArray)>0) {  
-    $nFilterArray=array();
+function htmlDisplayFilterRow ($context,$filter,$currentFilter,$comboDetail,$defaultFilter){
+  if ($context!='directFilterList') {
+    echo "<tr class='dojoDndItem' dndType='tableNotSharedFilter' id='filter$filter->id' style=\""
+    . ((!isNewGui()) ? 'font-size:8pt;' : '')
+    . (($filter->name == $currentFilter) ? 'color:var(--color-darker); background-color: var(--color-medium-secondary);' : '')
+    . "\">";
+    
+  }else{
+    echo "<tr class='dojoDndItem' dndType='tableauBordRight' id='retlif$filter->id' >";
+  }
+  $selected="notSelected";
+  if ($filter->name==$currentFilter) $selected="isSelected";
+  $idLayout = ($filter->idLayout)?$filter->idLayout:0;
+  //ADD qCazelles - Dynamic filter - Ticket #78
+  echo ($filter->isDynamic=="1" ? '<input type="hidden" id="dynamicFilterId'.$filter->id.'" />' : ''); //Used for selection of stored filter, to enable the prompt of dynamic value(s)
+  //END ADD qCazelles - Dynamic filter - Ticket #78
+  echo '<td  id="filterData_'.$filter->id.'#'.$idLayout.'" data-selected="'.$selected.'" style="'.((!isNewGui())?'font-size:8pt;':''). (($filter->name==$currentFilter and $context=='directFilterList')?'color:var(--color-darker); background-color: var(--color-medium-secondary);':'cursor: pointer;') . (($context != 'directFilterList') ? 'border-radius:3px 0 0 3px;':''). '"'
+      . ' class="' . (($context != 'directFilterList') ? 'filterStored' : 'filterData') . '" '
+          //. ($filter->name==$currentFilter)?'':'onClick="selectStoredFilter('. "'" . htmlEncode($filter->id) . "'" . ');" ')
+      . ' onClick="selectStoredFilter(\'' . htmlEncode($filter->id) . '\',\'' . htmlEncode($filter->idLayout) . '\',\'' . htmlEncode($context) . '\''.(array_key_exists("contentLoad", $_REQUEST) && array_key_exists("container", $_REQUEST) ? ',\''.$_REQUEST['contentLoad'].'\',\''.$_REQUEST['container'].'\'' : '').');" '
+      . ' title="' . i18n("selectStoredFilter") . '" >' ;
+  //Gautier #filter
+  if(!$comboDetail){
+    if ($filter->name==$currentFilter) echo '<span class="dojoDndHandle handleCursor"><img style="filter: brightness(0) invert(var(--color-toolbar-invert));width:'.((isNewGui())?'10px;float:left':'6px;').'" src="css/images/iconDrag.gif" />&nbsp;&nbsp;</span>';
+    else echo '<span class="dojoDndHandle handleCursor"> <img id="imgFilter' . $filter->id . '" style="width:' . ((isNewGui()) ? '10px;float:left' : '6px;') . ';" src="css/images/iconDrag.gif" />&nbsp;&nbsp;</span>';
+  }
+  echo  '<span style="position:relative;top:2px;margin:3px">'.htmlEncode($filter->name)
+  . ( ($defaultFilter==$filter->id and $context!='directFilterList')?' (' . i18n('defaultValue') . ')':'')
+  .'</span>'. "</td>";
+  if ($context!='directFilterList') {
+    echo "<td class='' style='text-align: center; width: 25px;'>";
+    if ($defaultFilter==$filter->id){
+      echo '<span class="roundedButtonSmall"><div title="' . i18n('removeDefaultFilter') . '" class="iconIsFavorite iconSize16" onClick="defaultFilter(true);"></div></span>';
+    }else{
+      echo '<span class="roundedButtonSmall"><div title="' . i18n('putDefaultFilter') . '" class="iconFavorite iconSize16" onClick="defaultFilter(false, \'' . htmlEncode($filter->name) . '\');"></div></span>';
+    }
+    echo '</td>';
+    echo "<td class='dndHidden' style='text-align: center;width: 25px;padding:3px 5px 0 0;'>";
+    if($filter->isShared==0)echo ' <img src="css/images/share.png" class="roundedButtonSmall" onClick="shareStoredFilter('. "'" . htmlEncode($filter->id) . "','" . htmlEncode(htmlEncode($filter->name)) . "'" . ');" title="' . i18n('shareStoredFilter') . '" class="smallButton"/> ';
+    if($filter->isShared==1)echo ' <img src="css/images/shared.png" class="roundedButtonSmall" onClick="shareStoredFilter('. "'" . htmlEncode($filter->id) . "','" . htmlEncode(htmlEncode($filter->name)) . "'" . ');" title="' . i18n('unshareStoredFilter') . '" class="smallButton"/> ';
+    echo "</td>";
+    echo "<td class='' style='padding: 0 10px 0 0;text-align: center; width: 25px; " . (($context != 'directFilterList') ? 'border-radius: 0 3px 3px 0px;' : '') . "'>";
+    echo ' <a src="css/images/smallButtonRemove.png" onClick="removeStoredFilter('. "'" . htmlEncode($filter->id) . "','" . htmlEncode(htmlEncode($filter->name)) . "'" . ');" title="' . i18n('removeStoredFilter') . '" > ';
+    echo formatSmallButton('Remove');
+    echo ' </a>';
+    echo "</td>";
+  }
+  
+  echo "</tr>";
+}
+
+function htmlDisplaySharedFilter($filterArray, $filterObjectClass, $currentFilter = "", $context = "",$comboDetail=false) {
+  echo "<div class='filterTitleSection' colspan='' style='width:97%;'>" . (isNewGui()?i18n("sharedStoredFiltersShared"):i18n("sharedStoredFiltersShared")) . "</div>";
+  $handleShared = (!$comboDetail)?"dojotype='dojo.dnd.Source' withhandles='true' data-dojo-props='accept: [ \"tableSharedFilter\"]'":"";
+  
+  echo "<td style='vertical-align: top; width: 100%;'>";
+  echo '<table style="width:99%" ' . $handleShared . '>';
+  if (count($filterArray) > 0) {
+    $nFilterArray = array();
     foreach ($filterArray as $filter) {
-      $user=SqlElement::getSingleSqlElementFromCriteria("User", array("id"=>$filter->idUser));
-      $cle=$user->name.'|'.$user->id;
-      if(!isset($nFilterArray[$cle]))$nFilterArray[$cle]=array();
-      $nFilterArray[$cle][$filter->name]=$filter;
+      $user = SqlElement::getSingleSqlElementFromCriteria("User", array("id" => $filter->idUser));
+      $cle = $user->name . '|' . $user->id;
+      if (!isset($nFilterArray[$cle])) $nFilterArray[$cle] = array();
+      $nFilterArray[$cle][$filter->name] = $filter;
       asort($nFilterArray[$cle]);
     }
     asort($nFilterArray);
-    // Display Result
-    $param=SqlElement::getSingleSqlElementFromCriteria('Parameter',
-        array('idUser'=>getSessionUser()->id, 'parameterCode'=>'Filter'.$filterObjectClass));
-    $defaultFilter=($param)?$param->parameterValue:'';
-    echo '<div dojoType="dijit.form.DropDownButton"
-                              style="width: 320px;margin:0 auto;"
-                              id="filterSharedSelect" name="entity">';
-    echo '<span>'.i18n("selectSharedFilter").'</span><div data-dojo-type="dijit/TooltipDialog" style="width:720px">';
-    $iterateur=0;
-      foreach ($nFilterArray as $userName=>$filters) {
-        $nameExplode=pq_explode('|',$userName);
-        echo '<span style="float:left;height:15px;font-weight:bold;" disabled="disabled" value="-2" '
-            . ' title="' . i18n("selectStoredFilter") . '" >'.$nameExplode[0].'</span><br/>';
-        foreach ($filters as $filterName=>$filter) {
-          echo '<span onclick="selectStoredFilter('.htmlEncode($filter->id).',\'' . htmlEncode($context) . '\');dijit.byId(\'filterSharedSelect\').closeDropDown();" class="menuTree" style="font-size:95%;float:left;height:15px;width:700px;white-space: nowrap; overflow: hidden" '
-              . ' >&nbsp;&nbsp;&nbsp;&nbsp;'
-                  . htmlEncode($filter->name)
-                  . ( ($defaultFilter==$filter->id and $context!='directFilterList')?' (' . i18n('defaultValue') . ')':'')
-                  . "</span><br/>";
+
+    $param = SqlElement::getSingleSqlElementFromCriteria('Parameter', array('idUser' => getSessionUser()->id, 'parameterCode' => 'Filter' . $filterObjectClass));
+    $defaultFilter = ($param) ? $param->parameterValue : '';
+    foreach ($nFilterArray as $userName => $filters) {
+      $nameExplode = pq_explode('|', $userName);
+      foreach ($filters as $filterName => $filter) {
+        echo "<tr class='dojoDndItem' dndType='tableSharedFilter' id='filter$filter->id'>";
+        echo "<td class='filterData' colspan='3' style='cursor:pointer;border-radius:3px 0 0 3px;' onclick=\"selectStoredFilter(" . htmlEncode($filter->id) . ", '" . htmlEncode($context) . "');\">";
+        echo '<span class="dojoDndHandle handleCursor"> <img id="imgFilter' . $filter->id . '" style="width:' . ((isNewGui()) ? '10px;float:left' : '6px;') . ';" src="css/images/iconDrag.gif" />&nbsp;&nbsp;</span>';
+        echo strtoupper(htmlEncode($nameExplode[0]))." - ".htmlEncode($filter->name);
+        if ($defaultFilter == $filter->id && $context != 'directFilterList') {
+          echo " (" . i18n('defaultValue') . ")";
         }
-        $iterateur++;
-        if(sizeof($nFilterArray)>$iterateur)echo '<span style="float:left;height:15px;" value="-1" '
-        . ' title="' . i18n("selectStoredFilter") . '" ></span><br/>';
+        echo "<td class='' style='text-align: center; width: 25px;border-radius: 0 3px 3px 0px;'>";
+        echo '<span class="roundedButtonSmall"><div class="iconButtonCopy16 iconButtonCopy iconSize16" title="' . i18n('copyFilter') . '" onClick="copyFilterShared(\'' . $filter->id . '\');"></div></span>';
+        echo '</td>';
+        echo "</td>";
+        echo "</tr>";
       }
-    echo "</div></div>";
-    echo "<span style='position:relative;left:20px;font-size:90%;color:#a0a0a0;'>".i18n("tipsSharedFilter").'</span>';
+    }
+    echo "</tr>";
+  } else {
+    echo "<tr>";
+    echo "<td class='filterData' colspan='3'><i style='padding-left: 10px;'>" . ucfirst(i18n("noSharedStoredFilter")) . "</i></td>";
+    echo "</tr>";
   }
+  echo "</table>";
+  echo "</td>";
 }
+
+// }
 
 // BEGIN - ADD BY TABARY - TOOLTIP
 function htmlDisplayTooltip($value="", $colName="", $print=false, $outMode="", $position='before') {

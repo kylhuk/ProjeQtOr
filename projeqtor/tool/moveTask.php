@@ -59,6 +59,38 @@ PlanningElement::$_noDispatch=true;
 $needRefreshInserted=false;
 $doNotTriggerAlerts=true;
 Sql::beginTransaction();
+
+if(count($arrayFrom) > 1){
+  $arrayFromGroup = array();
+  $arrayFromGroup = $arrayFrom;
+  $arrayFromSorted = array();
+  // created sorted array with task wbs as key to sorted it after
+  foreach ($arrayFromGroup as $from){
+    $idFrom=pq_substr($from, 6);
+    $task=GlobalPlanningElement::getTaskFromPlanningId($idFrom);
+    $arrayFromSorted[$task->wbs]=$task;
+  }
+  // browse array sorted by wbs descending order
+  krsort($arrayFromSorted);
+  $arrayFrom = array_flip($arrayFrom);// flip array from to get 'child_xxxx' as key
+  $arrayFromTemp = array();
+  foreach ($arrayFromSorted as $task){
+    // if task topId not in arrayFrom it a top parent task, stock it in temporary array
+    if(!array_key_exists('child_'.$task->topId, $arrayFrom)){
+      $arrayFromTemp[$task->wbs]='child_'.$task->id;
+    }
+  }
+  // if mode before reorder the wbs in correct sort
+  if($mode=="before"){
+    ksort($arrayFromTemp);
+  }
+  $arrayFrom = array();
+  //replace arrayFrom with temporary array fill with only parent and not elementary task
+  foreach ($arrayFromTemp as $from){
+    $arrayFrom[]=$from;
+  }
+}
+
 foreach ($arrayFrom as $from) {
   $to=$stockTo;
   $mode=$stockMode;

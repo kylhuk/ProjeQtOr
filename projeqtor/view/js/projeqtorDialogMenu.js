@@ -40,10 +40,20 @@ function selectIconMenuBar(menuClass) {
   }
 }
 
-function loadMenuBarObject(menuClass,itemName,from) {
-  if (checkFormChangeInProgress()) {
-    return false;
+function loadMenuBarObject(menuClass,itemName,from, skipCheck) {
+  if (!skipCheck) {
+    var actionYes = function () {
+      loadMenuBarObject(menuClass, itemName, from, true); // when recall skip checkFormChangeInProgress to avoid infinite while
+    };
+    var actionSave = function () {
+      noRefreshAfterSave = true;
+      saveObject(actionYes);
+    };
+    if (checkFormChangeInProgress(actionYes, null, actionSave)) {
+      return false;
+    }
   }
+  
   setActionCoverListNonObj('CLOSE',false);
   currentPluginPage=null;
   if (from == 'bar' && !isNewGui) {
@@ -68,10 +78,20 @@ function loadMenuBarObject(menuClass,itemName,from) {
   return true;
 }
 
-function loadMenuBarItem(item,itemName,from) {
-  if (checkFormChangeInProgress()) {
-    return false;
+function loadMenuBarItem(item,itemName,from,skipCheck) {
+  if (!skipCheck) {
+    var actionYes = function () {
+      loadMenuBarItem(item, itemName, from, true); // when recall skip checkFormChangeInProgress to avoid infinite while
+    };
+    var actionSave = function () {
+      noRefreshAfterSave = true;
+      saveObject(actionYes);
+    };
+    if (checkFormChangeInProgress(actionYes, null, actionSave)) {
+      return false;
+    }
   }
+  
   setActionCoverListNonObj('CLOSE',false);
   currentPluginPage=null;
   if (from == 'bar' && !isNewGui) {
@@ -241,9 +261,18 @@ function loadMenuBarItem(item,itemName,from) {
 }
 
 var currentPluginPage=null;
-function loadMenuBarPlugin(item,itemName,from) {
-  if (checkFormChangeInProgress()) {
-    return false;
+function loadMenuBarPlugin(item,itemName,from,skipCheck) {
+  if (!skipCheck) {
+    var actionYes = function () {
+      loadMenuBarPlugin(item, itemName, from, true); // when recall skip checkFormChangeInProgress to avoid infinite while
+    };
+    var actionSave = function () {
+      noRefreshAfterSave = true;
+      saveObject(actionYes);
+    };
+    if (checkFormChangeInProgress(actionYes, null, actionSave)) {
+      return false;
+    }
   }
   setActionCoverListNonObj('CLOSE',false);
   if (!pluginMenuPage || !pluginMenuPage['menu' + item]) {

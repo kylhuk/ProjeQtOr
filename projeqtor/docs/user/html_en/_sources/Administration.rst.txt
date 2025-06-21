@@ -326,15 +326,6 @@ Some examples of queries in Json format.
    
    Full description of all objects updated between start date and end date. Date format is YYYYMMDDHHMMSS. Date> = "date stard" and date < "end date"
 
-
-
-.. epigraph::
-
-   No matter where you go, there you are.
-
-   -- Buckaroo Banzai
-   
-   
    
    
 .. rubric:: POST
@@ -369,6 +360,16 @@ Some examples of queries in Json format.
        
        
 Here is an example of PHP code calling the API for PUT and POST request (create, update). 
+
+.. note::
+  
+  Note that by default ProjeQtOr API uses 128 bits encryption key, that is why in exemples function AesCtr::encrypt uses 128 as last parameter.
+  
+  It you want to change it, you can force API to use a different encryption key length, just add in parameters.php 
+    $aesKeyLength=256; // Possible values are 128, 192, 256 
+  (256 bits encrypton may be illegal in some countries)
+
+
 This request lists all Tickets:
 
 .. parsed-literal::
@@ -383,13 +384,13 @@ This request lists all Tickets:
    echo $curl_response;
    curl_close($curl);
 
-Avec DELETE (suppression) qui permet de supprimer le ticket ID #1 : 
+With DELETE that allows to delete ticket with ID #1 : 
 
 .. parsed-literal::
 
    $fullUrl="http://myserver/api/Ticket";
    $data='{"id":"1"}';
-   $data=AesCtr::encrypt($data, 'ApiKeyForUserProjeqtor', 256);
+   $data=AesCtr::encrypt($data, 'ApiKeyForUserProjeqtor', 128);
    $curl = curl_init($fullUrl);
    curl_setopt($curl, CURLOPT_HTTPAUTH, CURLAUTH_BASIC);
    curl_setopt($curl, CURLOPT_USERPWD, "projeqtor:projeqtor");
@@ -402,13 +403,13 @@ Avec DELETE (suppression) qui permet de supprimer le ticket ID #1 :
    echo $curl_response;
    curl_close($curl);
 
-Avec PUT et POST (création et mise à jour) qui permet de mettre à jour le nom du ticket ID #1 : 
+Put PUT and POST (creation or update) th8at allows to update n=ame of ticket with ID #1 : 
    
 .. parsed-literal::
 
    $fullUrl="http://myserver/api/Ticket";
    $data='{"id":"1", "name":"name to be changed for Ticket 1"}';
-   $data=AesCtr::encrypt($data, 'ApiKeyForUserProjeqtor', 256);
+   $data=AesCtr::encrypt($data, 'ApiKeyForUserProjeqtor', 128);
    $curl = curl_init($fullUrl);
    curl_setopt($curl, CURLOPT_HTTPAUTH, CURLAUTH_BASIC);
    curl_setopt($curl, CURLOPT_USERPWD, "projeqtor:projeqtor");
@@ -437,5 +438,3 @@ Avec PUT et POST (création et mise à jour) qui permet de mettre à jour le nom
    $curl_response = curl_exec($curl);
    echo $curl_response;
    curl_close($curl);
-
-  

@@ -11,9 +11,7 @@
 
  
  /* ------------------------------- IMPORT FONT -------------------------------------- */
-@import url('https://fonts.googleapis.com/css?family=Oswald:700&display=swap');
-@import url('https://fonts.googleapis.com/css?family=Titillium+Web&display=swap');
-@import url('https://fonts.googleapis.com/css?family=Blinker&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Poppins:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800;1,900&display=swap');
 /* ----------------------------------------------------------------------------------- */
 
 
@@ -22,24 +20,24 @@
 /* -------------------------------- MAIN LAYOUT -------------------------------------- */
 /* ------------------ apparence générale de la page ---------------------- */
 
-/* marge droite - Figure1 */
+/* marge droite */
 div.bodywrapper {
     margin: 0 0 0 300px;
     background-color: #ffffff;
-    
+        
 }
 
-/* Marge gauche - Figure2 */
+/* Marge gauche */
 body {
-    background-color: #545381;
     margin: 0;
     padding: 0;
-    font-family: 'Arial', sans-serif;
 	letter-spacing: 0.2px;
+	font-size: 90%;
 }
 
-/* Contenu manuel - Figure3 */
+/* Contenu manuel */
 div.body {
+	font-family: 'Poppins', sans-serif;
     background-color: #ffffff;
     color: #6e6e6e;
     padding: 30px 60px 30px 50px;    
@@ -49,10 +47,7 @@ div.body {
 
 
 div.body p {
-  font-family: 'Arial', sans-serif;
-  font-size: 85%;
-  text-align: left;
-  line-height: 180%;     
+  line-height: 200%;     
   -moz-hyphens: auto;
   -ms-hyphens: auto;
   -webkit-hyphens: auto;
@@ -66,12 +61,14 @@ div.body p {
 
 
 
-/* Barre de navigation - figure4 */
+/* Barre de navigation */
 
 div.related {
-    line-height: 30px;
+	font-family: 'Poppins', sans-serif;
+	line-height: 30px;
     width: 100%;
     font-size: 90%;
+	font-size: 85%;
     background-color: #000000;/
 }
 
@@ -183,6 +180,8 @@ div.sphinxsidebar {
     position: fixed;
     overflow: auto;
     height: auto;
+    font-family: 'Poppins', sans-serif;
+    background: linear-gradient(to bottom, #5D5CA8, #535481);
 }
 
 
@@ -200,6 +199,7 @@ div.sphinxsidebar ul {
     list-style: none;
     margin: 10px 5px 20px 2px;
     padding: 0;
+    font-family: 'Poppins', sans-serif;
 }
 
 
@@ -208,6 +208,7 @@ div.sphinxsidebar ul {
 div.sphinxsidebar li {
     padding: 0;
     line-height: 1.4em;
+    font-family: 'Poppins', sans-serif;
 }
 
 
@@ -215,11 +216,12 @@ div.sphinxsidebar li {
 /* e niveau de liste + style de points - Liste menu - figure 13 */
 
 div.sphinxsidebar ul ul {
-	  margin-top: 0em;
+	margin-top: 0em;
     margin-bottom: 0em;
     margin-left: 25px;
     list-style: square;
     color: #f8f9f9;
+    font-family: 'Poppins', sans-serif;
 }
 
 
@@ -242,7 +244,7 @@ div.sphinxsidebar a {
 
 /* Titre Table of content + Quick Search */
 div.sphinxsidebar h3 {
-    font-family: 'Blinker', sans-serif;
+    font-family: 'Poppins', sans-serif;
     color: #ffffff;
     font-size: 1.4em;
     font-weight: normal;
@@ -260,7 +262,7 @@ div.sphinxsidebar h3 a {
 
 /* Titre Previous/Next Topic */
 div.sphinxsidebar h4 {
-    font-family: 'Blinker', sans-serif;
+    font-family: 'Poppins', sans-serif;
     color: #ffffff;
     font-size: 1em;
     font-weight: bolder;
@@ -287,7 +289,7 @@ div.sphinxsidebar form {
 
 div.sphinxsidebar input {
     border: 1px solid #bfbfdf;
-    font-family: sans-serif;
+    font-family: 'Poppins', sans-serif;
     font-size: 1em;
 }
 
@@ -336,7 +338,7 @@ div.sphinxsidebar #searchbox input[type="submit"] {
 
 
 /* ------------------------------- IMAGES ET FIGURES --------------------------------- */
-/* ------------------------------------ images --------------------------------------- */
+/* ------------------------------------ images --------------------------------------- 
 
 img {
     border: 2px #999999;
@@ -348,9 +350,9 @@ img.toggler {
     margin-top: 3px;
     cursor: pointer;
 }
-
+*/
 /* ------------------------------- IMAGES ET FIGURES --------------------------------- */
-/* ----------------------------- figures --------------------------------------- */
+/* ----------------------------- figures --------------------------------------- 
 
 div.figure, figure {
     margin: 35px 0 3px 0;
@@ -379,22 +381,91 @@ div.figure p.caption, figcaption p {
     font-size: 85%;
     font-style: italic;
     background-color: #ffffff;
-    box-shadow: 1px 1px 5px #d4d4d4;*/
-
-
-
-
-
-
+    box-shadow: 1px 1px 5px #d4d4d4;
 
 
 div.figure p.caption span.caption-number {
     font-style: italic;
 }
 
+*/
+
+/*
+
+div.figure, figure {
+    margin: 35px 0 3px 0;
+    padding: 25px 20px;
+    background: linear-gradient(145deg, #f8f8ff, #e8e8f0);
+    border-radius: 18px;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05);
+    border: 1px solid #ddd;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+div.figure:hover, figure:hover {
+    transform: scale(1.01);
+    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.08);
+}
+
+div.figure p.caption, figcaption p {
+    margin: 15px 0 0 0;
+    padding: 5px 10px;
+    color: #444;
+    text-align: center !important;
+    font-size: 90%;
+    font-style: italic;
+    border-top: 1px dashed #ccc;
+    opacity: 0.85;
+}
+
+
+*/
+
 
 /* ------------------------------- IMAGES ET FIGURES --------------------------------- */
-/* ------------------------------------ aligement ------------------------------------ */
+
+
+div.figure, figure {
+    margin: 50px 0 40px 0;
+    padding: 0;
+    background: #ffffff;
+    border: 1px solid #dcdcdc;
+    border-radius: 0;
+    box-shadow: -4px 0 8px -2px rgba(93, 92, 168, 0.3); /* ombre côté gauche uniquement */
+    overflow: hidden;
+    text-align: center;
+    border-left: 5px solid #5D5CA8; /* liseré violet à gauche */
+}
+
+div.figure img, figure img {
+    display: block;
+    margin: 20px auto;
+    max-width: 100%;
+    height: auto;
+    border: none;
+    filter: contrast(1.03) saturate(1.08);
+}
+
+/* Légende manuscrite soulignée */
+div.figure p.caption, figcaption p {
+    margin: 15px auto 15px auto;
+    padding: 65px 5px 5px 5px;
+    color: #ffffff; /* contraste renforcé */
+    text-align: center;
+    font-size: 90%;
+    font-style: italic;
+    font-family: "Poppins", sans-serif;
+    display: inline-block;
+    background: linear-gradient(to bottom, transparent 70%, #5D5CA8 70%);
+
+}
+
+
+
+
+
+
+/* ------------------------------------ aligement ------------------------------------ 
 img.align-left, .figure.align-left, object.align-left {
     clear: left;
     float: left;
@@ -413,12 +484,44 @@ img.align-center, .figure.align-center, object.align-center {
   margin-right: auto;
 }
 
+
+
 /* ----------------------------------------------------------------------------------- */
 
 
+table.docutils {
+  width: 100%;
+  border-collapse: collapse;
+  font-family: "Poppins", sans-serif;
+  font-size: 0.95rem;
+  margin: 1em 0;
+  border: 1px solid #ccc;
+}
+
+table.docutils thead th {
+  background-color: #f5f5f5;
+  color: #333;
+  font-weight: bold;
+  text-align: left;
+  padding: 8px 12px;
+  border-bottom: 2px solid #ccc;
+}
+
+table.docutils tbody td {
+  padding: 8px 12px;
+  border-bottom: 1px solid #e0e0e0;
+}
+
+table.docutils tbody tr:nth-child(even) {
+  background-color: #fafafa;
+}
+
+table.docutils tbody tr:hover {
+  background-color: #f0f8ff;
+}
 
 
-/* -------------------------------- TABLEAUX ------------------------------------ */
+/* -------------------------------- TABLEAUX ------------------------------------ 
 
 table.docutils {
 	border-collapse: collapse;
@@ -426,8 +529,7 @@ table.docutils {
 }
 
 
-
-/* --------------------------TABLEAUX première ligne ------------------------------------ */
+--------------------------TABLEAUX première ligne ------------------------------------ 
 table.docutils thead {
 	color: #fff;
 	background-color: #e97b2c;
@@ -467,7 +569,7 @@ table.docutils caption {
 }
 
 
-/* --------- Bords arrondis --------- */
+/* --------- Bords arrondis --------- 
 thead th:first-child {
   border-top-left-radius: 5px;
 }

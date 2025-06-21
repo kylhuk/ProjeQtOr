@@ -162,7 +162,7 @@ function validateLayoutListColumn(planningType){
     handleAs:"text",
     load:function(data,args) {
       if(dijit.byId("dialogLayout"))dijit.byId("dialogLayout").hide();
-      if(objectClass.indexOf('Planning') != -1){
+      if(objectClass.indexOf('Planning') != -1 && objectClass!='PlanningMode'){
         var callback = function(){
           var nodeList=dndPlanningColumnSelector.getAllNodes();
           planningColumnOrder[getIndiceForPlanningType(planningType)]=new Array();
@@ -188,6 +188,7 @@ function validateLayoutListColumn(planningType){
             dijit.byId('listColumnSelector').closeDropDown();
             resizeListDiv();
           }
+          filterJsonList(dojo.byId("objectClass").value);
         };
         if (compUrl) {
           doc.refreshJsonList(dojo.byId('objectClassList').value);

@@ -222,14 +222,32 @@ class IndicatorDefinition extends SqlElement {
   private function updateExistingIndicatorValue() {
     $iv=new IndicatorValue();
     $ivList=$iv->getSqlElementsFromCriteria(array('idIndicatorDefinition'=>$this->id));
+    $total=count($ivList);
+    debugTraceLog("Update Existing Indicator Values for IndicatorDefinition #$this->id");
+    debugTraceLog("Total number of items to update : ".$total);
+    $cpt=0;$cptDone=0;
+    projeqtor_set_time_limit(60);
     foreach ($ivList as $iv) {
+      $cptLeft=$total-$cpt;
+      $cptSkipped=$cpt-$cptDone;
+      if ($cptLeft%100==0) {
+        debugTraceLog("  => Done=$cptDone \t Skipped=$cptSkipped \t Left=$cptLeft");
+        projeqtor_set_time_limit(60);
+      }
+      $cpt++;
       $obj=new $iv->refType($iv->refId);
+      if (property_exists($obj, 'idle') and $obj->idle) continue;
       if ($obj->id) {
         IndicatorValue::addIndicatorValue($this,$obj);
       } else {
         $iv->delete();
       }
+      
+      $cptDone++;
     }
+    $cptLeft=$total-$cpt;
+    $cptSkipped=$cpt-$cptDone;
+    debugTraceLog("  => Done=$cptDone \t Skipped=$cptSkipped \t Left=$cptLeft");
   }
   
    /** ==========================================================================

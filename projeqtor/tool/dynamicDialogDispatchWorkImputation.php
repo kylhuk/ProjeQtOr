@@ -205,7 +205,7 @@ foreach($arrayWorkDetail as $key=>$workD) {
       </button>
     </div>
     <div>
-      <div class="imageColorNewGui" id="addDispatchWorkImputationLine" 
+      <div class="" id="addDispatchWorkImputationLine" 
            onclick="addDispatchWorkImputationLine('<?php echo Work::displayShortWorkUnit();?>', '<?php echo $objectClass; ?>' , '<?php echo $objectId;?>');" title="<?php echo i18n('addLine');?>" 
            style="cursor: pointer; font-size: 14px; width: 22px; padding-right:15px;">
         <?php echo formatMediumButton('Add');?>

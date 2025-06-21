@@ -55,9 +55,9 @@ if (is_session_started()===FALSE) {
 // === Application data : version, dependencies, about message, ...
 $applicationName = "ProjeQtOr"; // Name of the application
 $copyright = $applicationName; // Copyright to be displayed
-$version = "V12.1.1"; // Version of application : Major / Minor / Release
-$svnRevision="22708";
-$build = "0380"; // Build number. To be increased on each release
+$version = "V12.2.0"; // Version of application : Major / Minor / Release
+$svnRevision="23023";
+$build = "0383"; // Build number. To be increased on each release
 $website = "https://www.projeqtor.org"; // ProjeQtOr site url
 if (!isset($aesKeyLength)) { // one can define key lenth to 256 in parameters.php with $aesKeyLength=256; // valid values are 128, 192 and 256
   $aesKeyLength=128;
@@ -380,7 +380,9 @@ if (!(isset($maintenance) and $maintenance) and !(isset($batchMode) and $batchMo
         }
         if (!$user->crypto) {
           if ($user->password) $changePassword=true;
-        } else {
+        }else if($user->mustChangePassword){
+          $changePassword=true;
+        }else {
           $defaultPwd=$user->getRandomPassword();
           if ($user->crypto=="md5") {
             $defaultPwd=md5($defaultPwd.$user->salt);
@@ -2083,7 +2085,7 @@ function getVisibleProjectsList($limitToActiveProjects=true, $idProject=null) {
 //     }
   }
   if ($favoriteProjectsList) {
-    $favsSel=getSessionValue('favoriteProjectsArray');
+    $favsSel=Parameter::getUserParameter('favoriteProjectsArray');
     $favsSelArray=pq_explode(',', $favsSel);
     $favs=array();
     foreach ($favsSelArray as $idx=>$fav) {
@@ -2429,7 +2431,7 @@ function extractExternalImages(&$message) {
         $data = base64_encode($img);
         $base64Image = 'data:image/jpeg;base64,' . $data;
       } else {
-        errorLog("Base64 Encoding of image - Could not read file $imageUrl");
+        traceLog("Base64 Encoding of image - Could not read file $imageUrl");
         $base64Image='';
       }
       $message = str_replace($imageUrl, $base64Image, $message);
@@ -4849,6 +4851,16 @@ function securityCheckRequest() {
   // parameters to check for non html
   $parameters=array('objectClass', 'objectId', 'directAccess', 'page', 'directAccessPage');
   $pages=array('page', 'directAccessPage');
+  if (isset($_REQUEST['directAccess']) and pq_strpos($_REQUEST['directAccess'],'&amp;')!==false) {
+    $direct=$_REQUEST['directAccess'];
+    $all=explode('&amp;',$direct);
+    foreach ($all as $prm) {
+      $exp=explode('=',$prm);
+      if (count($exp)==1) $_REQUEST['directAccess']=$exp[0];
+      else if (count($exp)==2) $_REQUEST[$exp[0]]=$exp[1];
+      else traceHack("projeqtor->securityCheckRequest, _REQUEST['directAccess']=$direct | cannot be split for $prm");
+    }
+  }
   foreach ($parameters as $param) {
     if (isset($_REQUEST[$param])) {
       $paramVal=$_REQUEST[$param];
@@ -4861,7 +4873,13 @@ function securityCheckRequest() {
         }
       }
       if (pq_trim($paramVal) and pq_htmlentities($paramVal)!=$paramVal) {
-        traceHack("projeqtor->securityCheckRequest, _REQUEST['$param']=$paramVal");
+        if ($param=='objectClass' and pq_strpos($paramVal, '<input type="hidden" id="lastOperation" name="lastOperation" value="testConnection"><input type="hidden" id="lastOperationStatus" name="lastOperationStatus" value="ERROR">'!==false)) {
+          echo '<input type="hidden" id="lastOperation" name="lastOperation" value="testConnection">';
+          echo '<input type="hidden" id="lastOperationStatus" name="lastOperationStatus" value="ERROR">';
+          echo '<div class="messageERROR" >'.i18n('errorConnection').'</div>';
+        } else {
+          traceHack("projeqtor->securityCheckRequest, _REQUEST['$param']=$paramVal");
+        }
         exit();
       }
     }
@@ -5429,7 +5447,7 @@ function formatMediumButton($class, $isClass=false, $activeButton=true) {
   } else {
     $button=($isClass)?'':'Button';
     $buttonClass=($activeButton)?'roundedButtonSmall roundedButtonNoBorder':'';
-    $result.="<span class='$buttonClass' style='top:0px;display:inline-block;width:".$size."px;height:".$size."px;'><div class='icon$button$class$size icon$button$class iconSize$size' style='' >&nbsp;</div></span>";
+    $result.="<span class='$buttonClass' style='top:0px;display:inline-block;width:".$size."px;height:".$size."px;'><div class='icon$button$class$size icon$button$class iconSize$size imageColorNewGui' style='' >&nbsp;</div></span>";
   }
   return $result;
 }
@@ -6078,6 +6096,67 @@ function sortNotes(&$listNotes, &$result, $parent){
     }
   }
 }
+
+function collectBranch($note, $map, &$usedIds) {
+  if (in_array($note->id, $usedIds)) return [];
+
+  $branch = [];
+  $branch[] = $note;
+  $usedIds[] = $note->id;
+  $children = array_filter($map, fn($n) => $n->idNote == $note->id);
+  usort($children, fn($a, $b) => $a->id - $b->id);
+
+  foreach ($children as $child) {
+    $branch = array_merge($branch, collectBranch($child, $map, $usedIds));
+  }
+
+  return $branch;
+}
+
+function sortNotesRecentBranchFirst($notes) {
+  $map = [];
+  foreach ($notes as $note) {
+    $map[$note->id] = $note;
+  }
+    
+  $mostRecent = null;
+  foreach ($notes as $note) {
+    $date = strtotime($note->updateDate ?: $note->creationDate);
+    if (!empty($note->idNote) && (!$mostRecent || $date > strtotime($mostRecent->updateDate ?: $mostRecent->creationDate))) {
+      $mostRecent = $note;
+    }
+  }
+    
+  $rootOfMostRecent = null;
+  while (!empty($mostRecent->idNote) && isset($map[$mostRecent->idNote])) {
+    $mostRecent = $map[$mostRecent->idNote];
+    $rootOfMostRecent = $mostRecent;
+  }
+  $usedIds = [];
+  $branches = [];
+  $rootNotes = array_filter($map, fn($n) => empty($n->idNote));
+  usort($rootNotes, fn($a, $b) => $a->id - $b->id);
+  foreach ($rootNotes as $root) {
+    $branch = collectBranch($root, $map, $usedIds);
+    $branches[] = [
+      'rootId' => $root->id,
+      'isMostRecentBranch' =>  ($rootOfMostRecent && $root->id == $rootOfMostRecent->id),
+      'notes' => $branch,
+    ];
+  }
+  usort($branches, function ($a, $b) {
+    if ($a['isMostRecentBranch']) return -1;
+    if ($b['isMostRecentBranch']) return 1;
+    return $a['rootId'] - $b['rootId'];
+  });
+  $result = [];
+  foreach ($branches as $branch) {
+    $result = array_merge($result, $branch['notes']);
+  }
+
+  return $result;
+}
+
 
 function isNoteFromDiscussion($arrayNotes,$idRes,&$result){
   $disc=array();

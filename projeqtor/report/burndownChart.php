@@ -190,7 +190,7 @@ $pe=new PlanningElement();$peTable=$pe->getDatabaseTableName();
 //where
 if ($idFilterCriteria) {
   $todaySql=date('Ymd');
-  $querySelect= "select sum(leftWork) as leftwork, sum(realWork) as realwork, '$todaySql' as day ";
+  $querySelect= "select sum(leftWork) as leftwork, sum(realWork) as realwork, '$todaySql' as day, min(coalesce(pe.realStartDate, pe.plannedStartDate, pe.validatedStartDate)) startact ";
   $queryFrom=   " from $actcrtTable a";
   $queryFrom.=  "   LEFT JOIN $peTable pe ON a.id = pe.refId AND pe.refType = 'Activity'";
   $queryWhere=  " where $myFilters";
@@ -213,6 +213,8 @@ if ($startDateReport) $start=$startDateReport;
 $end="";
 $hasReal=false;
 $lastLeft=0;
+$maxReal=0;
+$startAct=null;
 while ($line = Sql::fetchLine($result)) {
   $day=pq_substr($line['day'],0,4).'-'.pq_substr($line['day'],4,2).'-'.pq_substr($line['day'],6);
   $left=$line['leftwork']??0;
@@ -222,13 +224,21 @@ while ($line = Sql::fetchLine($result)) {
     //$left;
     if($idProject){
       $lastLeft=$left;
+      $maxReal=$real;
     }else{
       $lastLeft+=$left;
+      $maxReal+=$real;
     }
     if ( ($start=="" or $start>$day) and $day<=$today ) {$start=$day;}
     if ( ($end=="" or $end<$day) and $day<=$today ) { $end=$day;}
+    if ($idFilterCriteria and isset($line['startact']) and ($startAct==null or $startAct>$line['startact'])) $startAct=$line['startact'];
   }
   if ($day>date('Y-m-d')) break;
+}
+
+if ($idFilterCriteria and ! $startDateReport and $startAct) {
+  $startDateReport=addDaysToDate($startAct,-1);
+  $start=$startDateReport;
 }
 //if lastLeft = 0, no data.
 if($lastLeft == 0 ){
@@ -411,6 +421,41 @@ while ($date<=$end) {
   $date=addDaysToDate($date, 1);
 }
 
+if ($idFilterCriteria and (! isset($resLeft[$start]) or $resLeft[$start]==VOID)) {
+  $tabLeft[$start]=$lastLeft+$maxReal;
+}
+if ($idFilterCriteria) { // RETRIEVE WORK TO DECREASE VALUE
+  $w=new Work();
+  $currentLeft=$lastLeft+$maxReal;
+  $wTable=$w->getDatabaseTableName();
+  //select
+  $querySelect= "select sum(w.work) as work, w.workDate as day ";
+  $queryFrom=   " from $wTable w";
+  $queryJoin=  " LEFT JOIN $actcrtTable a ON w.refId = a.id  AND w.refType = 'Activity'";
+  if($peCritOn){
+    $queryJoin .= "LEFT JOIN $peTable pe ON w.refId = pe.refId AND pe.refType = 'Activity'";
+  }
+  if ($startDateReport) $queryWhere= "  where w.workDate>='$startDateReport'";
+  else $queryWhere=  " where 1=1";
+  $queryWhere .= " AND $myFilters";
+  $queryOrder= "  group by w.workDate order by w.workDate";
+  $query=$querySelect.$queryFrom.$queryJoin.$queryWhere.$queryOrder;
+  $resultReal=Sql::query($query);
+  while ($line = Sql::fetchLine($resultReal)) {
+    $day=$line['day'];
+    $work=$line['work']??0;
+    $currentLeft-=$work;
+    $tabLeft[$day]=$currentLeft;
+  }
+}
+
+$lastTabLeft=$lastLeft+$maxReal;
+foreach ($arrDates as $date => $period) {
+  if (isset($tabLeft[$date])) $lastTabLeft=$tabLeft[$date];
+  else $tabLeft[$date]=$lastTabLeft;
+}
+
+
 $old=null;
 $old=reset($tabLeft);
 $oldPlanned=$lastLeft;
@@ -422,10 +467,17 @@ foreach ($arrDates as $date => $period) {
   if ($date>$endReal) {
     if (!isset($resLeft[$period])) $resLeft[$period]=VOID;
   } else if (isset($tabLeft[$date])) {
-    $resLeft[$period]=Work::displayWork($tabLeft[$date]);
-    $old=$tabLeft[$date];
+    if (isset($tabLeftPlanned[$date])) {
+      $resLeft[$period]=Work::displayWork($tabLeftPlanned[$date]);
+      $old=$tabLeftPlanned[$date];
+    } else {
+      $resLeft[$period]=Work::displayWork($tabLeft[$date]);
+      $old=$tabLeft[$date];
+    }
+    
   } else {
-    $resLeft[$period]=($old===null)?'':Work::displayWork($old);
+    if ($idFilterCriteria and $date<$today) $resLeft[$period]=VOID;
+    else $resLeft[$period]=($old===null)?VOID:Work::displayWork($old);
   }
   if (isset($tabLeftPlanned[$date])) {
     $resLeftPlanned[$period]=Work::displayWork($tabLeftPlanned[$date]);
@@ -503,12 +555,12 @@ foreach ($arrDates as $date => $period) {
   if ($val) {
     $val-=$stepValue;
     if ($val<0) $val=VOID;
-    else if ($val<0.1) $val=VOID;
+    else if ($val<0.1 and $scale!='day') $val=VOID;
   } else {
     $val=VOID;
   }
 }
-
+if ($scale!='day') $resBest[$period]=VOID;
 $startDatePeriod=null;
 $endDatePeriod=null;
 if ($startDateReport and isset($arrDates[$startDateReport])) $startDatePeriod=$arrDates[$startDateReport];
@@ -527,7 +579,7 @@ if ($startDatePeriod or $endDatePeriod) {
         unset($resCompletedTasksPlanned[$period]);
       }
     }
-    if ($idFilterCriteria and $date!=$startDatePeriod) unset($resLeft[$period]);
+    //if ($idFilterCriteria and $date!=$startDatePeriod) unset($resLeft[$period]);
   }
 }
 

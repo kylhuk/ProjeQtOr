@@ -195,13 +195,14 @@ use Mpdf\Tag\Table;
   echo '</div>';
   $left = round(dayDiffDates($startDate, date('Y-m-d')));
   $left = ((($topUnit*$ratio)*$left)/numberOfDaysOfMonth(date('Y-m-d')));
-  echo '<div style="position:absolute;top:5px;left:'.$todayLeft.'px;height: 18px;background:green;color:white;padding:0px 5px;z-index:999;border-radius: 5px 0px 5px 0px;" title="'.htmlFormatDate(date('Y-m-d')).'">'.ucfirst(i18n('today')).'</div>';
-  echo '<div style="position:absolute;top:23px;left:'.$todayLeft.'px;height: 20px;width:2px;background:green;z-index: -1;" title="'.htmlFormatDate(date('Y-m-d')).'"></div>';
+  echo '<div style="position:absolute;top:0px;left:'.$todayLeft.'px;height: 18px;background:green;color:white;padding:0px 5px;z-index:999;border-radius: 5px 0px 5px 0px;" title="'.htmlFormatDate(date('Y-m-d')).'">'.ucfirst(i18n('today')).'</div>';
+  echo '<div style="position:absolute;top:18px;left:'.$todayLeft.'px;height: 25px;width:2px;background:green;z-index: -1;" title="'.htmlFormatDate(date('Y-m-d')).'"></div>';
   echo '<div style="position:absolute;top:43px;left:'.$todayLeft.'px;height: 100%;width:2px;background:green;z-index:999;" title="'.htmlFormatDate(date('Y-m-d')).'"></div>';
   echo '<div style="position:relative;width:'.(($topUnit*$ratio)*$topUnits).'px;min-height:64px;margin: 3px 0px;overflow-y:scroll;overflow-x:hidden;">';
   $left = round(dayDiffDates($startDate, date('Y-m-d')));
   $left = ((($topUnit*$ratio)*$left)/numberOfDaysOfMonth(date('Y-m-d')));
   $itemToDraw = array();
+  $milestoneToDraw = array();
   ksort($itemListSortDate);
   foreach ($itemListSortDate as $wbs=>$dateList){
     foreach ($dateList as $date=>$idItemList){
@@ -225,19 +226,30 @@ use Mpdf\Tag\Table;
         }
         $item = $itemList[$idItem];
         if($nbRow-count($itemToDraw) > 0)$nbRow-=($nbRow-count($itemToDraw));
-        $top = 'top:'.((20*$nbRow)+$nbRow).'px;';
         $left = round(dayDiffDates($startDate, $item['startDate']));
         $left = ((($topUnit*$ratio)*$left)/$topUnit)+1;
-        $width = round(dayDiffDates($item['startDate'], $item['endDate']))+1;
-        $width = ((($topUnit*$ratio)*$width)/$topUnit)-1;
-        $color = ($pe->color)?$pe->color:'var(--color-light)';
-        $fontColor = '#3a3a3a';
-        $itemToDraw[$nbRow][$date][$wbs] = '<div style="border-left:1px solid white;border-radius:3px;position:absolute;left:'.$left.'px;'.$top.'width:'.$width.'px;height:20px;background:'.$color.';overflow:hidden;cursor:pointer;" title="'.$itemName.' ( '.htmlFormatDate($item['startDate']).' - '.htmlFormatDate($item['endDate']).' )"
-        oncontextmenu="event.preventDefault();openTimelineContextMenu('.$idItem.','.$item['refId'].',\''.$item['refType'].'\');" onclick="runScript(\''.$item['refType'].'\','.$item['refId'].','.$idItem.');">';
-        $itemToDraw[$nbRow][$date][$wbs] .= '  <div style="float:left;overflow:hidden;white-space:nowrap;font-weight: bold;margin: 5px 0px 0px 7px;font-size: 7pt;color:'.$fontColor.'">'.$itemName.'</div>';
-        $itemToDraw[$nbRow][$date][$wbs] .= '  <div style="float:left;overflow:hidden;white-space:nowrap;margin: 5px 0px 0px 10px;font-size: 7pt;color:'.$fontColor.';">'.htmlFormatDate($item['startDate']).' - '.htmlFormatDate($item['endDate']).'</div>';
-        echo '  <input class="hiddenTimelineTask" type="hidden" id="TimelineItemTask_'.$idItem.'" name=""/>';
-        $itemToDraw[$nbRow][$date][$wbs] .= '</div>';
+        if($item['refType'] != 'Milestone'){
+          $top = 'top:'.((20*$nbRow)+$nbRow).'px;';
+          $width = round(dayDiffDates($item['startDate'], $item['endDate']))+1;
+          $width = ((($topUnit*$ratio)*$width)/$topUnit)-1;
+          $color = ($pe->color)?$pe->color:'var(--color-light)';
+          $fontColor = '#3a3a3a';
+          $itemToDraw[$nbRow][$date][$wbs] = '<div style="border-left:1px solid white;border-radius:3px;position:absolute;left:'.$left.'px;'.$top.'width:'.$width.'px;height:20px;background:'.$color.';overflow:hidden;cursor:pointer;" title="'.$itemName.' ( '.htmlFormatDate($item['startDate']).' - '.htmlFormatDate($item['endDate']).' )"
+          oncontextmenu="event.preventDefault();openTimelineContextMenu('.$idItem.','.$item['refId'].',\''.$item['refType'].'\');" onclick="runScript(\''.$item['refType'].'\','.$item['refId'].','.$idItem.');">';
+          $itemToDraw[$nbRow][$date][$wbs] .= '  <div style="float:left;overflow:hidden;white-space:nowrap;font-weight: bold;margin: 5px 0px 0px 7px;font-size: 7pt;color:'.$fontColor.'">'.$itemName.'</div>';
+          $itemToDraw[$nbRow][$date][$wbs] .= '  <div style="float:left;overflow:hidden;white-space:nowrap;margin: 5px 0px 0px 10px;font-size: 7pt;color:'.$fontColor.';">'.htmlFormatDate($item['startDate']).' - '.htmlFormatDate($item['endDate']).'</div>';
+          $itemToDraw[$nbRow][$date][$wbs] .= '  <input class="hiddenTimelineTask" type="hidden" id="TimelineItemTask_'.$idItem.'" name="TimelineItemTask_'.$item['refType'].'"/>';
+          $itemToDraw[$nbRow][$date][$wbs] .= '</div>';
+        }else{
+          $top = '29px';
+          $milestoneToDraw[$nbRow][$date][$wbs] = '<div style="position:absolute;left:'.$left.'px;top:'.$top.';cursor:pointer;z-index:99;" title="'.$itemName.' ( '.htmlFormatDate($item['startDate']).' )"
+          oncontextmenu="event.preventDefault();openTimelineContextMenu('.$idItem.','.$item['refId'].',\''.$item['refType'].'\');" onclick="runScript(\''.$item['refType'].'\','.$item['refId'].','.$idItem.');">';
+          $milestoneToDraw[$nbRow][$date][$wbs] .= '  <div style="top: -20px;left: 7px;font-weight: bold;font-size: 9px;position: absolute;white-space:nowrap;transform: translateX(-50%);">'.$itemName.'</div>';
+          $milestoneToDraw[$nbRow][$date][$wbs] .= '  <div style="top: -10px;left: 7px;width: 2px;height:20px;background: black;position: absolute;"></div>';
+          $milestoneToDraw[$nbRow][$date][$wbs] .= '  <div style="font-size: 15pt;color: black;">◊</div>';
+          $milestoneToDraw[$nbRow][$date][$wbs] .= '  <input class="hiddenTimelineTask" type="hidden" id="TimelineItemTask_'.$idItem.'" name="TimelineItemTask_'.$item['refType'].'"/>';
+          $milestoneToDraw[$nbRow][$date][$wbs] .= '</div>';
+        }
       }
     }
   }
@@ -258,5 +270,20 @@ use Mpdf\Tag\Table;
     }
   }
   echo '</div>';
+  foreach ($milestoneToDraw as $row=>$dateList){
+    foreach ($dateList as $date=>$wbsList){
+      foreach ($wbsList as $wbs=>$item){
+        if($maxRow){
+          if($row < $maxRow){
+            echo $item;
+          }else{
+            continue;
+          }
+        }else{
+          echo $item;
+        }
+      }
+    }
+  }
   echo '</div>';
 ?>

@@ -38,6 +38,7 @@ $activityStreamNumberElement=Parameter::getUserParameter("activityStreamNumberEl
 $activityStreamIdNote=Parameter::getUserParameter("activityStreamIdNote");
 $activityStreamNumberDays=Parameter::getUserParameter("activityStreamNumberDays");
 $displayInChatMode=(Parameter::getUserParameter('displayInChatMode'));
+$hideEmailsSent = Parameter::getUserParameter('hideEmailsSent');
 
 $selectedAuthor=Parameter::getUserParameter('activityStreamAuthorFilter');
 if ($selectedAuthor==' ') $selectedAuthor=null;
@@ -47,13 +48,13 @@ if(!$activityStreamNumberDays){
   $activityStreamNumberDays="7";
 }
 $inputWidth=(RequestHandler::getValue('destinationWidth')<1000)?100:150;
-$height='93';
+$height='115';
 if($showOnlyNotes!='YES' or !$selectedAuthor){
   $showDisplayInChatMode='NO';
 }
 if ($showOnlyNotes=='YES' and $selectedAuthor){
   $showDisplayInChatMode='YES';
-  $height='123';
+  $height='145';
 }
 
 if(!isNewGui()){
@@ -191,6 +192,16 @@ if(!isNewGui()){
                  </a>
               </td>
             </tr>
+            <tr>
+              <input type="hidden" id="hideEmailsSentValue" name="hideEmailsSentValue" value="<?php echo $hideEmailsSent;?>" /> 
+              <td colspan="2" style="width:50%;white-space:nowrap;" align="right">
+                <a onclick="hideEmailsSentStream();" href="#" style="cursor: pointer;display:flex;">
+                   <?php echo i18n("hideEmailsSent");?>
+                   <?php $displayHideEmailsSent=($hideEmailsSent=='YES')?'inline-block':'none';?>
+                   <span id="hideEmailsSent" style="display:<?php echo $displayHideEmailsSent;?>;margin-left:10px;";><img src="css/images/iconSelect.png"/></span>
+                 </a>
+              </td>
+            </tr>
 		  </table>
         </td>
         <td valign="top" width="20%">
@@ -270,7 +281,7 @@ if(!isNewGui()){
 				<td valign="top" width="25%">
 					<table >
 						<tr>
-						  <td > <div id ="filterElement" style="height:<?php echo ($showDisplayInChatMode!='YES')?'120':'150'; ?>px;text-align:center;writing-mode: vertical-rl; transform: rotate(180deg);border-left:1px solid;margin-right:15px;">
+						  <td > <div id ="filterElement" style="height:<?php echo ($showDisplayInChatMode!='YES')?'144':'174'; ?>px;text-align:center;writing-mode: vertical-rl; transform: rotate(180deg);border-left:1px solid;margin-right:15px;">
 						  <strong><?php echo pq_ucfirst(i18n('filterOnElementActivityStream'));?></strong> </div>
 						  </td>
 						  <td>
@@ -349,7 +360,7 @@ if(!isNewGui()){
           <input type="hidden" id="activityStreamAddedRecently" name="activityStreamAddedRecently" value="<?php echo $addedRecently;?>" />   
           <input type="hidden" id="activityStreamUpdatedRecently" name="activityStreamUpdatedRecently" value="<?php echo $updatedRecently;?>" /> 
 						<tr>
-						  <td> <div  id ="filterOnEdit" style="height:<?php echo ($showDisplayInChatMode!='YES')?'120':'150'; ?>px;text-align:center;writing-mode: vertical-rl; transform: rotate(180deg);border-left:1px solid;margin-right:15px;">
+						  <td> <div  id ="filterOnEdit" style="height:<?php echo ($showDisplayInChatMode!='YES')?'144':'174'; ?>px;text-align:center;writing-mode: vertical-rl; transform: rotate(180deg);border-left:1px solid;margin-right:15px;">
 						  <strong><?php echo i18n('filterOnEdit')?></strong> </div>
 						  </td>
 						  <td>
@@ -435,6 +446,21 @@ if(!isNewGui()){
               </script>
             </div>
             <input type="hidden" id="lastShowOnlyNoteSwitch" name="lastShowOnlyNoteSwitch" value="<?php echo ($displayShowOnlyNotes=='inline-block')?'on':'off';?>" /> 
+          </td>
+       </tr>
+       <tr style="margin-top:10px;">
+          <input type="hidden" id="hideEmailsSentValue" name="hideEmailsSentValue" value="<?php echo $hideEmailsSent;?>" /> 
+          <td  style="padding:10px;white-space:nowrap;" align="right">
+           <?php echo pq_ucfirst(i18n("hideEmailsSent"));?>
+           <?php $displayHideEmailsSent=($hideEmailsSent=='YES')?'inline-block':'none';?>
+          </td>
+          <td style="text-align:left;">
+            <div  id="hideEmailsSentSwitch" name="hideEmailsSentSwitch" class="colorSwitch" data-dojo-type="dojox/mobile/Switch" value="<?php if($displayHideEmailsSent=='inline-block'){?>on<?php }else{?>off<?php }?>" leftLabel="" rightLabel="">
+              <script type="dojo/method" event="onStateChanged" >
+              hideEmailsSentStream();
+              </script>
+            </div>
+            <input type="hidden" id="lastHideEmailsSentSwitch" name="lastHideEmailsSentSwitch" value="<?php echo ($displayShowOnlyNotes=='inline-block')?'on':'off';?>" /> 
           </td>
        </tr>
        <tr id="trDisplayChat" style="margin-top:10px;display:<?php echo ($showOnlyNotes=='YES' and $selectedAuthor)?"table-row;":"none;"; ?>">

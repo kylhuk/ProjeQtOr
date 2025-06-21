@@ -137,9 +137,9 @@ function loadDialog(dialogDiv, callBack, autoShow, params, clearOnHide, closable
    params="";
   }
   showWait();
+  var url='../tool/dynamicDialog.php?dialog='+dialogDiv+'&isIE='+((dojo.isIE)?dojo.isIE:'')+params+addTokenIndexToUrl();
   dojo.xhrPost({
-   url : '../tool/dynamicDialog.php?dialog=' + dialogDiv + '&isIE='
-       + ((dojo.isIE) ? dojo.isIE : '') + params+addTokenIndexToUrl(),
+   url : url,
    form : formName,
    handleAs : "text",
    load : function(data) {
@@ -591,7 +591,6 @@ function hideMsg(id,value){
 // =============================================================================
 
 function showPrint(page, context, comboName, outMode, orientation, attach) {
-  //console.log(page);
   showWait();
   quitConfirmed=true;
   noDisconnect=true;
@@ -4125,18 +4124,42 @@ function filterProjects() {
   }
 }
 
-function refreshProjectSelectorList(skipRefreshPlanningList) {
+function validateSearchProject(){
+  if(event.keyCode != '13')return;
+  var input = dojo.byId('projectFilterInput');
+  var filter = input.value.toLowerCase();
+  var projectTr = document.querySelectorAll("tr[id^='forSearchBar']");
+  if (projectTr.length === 0)return;
+  for (var i = 0; i < projectTr.length; i++) {
+      var project = projectTr[i];
+      if (project.innerText.toLowerCase().indexOf(filter) > -1) {
+        dojo.query('.projectSelectorCheckbox .dijitCheckBoxInput', project).forEach(function(checkbox){
+          dijit.byId(checkbox.id).set('checked', true);
+        });
+      }
+  }
+  selectedMultiProject();
+}
+
+function refreshProjectSelectorList(skipRefreshPlanningList, openDropDown, hideParam) {
   if (skipRefreshPlanningList==null || skipRefreshPlanningList==undefined) skipRefreshPlanningList=false;
+  if (openDropDown==null || openDropDown==undefined) openDropDown=false;
+  if (hideParam==null || hideParam==undefined) hideParam=true;
   dojo.xhrPost({
     url : "../tool/refreshVisibleProjectsList.php"+addTokenIndexToUrl('?'),
     load : function() {
-      loadContent('../view/menuProjectSelector.php', 'projectSelectorDiv');
+      var callback = function(){
+        if(openDropDown){
+          dijit.byId('selectedProject').openDropDown();
+        }
+      };
+      loadContent('../view/menuProjectSelector.php', 'projectSelectorDiv', null,null,null,null,null,callback);
       if (dijit.byId('idProjectPlan')) {
         if (! skipRefreshPlanningList) refreshList('planning', null, null, dijit.byId('idProjectPlan').get('value'), 'idProjectPlan', false);
       }
     }
   });
-  if (dijit.byId('dialogProjectSelectorParameters')) {
+  if (hideParam && dijit.byId('dialogProjectSelectorParameters')) {
     dijit.byId('dialogProjectSelectorParameters').hide();
   }
 }

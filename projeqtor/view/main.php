@@ -511,7 +511,8 @@ if (isset($paramExtraHeaders) ) {
     <?php foreach (Project::getSelectedProjectList() as $key=>$idP){
       echo "arraySelectedProject[$key]='$idP';";
     }?>
-    var favoriteProjectsArray = "<?php echo Parameter::getUserParameter('favoriteProjectsArray');?>";
+    var selectedFavoriteProject = "<?php echo Parameter::getUserParameter('idFavoriteProjectList');?>";
+    var favoriteProjectsArray = '';
     var isColorBlind = "<?php echo Parameter::getUserParameter('colorBlindPlanning');?>";
     var fromContextMenu = false;
     var lockPlanningSaveRefresh = 0;
@@ -537,6 +538,7 @@ if (isset($paramExtraHeaders) ) {
     var wpShowPoolForResource = "<?php echo (Parameter::getUserParameter("workPlanShowPoolForResource") == "1")?1:0;?>";
     var wpShowResourceWithoutWork = "<?php echo (Parameter::getUserParameter("workPlanShowResourceWithoutWork") == "1")?1:0;?>";
     var wpShowWorkDecimals = "<?php echo (Parameter::getUserParameter("workPlanShowWorkDecimals") != "0")?1:0;?>";
+    var multiSelectionInputPressed = false;
     window.onresize=function() {
       if (dojo.byId('objectClassManual') && dojo.byId('objectClassManual').value=='Planning') {
         if (g) {g.DrawDependencies();}
@@ -649,6 +651,20 @@ if (isset($paramExtraHeaders) ) {
           }
         }else if(event.keyCode==122){
           setTimeout("resizeAfterFullScreen();",150);
+        }else if(event.keyCode==13){
+          if(currentRowToEdit && !isEditRowFinishDisplay){
+            var refId = dojo.byId('objectIdRow').value;
+            var refClass = dojo.byId('objectClassName').value;
+            var idProject = dojo.byId('idProjectRow').value;
+            if (refClass=='Replan' || refClass=='Construction' || refClass=='Fixed') refClass='Project';
+            JSGantt.planningRowClickAction(currentRowToEdit, refId, refClass, idProject, false);
+          }else if(currentRowToEdit){
+            inlineSave();
+          }
+        }else if(event.keyCode==38 || event.keyCode==40){
+          switchEditRowLine(event);
+        }else if(event.keyCode==16 || event.keyCode==17){
+          multiSelectionInputPressed=true;
         }
        if (event.target.id=="noteNoteStream") {
           saveNoteStream(event);
@@ -658,10 +674,16 @@ if (isset($paramExtraHeaders) ) {
           saveNoteStreamVote(event);
         }
       };
+      var onKeyUpFunc = function(event) {
+        if(event.keyCode==16 || event.keyCode==17){
+          multiSelectionInputPressed=false;
+        }
+      };
       //if (dojo.isIE && dojo.isIE<=8) { // compatibility with IE8 removed in V6.0
       //  dojo.connect(document, "onkeypress", this, onKeyPressFunc);
       //} else {
         dojo.connect(document, "onkeydown", this, onKeyDownFunc);
+        dojo.connect(document, "onkeyup", this, onKeyUpFunc);
       //} 
         var fullScr=function(evt){
           var fullscreenElement = document.fullscreenElement || document.mozFullScreenElement ||

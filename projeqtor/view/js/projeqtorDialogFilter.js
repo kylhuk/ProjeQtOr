@@ -38,12 +38,7 @@ function showFilterDialog() {
   function callBack() {
     filterStartInput=false;
     window.top.filterFromDetail=false;
-    if (window.top.dijit.byId('dialogDetail').open) {
-      window.top.filterFromDetail=true;
-      dojo.byId('filterDefaultButtonDiv').style.display='none';
-    } else {
-      dojo.byId('filterDefaultButtonDiv').style.display='block';
-    }
+
     dojo.style(dijit.byId('idFilterOperator').domNode,{
       visibility:'hidden'
     });
@@ -91,9 +86,18 @@ function showFilterDialog() {
       }
     });
     compUrl=(window.top.dijit.byId("dialogDetail").open) ? '?comboDetail=true' : '';
-    loadContent("../tool/displayFilterClause.php" + compUrl,"listFilterClauses","dialogFilterForm",false,null,null,null,displayOrOperator);
+    loadContent("../tool/displayFilterClause.php" + compUrl,"listFilterClauses","dialogFilterForm",false,null,null,null);
+    loadContent("../tool/refreshFilterNameLayout.php" + compUrl,"filterNameLayoutDiv","dialogFilterForm",false, null, null, null);
     loadContent("../tool/displayFilterList.php" + compUrl,"listStoredFilters","dialogFilterForm",false);
     loadContent("../tool/displayFilterSharedList.php" + compUrl,"listSharedFilters","dialogFilterForm",false);
+    const filterData = document.querySelectorAll('td[id^="filterData_"]');
+    filterData.forEach(function(td) {
+      if (td.dataset.selected === 'isSelected') {
+        const idsPart = td.id.replace('filterData_', '');
+        const [filterId, idLayout] = idsPart.split('#');
+        selectStoredFilter(filterId,idLayout,'','','');
+      }
+    });
     var objectClass='';
     if (dojo.byId('objectClassList') && dojo.byId('objectClassList').value) objectClass=dojo.byId('objectClassList').value;
     else if (dojo.byId("objectClassManual") && dojo.byId("objectClassManual").value
@@ -111,12 +115,16 @@ function displayOrOperator() {
     dojo.byId('filterLogicalOperator').style.display='block';
   }
 }
-
+var samefilteroperator = null;
 function filterSelectAtribute(value) {
   if (value) {
     filterStartInput=true;
     if (dijit.byId('filterCompareParameterSwitch')) dijit.byId('filterCompareParameterSwitch').set('value','off');
     if (dijit.byId('filterDynamicParameterSwitch')) dijit.byId('filterDynamicParameterSwitch').set('value','off');
+    if (editFilterValueDynamic!==null && editFilterValueDynamic==1){
+      dijit.byId("filterDynamicParameterSwitch").set("value",'on');
+    }
+    var dataTypeEdit=null;
     dijit.byId('idFilterAttribute').store.store.fetchItemByIdentity({
       identity:value,
       onItem:function(item) {
@@ -140,7 +148,31 @@ function filterSelectAtribute(value) {
           },
           count:1,
           onItem:function(item) {
-            dijit.byId('idFilterOperator').set("value",item.id);
+            var filteroperator = (editFilterOperator )? editFilterOperator : item.id;
+            if (editFilterOperator!==null){
+              if (editFilterOperator=='BETWEEN'){
+                filteroperator = '=';
+              }else if(editFilterOperator=='NOT BETWEEN'){
+                filteroperator = '<>';
+              }else if(editFilterOperator=='is null'){
+                filteroperator = 'isEmpty';
+              }else if(editFilterOperator=='is not null'){
+                filteroperator = 'isNotEmpty';
+              }else if(editFilterOperator=='LIKE' && editFilterOperatorDisp && editFilterOperatorDisp=='startBy'){
+                filteroperator = 'startBy'; 
+              }else if(editFilterOperator=='<='){
+                if (editFilterValue.toUpperCase().includes('ADDDATE')){
+                  filteroperator = '<=now+';
+                }
+              }else if(editFilterOperator=='>='){
+                if (editFilterValue.toUpperCase().includes('ADDDATE')){
+                  filteroperator = '>=now+';
+                }
+              }
+              if (samefilteroperator==filteroperator) filterSelectOperator(filteroperator); 
+                samefilteroperator=  filteroperator; 
+            }
+            dijit.byId('idFilterOperator').set("value",filteroperator);
           },
           onError:function(err) {
             console.info(err.message);
@@ -175,7 +207,10 @@ function filterSelectAtribute(value) {
           visibility:'visible'
         });
         // ADD qCazelles - Dynamic filter - Ticket #78
-        dojo.byId('filterDynamicParameterPane').style.display='block';
+        if (editFilterValueCompare) {
+          dojo.byId('filterDynamicParameterPane').style.display = 'none';
+        }
+        else dojo.byId('filterDynamicParameterPane').style.display='block';
         dojo.byId('filterCompareParameterPane').style.display='none';
 		dijit.byId("filterCompareParameter").set("checked",false);
 		
@@ -183,6 +218,7 @@ function filterSelectAtribute(value) {
         // END ADD qCazelles - Dynamic filter - Ticket #78
         dojo.byId('filterDataType').value=dataType;
         if (dataType == "bool") {
+          dataTypeEdit="bool";
           dijit.byId("filterCompareParameter").set("checked",false);
           dojo.byId('filterCompareParameterPane').style.display='none';
           filterType="bool";
@@ -198,6 +234,7 @@ function filterSelectAtribute(value) {
             dojo.style(dijit.byId('filterValueCheckboxSwitch').domNode,{
               display:'block'
             });
+
             if (isNewGui) dojo.byId("filterValueCheckboxSwitch").style.top="10px";
             dijit.byId('filterValueCheckbox').set('value','off');
           } else {
@@ -209,21 +246,25 @@ function filterSelectAtribute(value) {
           dojo.style(dijit.byId('filterValueDate').domNode,{
             display:'none'
           });
+          dojo.style(dijit.byId('showDetailInFilter').domNode,{
+            display:'none'
+          });
         } else if (dataType == "list") {
+          dataTypeEdit='list';
           dijit.byId("filterCompareParameter").set("checked",false);
           dojo.byId('filterCompareParameterPane').style.display='none';
           filterType="list";
           var extraUrl="";
           if (value == 'idTargetVersion' || value == 'idTargetProductVersion' || value == 'idOriginalProductVersion') {
             value='idProductVersion';
-            if (dojo.byId('archiveOn').style.display=='none'){
+            if (dojo.byId('archiveOn') && dojo.byId('archiveOn').style.display=='none'){
               extraUrl='&critField=idle&critValue=0'; 
             }else{
               extraUrl='&critField=idle&critValue=all';
             }
           } else if (value == 'idTargetComponentVersion' || value == 'idOriginalComponentVersion') {
             value='idComponentVersion';
-            if (dojo.byId('archiveOn').style.display=='none'){
+            if (dojo.byId('archiveOn') && dojo.byId('archiveOn').style.display=='none'){
               extraUrl='&critField=idle&critValue=0'; 
             }else{
               extraUrl='&critField=idle&critValue=all';
@@ -303,12 +344,18 @@ function filterSelectAtribute(value) {
               }
             });
           } else {
+            valueSelect=[];
+            if (editFilterValue!==null) {
+              editFilterValue=editFilterValue.replace(/\(|\)|\s/g,'');
+              valueSelect=editFilterValue.split(',');
+            }
             tmpStore.fetch({
               query:{
                 id:"*"
               },
               onItem:function(item) {
-                mySelect.options[mySelect.length]=new Option(tmpStore.getValue(item,"name",""),tmpStore.getValue(item,"id",""));
+                selected=(valueSelect.indexOf(item.id[0])!=-1)?true:false;
+                mySelect.options[mySelect.length]=new Option(tmpStore.getValue(item,"name",""),tmpStore.getValue(item,"id",""),selected,selected);
                 nbVal++;
               },
               onError:function(err) {
@@ -351,6 +398,7 @@ function filterSelectAtribute(value) {
             display:'none'
           });
         } else if (dataType == "date") {
+          dataTypeEdit='date';
           filterType="date";
           dojo.byId('filterCompareParameterPane').style.display='block';
           dojo.style(dijit.byId('filterValue').domNode,{
@@ -377,14 +425,16 @@ function filterSelectAtribute(value) {
           });
           dijit.byId('filterValueDate').reset();
         } else {
-		  if (dataType=='decimal') {
-	          if (isNewGui) dojo.byId("filterCompareParameterPane").style.left="200px";
-	          if (isNewGui) dojo.byId("filterCompareParameterPane").style.top="30px";
-	          if (isNewGui) dojo.byId('filterCompareParameterPane').style.display='block';
-		  } else {
-			dojo.byId('filterCompareParameterPane').style.display='none';
-			dijit.byId("filterCompareParameter").set("checked",false);
-		  }
+    		  if (dataType=='decimal') {
+    		    dataTypeEdit='decimal';
+    		    if (isNewGui) dojo.byId("filterCompareParameterPane").style.left="200px";
+    	      if (isNewGui) dojo.byId("filterCompareParameterPane").style.top="30px";
+    	      if (isNewGui) dojo.byId('filterCompareParameterPane').style.display='block';
+    		  } else {
+    		    dataTypeEdit='varchar';
+    		    dojo.byId('filterCompareParameterPane').style.display='none';
+    		    dijit.byId("filterCompareParameter").set("checked",false);
+    		  }
           filterType="text";
           dojo.style(dijit.byId('filterValue').domNode,{
             display:'block'
@@ -447,7 +497,31 @@ function filterSelectAtribute(value) {
       dijit.byId('filterValueCheckboxSwitch').reset();
     }
     dijit.byId('filterValueDate').reset();
-
+    dojo.byId('buttonSaveFieldEdition').style.display=(editFilterValue!==null || editFilterValueDynamic!==null)?'block':'none';
+    
+    if (editFilterValue!==null) {
+      if (dataTypeEdit == "bool" && editFilterValue==1){
+        dijit.byId('filterValueCheckboxSwitch').set('value','on');
+      }else if (dataTypeEdit == "date"){
+        var dateFilter = editFilterValue.match(/(\d{4}-\d{2}-\d{2})/);
+        if (dateFilter) dijit.byId('filterValueDate').set('value', new Date(dateFilter[1]));
+        if (editFilterOperator=='<=' || editFilterOperator=='>='){
+          var valueFilter = editFilterValueDisp.match(/(\d+)/);
+          if (valueFilter) dijit.byId("filterValue").set("value",valueFilter[1]);
+        } 
+      }else if (dataTypeEdit!='list'){
+        valueFilter = editFilterValue;
+        if (editFilterOperator=='LIKE' || editFilterOperator=='NOT LIKE'){
+          valueFilter =  editFilterValueDisp.replace(/^'|'$/g, '');
+        }
+        dijit.byId("filterValue").set("value",valueFilter);
+      }
+      if (editFilterOperator!='NOT IN' && editFilterOperator!='IN' ){
+        dojo.byId('showDetailInFilter').style.display='none'; 
+      }else{
+        dojo.byId('showDetailInFilter').style.display='block';
+      }
+    }
     //#6012
     var objectClass='';
     if (dojo.byId('objectClassList') && dojo.byId('objectClassList').value) objectClass=dojo.byId('objectClassList').value;
@@ -545,6 +619,10 @@ function filterActiveCompareField() {
     });
     dijit.byId('FilterCompareAttribute').set('value', null);
     refreshListSpecific('object','FilterCompareAttribute','objectClass',objectClass, null, false, 'field', valueFilterAttribute);
+    if (editFilterValue!==null) {
+      editFilterValue=editFilterValue.replace(/\[|\]/g, '');
+     dijit.byId('FilterCompareAttribute').set('value',editFilterValue);
+    }
   }else{
     dojo.style(dijit.byId('FilterCompareAttribute').domNode,{
       display:'none'
@@ -631,6 +709,7 @@ function filterSelectOperator(operator) {
       dojo.style(dijit.byId('filterValue').domNode,{
         display:'none'
       });
+      
     } else {
     filterType="text";
     dojo.style(dijit.byId('filterValue').domNode,{
@@ -713,6 +792,7 @@ function filterSelectOperator(operator) {
       display:'none'
     });
     if (dataType == "bool") {
+      dojo.byId('filterCompareParameterPane').style.display='none';
       filterType="bool";
       if (dijit.byId('filterValueCheckboxSwitch')) {
         dojo.style(dijit.byId('filterValueCheckboxSwitch').domNode,{
@@ -760,7 +840,8 @@ function filterSelectOperator(operator) {
       });
       dijit.byId('filterDynamicParameter').set('checked','');
       if (dijit.byId('filterDynamicParameterSwitch')) dijit.byId('filterDynamicParameterSwitch').set('value','off');
-      dojo.byId('filterDynamicParameterPane').style.display='block';
+      if (editFilterValueCompare) dojo.byId('filterDynamicParameterPane').style.display = 'none';
+      else dojo.byId('filterDynamicParameterPane').style.display='block';
       if (isNewGui) dojo.byId("filterValueListHideTop").style.display="none";
     } else {
       filterType="text";
@@ -769,7 +850,8 @@ function filterSelectOperator(operator) {
       });
       dijit.byId('filterDynamicParameter').set('checked','');
       if (dijit.byId('filterDynamicParameterSwitch')) dijit.byId('filterDynamicParameterSwitch').set('value','off');
-      dojo.byId('filterDynamicParameterPane').style.display='block';
+      if (editFilterValueCompare) dojo.byId('filterDynamicParameterPane').style.display = 'none';
+      else dojo.byId('filterDynamicParameterPane').style.display='block';
       if (isNewGui) dojo.byId("filterValueListHideTop").style.display="none"; 
     } 
     //#6012
@@ -807,10 +889,29 @@ function filterSelectOperator(operator) {
       }); 
     }    //#6012
   }
+  if (editFilterValueCompare && dijit.byId('filterCompareParameterSwitch')){
+    dijit.byId('filterCompareParameterSwitch').set('value','on');
+    dojo.byId('filterDynamicParameterPane').style.display = 'none';
+  }else{
+    dijit.byId('filterCompareParameterSwitch').set('value','off');
+  }
+  if (editFilterValueDynamic !== null && editFilterValueDynamic == 1 && dijit.byId('filterCompareParameterSwitch')){
+    dijit.byId('filterDynamicParameterSwitch').set('value','on');
+  }else{
+    dijit.byId('filterDynamicParameterSwitch').set('value','off');
+  }
+  if (editFilterOperator!='NOT IN' && editFilterOperator!='IN' ){
+    dojo.byId('showDetailInFilter').style.display='none'; 
+  }else{
+    dojo.byId('showDetailInFilter').style.display='block';
+  }
 }
 
-function addfilterClause(silent) {
+function addfilterClause(silent,updateFilter,replaceIdFilterClause) {
   filterStartInput=false;
+  var isGroup = dojo.byId('isGroup');
+  var indentLevel = dojo.byId('indentLevel');
+  
   if (dijit.byId('filterNameDisplay')) {
     dojo.byId('filterName').value=dijit.byId('filterNameDisplay').get('value');
   }
@@ -851,21 +952,29 @@ function addfilterClause(silent) {
     }
   }
   var compUrl=(window.top.dijit.byId("dialogDetail").open) ? '?comboDetail=true' : '';
+  compUrl += (compUrl ? "&" : "?") + "updateFilter=" + (updateFilter ? "true" : "false");
+  compUrl += "&replaceFilterClause=" +(replaceIdFilterClause != undefined ? replaceIdFilterClause : '');
+  dojo.byId('filterEditId').value=(updateFilter)?editFilterIndex:null;
   loadContent("../tool/addFilterClause.php" + compUrl,"listFilterClauses","dialogFilterForm",false,null,null,null,function() {
     clearDivDelayed('saveFilterResult');
+    isGroup.value = "0";
   });
   if (dojo.byId('filterLogicalOperator') && dojo.byId('filterLogicalOperator').style.display == 'none') {
     dojo.byId('filterLogicalOperator').style.display='block';
   }
+  dojo.byId('buttonSaveFieldEdition').style.display='none';
 }
 
 function removefilterClause(id) {
   if (dijit.byId('filterNameDisplay')) {
     dojo.byId('filterName').value=dijit.byId('filterNameDisplay').get('value');
   }
+  if (dijit.byId('idLayout')) {
+    dojo.byId('filterLayout').value=dijit.byId('idLayout').get('value');
+  }
   dojo.byId("filterClauseId").value=id;
   var compUrl=(window.top.dijit.byId("dialogDetail").open) ? '?comboDetail=true' : '';
-  loadContent("../tool/removeFilterClause.php" + compUrl,"listFilterClauses","dialogFilterForm",false);
+  loadContent("../tool/removeFilterClause.php" + compUrl ,"listFilterClauses","dialogFilterForm",false);
   if (id == 'all' || dojo.byId('nbFilterCriteria').value == "1") { // Value is
     // not set
     // to 0
@@ -883,6 +992,9 @@ function removefilterClause(id) {
 
 function selectFilter(skipRefresh) {
   if (skipRefresh==null || skipRefresh==undefined) skipRefresh=false;
+  if (!validateFilterParentheses()) {
+    return false;
+  }
   if (filterStartInput) {
     addfilterClause(true);
     setTimeout("selectFilterContinue("+((skipRefresh)?'true':'false')+");",1000);
@@ -977,21 +1089,45 @@ function clearFilter() {
   if (dijit.byId('filterNameDisplay')) {
     dijit.byId('filterNameDisplay').reset();
   }
+  if (dijit.byId('idLayout')) {
+    dijit.byId('idLayout').reset();
+  }
   dojo.byId('filterName').value="";
+  dojo.byId('filterLayout').value="";
   removefilterClause('all');
   // setTimeout("selectFilter();dijit.byId('listFilterFilter').set('iconClass','dijitButtonIcon
   // iconFilter');",100);
   dijit.byId('listFilterFilter').set('iconClass','dijitButtonIcon iconFilter');
   dijit.byId('filterNameDisplay').set('value',null);
   dojo.byId('filterName').value=null;
+  dijit.byId('idLayout').set('value',null);
+  dojo.byId('filterLayout').value=null;
+  if (dojo.byId("operatorFilterAndOrJs") && dojo.byId("parenthesisOpenJs")){
+    dojo.byId("operatorFilterAndOrJs").remove();
+    dojo.byId("parenthesisOpenJs").remove();
+  }
+  resetOpenCloseGroup();
 }
 
-function defaultFilter() {
-  if (dijit.byId('filterNameDisplay')) {
+function defaultFilter(removeDefaultFilter,filterName) {
+  if (!removeDefaultFilter) removeDefaultFilter=false; 
+  if (!filterName) filterName=null;
+  if (dijit.byId('filterNameDisplay') && !removeDefaultFilter && filterName==null) {
     dojo.byId('filterName').value=dijit.byId('filterNameDisplay').get('value');
+  }else if (filterName){
+    dojo.byId('filterName').value=filterName;
   }
+  var removeParam = (compUrl ? "&" : "?") + "removeDefaultFilter=" + (removeDefaultFilter ? "1" : "0");
   var compUrl=(window.top.dijit.byId("dialogDetail").open) ? '?comboDetail=true' : '';
-  loadContent("../tool/defaultFilter.php" + compUrl,"listStoredFilters","dialogFilterForm",false,null,null,null,function() {
+  loadContent("../tool/defaultFilter.php" + compUrl + removeParam,"listStoredFilters","dialogFilterForm",false,null,null,null,function() {
+    clearDivDelayed('saveFilterResult');
+  });
+}
+
+function copyFilterShared(idFilter){
+  var compUrl=(window.top.dijit.byId("dialogDetail").open) ? '?comboDetail=true' : '';
+  var idFilter = (compUrl ? '&' : '?') + 'idFilter=' + idFilter;
+  loadContent("../tool/saveFilterShared.php" + compUrl + idFilter ,"listStoredFilters",null,false,null,null,null,function() {
     clearDivDelayed('saveFilterResult');
   });
 }
@@ -1004,6 +1140,15 @@ function saveFilter() {
     }
     dojo.byId('filterName').value=dijit.byId('filterNameDisplay').get('value');
   }
+  if (!validateFilterParentheses()) {
+    return false;
+  }
+  if (dojo.byId("operatorFilterAndOrJs") && dojo.byId("parenthesisOpenJs")){
+    dojo.byId("operatorFilterAndOrJs").remove();
+    dojo.byId("parenthesisOpenJs").remove();
+  }
+  resetOpenCloseGroup();
+  
   var nbFilter=dojo.byId('nbFilterCriteria');
   if (nbFilter && nbFilter.value == 0) {
     showAlert(i18n("cantSaveFilterWithNoClause"));
@@ -1015,6 +1160,149 @@ function saveFilter() {
   });
 }
 
+editFilterOperator=null;
+editFilterOperatorDisp=null;
+editFilterValue=null;
+editFilterValueDisp=null;
+editFilterValueDynamic=null;
+editFilterValueCompare=null;
+editFilterIndex=null;
+function editFilterClause(id){
+  dojo.xhrPost({
+    url:"../tool/getFilterClause.php?objectClass="+dojo.byId('objectClass').value+"&filterClause=" + id + addTokenIndexToUrl(),
+    handleAs:"text",
+    load:function(data,args) {
+      var res=JSON.parse(data);
+      currentAttribute=dijit.byId('idFilterAttribute').value;
+      editFilterOperator=res.sql.operator;
+      editFilterOperatorDisp=res.disp.operator;
+      editFilterValue=res.sql.value;
+      editFilterValueDisp=res.disp.value;
+      editFilterIndex=id;
+      if (id=='0' && dojo.byId('filterLogicalOperator')) dojo.byId('filterLogicalOperator').style.display='none';
+      editFilterValueCompare=(editFilterValue && editFilterValue[0]=='[')?true:false; 
+      editFilterValueDynamic=res.isDynamic;
+      dijit.byId('orOperator').set('value',res.orOperator);
+      dijit.byId('idFilterAttribute').set('value',res.sql.attribute);
+      if (currentAttribute==res.sql.attribute) filterSelectAtribute(currentAttribute);
+      setTimeout("editFilterOperator=null;editFilterValue=null;editFilterValueDynamic=null;editFilterValueCompare=null;editFilterOperatorDisp=null;editFilterValue=null;",2000);
+      
+    }
+  });
+}
+
+function openCloseGroup() {
+  var button = dojo.byId("dialogFilterOpenClose");
+  var triangle = dojo.byId("cursorFilter");
+  var isGroup = dojo.byId("isGroup");
+  var indentLevel = dojo.byId("indentLevel");
+  
+  if (button.getAttribute("data-state") == "open") {
+    if (dojo.byId("operatorFilterAndOrJs") || dojo.byId("parenthesisOpenJs")) return;
+    dojo.byId("dialogFilterOpenClose_label").innerHTML = i18n('closeGroup');
+    button.setAttribute("data-state", "closed");
+    button.setAttribute("title", i18n('closeGroupFilter'));
+    isGroup.value = "1";
+    indentLevel.value = "1";
+    var spanContainer = null;
+    if (triangle){
+      spanContainer = triangle.parentNode;
+    }
+    else {
+      var cursorNoFilterClause = dojo.byId('cursorFilterNoFilterClause');
+      cursorNoFilterClause.style.display='block';
+      spanContainer = cursorNoFilterClause.parentNode;
+    }
+
+    if (triangle) {
+      var operatorDiv = document.createElement("div");
+      operatorDiv.className = "operatorFilterAndOr";
+      const opVal = dijit.byId("orOperator").get("value");
+      operatorDiv.style.backgroundColor = (opVal === "1") ? "#e97c2d" : "#10c621";
+      operatorDiv.innerHTML = i18n(opVal === "1" ? 'OR' : 'AND');
+      operatorDiv.id = "operatorFilterAndOrJs";
+    }
+    const parenthesisDiv = document.createElement("div");
+    parenthesisDiv.className = "parenthesisFilter";
+    parenthesisDiv.id = "parenthesisOpenJs";
+    parenthesisDiv.innerHTML = "(";
+    if (spanContainer && spanContainer.parentNode) {
+      if (triangle) {
+        spanContainer.parentNode.insertBefore(operatorDiv, spanContainer.nextSibling);
+        spanContainer.parentNode.insertBefore(parenthesisDiv, operatorDiv.nextSibling);
+      } else {
+        spanContainer.parentNode.insertBefore(parenthesisDiv, spanContainer.nextSibling);
+      }
+    }
+  } else {
+    if (dojo.byId("operatorFilterAndOrJs") && dojo.byId("parenthesisOpenJs")){
+      dojo.byId("operatorFilterAndOrJs").remove();
+      dojo.byId("parenthesisOpenJs").remove();
+    }
+    dojo.byId("dialogFilterOpenClose_label").innerHTML = i18n('openGroup');
+    button.setAttribute("data-state", "open");
+    button.setAttribute("title", i18n('openGroupFilter'));
+    if (triangle) {
+      triangle.style.marginLeft = "0px";
+    }
+    isGroup.value = "0";
+    indentLevel.value = "0";
+    const filterDataTds = document.querySelectorAll('td[id^="filterData_"]');
+    var maxIndex = -1;
+    var lastTd = null;
+    filterDataTds.forEach(td => {
+      const match = td.id.match(/^filterData_(\d+)$/);
+      if (match) {
+        const num = parseInt(match[1], 10);
+        if (num > maxIndex) {
+          maxIndex = num;
+          lastTd = td;
+        }
+      }
+    });
+    if (document.querySelector('[id^="parenthesisOpen_"]') && lastTd && maxIndex >= 0 && !document.getElementById("parenthesisCloseJs_" + maxIndex) && !document.getElementById("parenthesisClose_" + maxIndex)) {
+      var idReplace = maxIndex-1;
+      if (document.getElementById("parenthesisOpen_" + maxIndex)){
+        addfilterClause(null,false,idReplace);
+      }else {
+        const closeDiv = document.createElement("div");
+        closeDiv.className = "parenthesisFilter";
+        closeDiv.id = "parenthesisCloseJs_" + maxIndex;
+        closeDiv.innerHTML = ")";
+        lastTd.appendChild(closeDiv);
+        addfilterClause(null,false,idReplace); 
+      } 
+    }
+  }
+}
+
+function resetOpenCloseGroup(){
+  var button = dojo.byId("dialogFilterOpenClose");
+  if (button){
+    dojo.byId("dialogFilterOpenClose_label").innerHTML = i18n('openGroup');
+    button.setAttribute("data-state", "open");
+    button.setAttribute("title", i18n('openGroupFilter'));
+    dojo.byId("isGroup").value = "0";
+    dojo.byId("indentLevel").value = "0";
+  }
+}
+
+function validateFilterParentheses() {
+  const opens = document.querySelectorAll("[id^='parenthesisOpen_']").length;
+  const closes = document.querySelectorAll("[id^='parenthesisClose_']").length;
+  if (opens>closes){
+    showAlert(i18n("groupNotClose"));
+    return;
+  }
+  if (opens<closes){
+    showAlert(i18n("groupNotOpen"));
+    return;
+  }
+  return true;
+}
+
+
+
 /**
  * Select a stored filter in the list and fetch criteria
  * 
@@ -1022,6 +1310,8 @@ function saveFilter() {
 var globalSelectFilterContentLoad=null;
 var globalSelectFilterContainer=null;
 function selectStoredFilter(idFilter,idLayout,context,contentLoad,container) {
+  if (dojo.byId('buttonSaveFieldEdition')) dojo.byId('buttonSaveFieldEdition').style.display='none';
+  resetOpenCloseGroup();
   var compUrl=(window.top.dijit.byId("dialogDetail").open) ? '&comboDetail=true' : '';
   globalSelectFilterContentLoad=null;
   globalSelectFilterContainer=null;
@@ -1045,6 +1335,7 @@ function selectStoredFilter(idFilter,idLayout,context,contentLoad,container) {
     if (dojo.byId('objectClassList') && dojo.byId('objectClassList').value) objectClass=dojo.byId('objectClassList').value;
     else if (dojo.byId("objectClassManual") && dojo.byId("objectClassManual").value) objectClass=dojo.byId("objectClassManual").value;
     else if (dojo.byId('objectClass') && dojo.byId('objectClass').value) objectClass=dojo.byId('objectClass').value;
+    if (objectClass=="PlanningWorkPlan") objectClass="Planning";
     var validationType=(idFilter==0 || ! idLayout)?null:'skipRefresh';
     var currentScreen = (dojo.byId("objectClassManual") && dojo.byId("objectClassManual").value)?dojo.byId("objectClassManual").value:null;
     if (dojo.byId('dynamicFilterId' + idFilter)) {
@@ -1078,12 +1369,23 @@ function selectStoredFilter(idFilter,idLayout,context,contentLoad,container) {
       dijit.byId('listFilterFilter').closeDropDown();
     }
   } else {
+    var filters = document.querySelectorAll("tr[id^='filter']");
+    for (var m = 0; m < filters.length; m++){
+      var filterID = filters[m].id.charAt(0).toUpperCase() + filters[m].id.slice(1);
+      if (filters[m].id == 'filter' + idFilter) {
+        dojo.byId('filter' + idFilter).style.cssText = "color: var(--color-darker); background-color: var(--color-medium-secondary);";
+        if (dojo.byId('img'+filterID)) dojo.byId('img'+filterID).style.cssText = "filter:brightness(0) invert(var(--color-toolbar-invert));float:left;width:10px;";
+      } else {
+        dojo.byId(filters[m].id).style.cssText = "cursor: pointer;";
+        if (dojo.byId('img'+filterID)) dojo.byId('img'+filterID).style.cssText = "float:left;width:10px";
+      }
+    }
     if (dojo.byId('filterLogicalOperator') && dojo.byId('filterLogicalOperator').style.display == 'none') {
       dojo.byId('filterLogicalOperator').style.display='block';
-    }
+    }   
     loadContent("../tool/selectStoredFilter.php?idFilter=" + idFilter + compUrl,"listFilterClauses","dialogFilterForm",false, null, null, null);
+    loadContent("../tool/refreshFilterNameLayout.php?idFilter=" + idFilter + '&idLayout=' + idLayout + compUrl,"filterNameLayoutDiv","dialogFilterForm",false, null, null, null);
   }
-
 }
 
 function removeStoredFilter(idFilter,nameFilter) {
@@ -1151,7 +1453,7 @@ function selectDynamicFilterContinue() {
   doc.loadContent("../tool/displayFilterList.php?context=directFilterList&displayQuickFilter=true&displayQuickFilter=true&filterObjectClass=" + objectClass + compUrl,"directFilterList",null,false,
       'returnFromFilter',false);
 
-  if (dojo.byId("objectClassManual") && dojo.byId("objectClassManual").value == 'Planning' && !window.top.dijit.byId('dialogDetail').open) {
+  if (dojo.byId("objectClassManual") && (dojo.byId("objectClassManual").value == 'Planning' || dojo.byId("objectClassManual").value == 'PlanningWorkPlan') && !window.top.dijit.byId('dialogDetail').open) {
     refreshJsonPlanning();
   } else if (dojo.byId("objectClassManual") && dojo.byId("objectClassManual").value == 'Report') {
     dojo.byId('outMode').value='';
@@ -1252,6 +1554,9 @@ function resetFilter(lstStat, lstTags) {
     if (dijit.byId('hideInService')) {
       dijit.byId('hideInService').set('value','');
     }
+    if (dojo.byId("listQuickSearchValueFilter")){
+      dijit.byId('listQuickSearchFilter').set('value','');
+    }
     if (dijit.byId('listIdFilter') || dijit.byId('listNameFilter') || dijit.byId('listNameFilter') && dijit.byId('listIdFilter')) {
       dijit.byId('listIdFilter').set('value','');
       dijit.byId('listNameFilter').set('value','');
@@ -1315,9 +1620,6 @@ function resetFilterQuick(lstStat, lstTags) {
     if (dijit.byId('ListBudgetParentFilter')) {
       dijit.byId('ListBudgetParentFilter').set('value','');
     }
-    if (dijit.byId('ListBudgetParentFilter')) {
-      dijit.byId('ListBudgetParentFilter').set('value','');
-    }
     if (dijit.byId('ListShowIdle')) {
       dijit.byId('ListShowIdle').set('value','');
     }
@@ -1329,6 +1631,9 @@ function resetFilterQuick(lstStat, lstTags) {
     }
     if (dijit.byId('listNameFilter')) {
       dijit.byId('listNameFilter').set('value','');
+    }
+    if (dojo.byId("listQuickSearchValueFilter")){
+      dijit.byId('listQuickSearchFilter').set('value','');
     }
     if (dijit.byId('listIdFilter') || dijit.byId('listNameFilter')) {
       filter={};
@@ -1352,16 +1657,35 @@ function resetFilterQuick(lstStat, lstTags) {
     }
   }
   if (dijit.byId('listTypeFilterQuick')) {
-    dijit.byId('listTypeFilterQuick').set('value','');
+    dijit.byId('listTypeFilterQuick').set('value','');    
+    if (dijit.byId('listTypeFilterQuickSw').get('value') == 'off') {
+      dojo.byId('listTypeFilterSpan').style.display="none";
+      dijit.byId('listTypeFilter').domNode.style.display='none';
+    }
   }
   if (dijit.byId('listClientFilterQuick')) {
     dijit.byId('listClientFilterQuick').set('value','');
+    if (dijit.byId('listClientFilterQuickSw').get('value') == 'off') {
+      dojo.byId('listClientFilterSpan').style.display="none";
+      dijit.byId('listClientFilter').domNode.style.display='none';
+    }
   }
   if (dijit.byId('listBudgetParentFilterQuick')) {
     dijit.byId('listBudgetParentFilterQuick').set('value','');
+    if (dijit.byId('listBudgetParentFilterQuickSw').get('value') == 'off') {
+      dojo.byId('listBudgetParentFilterSpan').style.display="none";
+      dijit.byId('listBudgetParentFilter').domNode.style.display='none';
+    }
   }
 
   if (dijit.byId('quickSearchValueQuick')) {
     dijit.byId('quickSearchValueQuick').set('value','');
+    quickSearchClose();
+    if (dijit.byId('quickSearchValueQuickSw').get('value') == 'off') {
+      dojo.byId('listQuickSearchFilterSpan').style.display="none";
+      dijit.byId('listQuickSearchFilter').domNode.style.display = "none";
+      dojo.byId('listQuickSearchFilterBtnSearch').style.display = "none";
+      dojo.byId('listQuickSearchFilterBtnClose').style.display = "none";
+    }
   }
 }

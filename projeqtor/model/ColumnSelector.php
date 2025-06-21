@@ -202,6 +202,27 @@ class ColumnSelector extends SqlElement {
 				}
 			}
 	    }
+	    if (property_exists($obj, '_Note') || property_exists($obj, '_Attachment') || property_exists($obj, '_Link')) {
+	      $indicatorField = 'indicatorFileNoteLink';
+	      if (!array_key_exists($indicatorField, $result)) {
+	        $cs = new ColumnSelector();
+	        $cs->scope = 'list';
+	        $cs->objectClass = $classObj;
+	        $cs->idUser = $user->id;
+	        $cs->field = $indicatorField;
+	        $cs->attribute = $indicatorField;
+	        $cs->hidden = 1;
+	        $cs->sortOrder = count($result) + 1;
+	        $cs->widthPct = 5;
+	        $cs->name = 'indicatorFileNoteLink';
+	        $cs->_displayName = i18n('colIndicatorFileNoteLink');
+	        $cs->formatter = 'indicatorFormatter';
+	        $cs->_from = null;
+	        $cs->subItem = null;
+	        $cs->save();
+	        $result[$indicatorField] = $cs;
+	      }
+	    }
 		Sql::commitTransaction();
 		self::$cachedLists['list#'.$classObj]=$result;
 		return $result;

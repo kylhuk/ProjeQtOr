@@ -408,9 +408,11 @@ class Parameter extends SqlElement {
       case 'isManualProgress':
       case 'selectFonction' :
       case 'listTagsPerProject' :
+      case 'requestorLimitToContact' :
       case 'hideItemTypeRestrictionOnProject' : case 'SAML_isADFS' :
       //case 'activateSubtasksManagement':
       case 'automaticFeedingOfTheReal' : case 'showOnlyNotes'://florent
+      case 'hideEmailsSent' :
       case 'colorBlindPlanning':
       case 'showColorTypeActivity' :
       case 'modeSurbookingDifferential' :
@@ -423,6 +425,8 @@ class Parameter extends SqlElement {
       case 'multiCurrencyShowGlobal' :
       case 'hideHoursTicketDueDates':
       case 'allowAttachInputMails':
+      case 'versionsWithoutAttachments':
+      case 'imputationHideDoneG':
         $list=array('NO'=>i18n('displayNo'),
                     'YES'=>i18n('displayYes')); 
         break;
@@ -951,6 +955,7 @@ class Parameter extends SqlElement {
                            "showIdleDefault"=>'list',
                            "userNoteDiscussionMode"=>'list',
                            "showOnlyNotes"=>"list",
+                           "hideEmailsSent"=>"list",
                            "clientElementList"=>'list',
                            "directEditTestCaseRun"=>'list',
                            "displayResourcePlan"=>'list',
@@ -1059,6 +1064,7 @@ class Parameter extends SqlElement {
             	                'imputationAlertWorkTooSoon'=>'list',
             	                'imputationFormat'=>'list',
             	                'hideRealAsPlanned'=>'list',
+            	                'imputationHideDoneG'=>'list',
       	                'tabPlanning'=>"tab",
       	                 'columnPlanningLeft'=>'newColumn',
       	                   'sectionTicket'=>'section',
@@ -1083,6 +1089,7 @@ class Parameter extends SqlElement {
                             'allowListRestrictionOnProject'=>'list',
                             'selectFonction'=>'list',
                             'listTagsPerProject'=>'list',
+                            'requestorLimitToContact'=>'list',
                           'sectionLeaves'=>'section',
                             //  'leavesSystemActiv'=>'list',
                             'leavesSystemAdmin'=>'list',
@@ -1164,6 +1171,7 @@ class Parameter extends SqlElement {
       	                      // MTY - EXPORT XLS OR ODS
       	                      "globalNoteDiscussionMode"=>'list',
       	                      "showOnlyNotes"=>"list",
+      	                      "hideEmailsSent"=>"list",
       	                      "notReceiveHisOwnEmails"=>'list',
       	                      'paramOrderNoteMail'=>'list',
       	                      "clientElementList"=>'list',
@@ -1181,6 +1189,7 @@ class Parameter extends SqlElement {
       	                       'draftSeparator'=>'text',
       	                       'preserveUploadedFileName'=>'list',
       	                       'lockDocumentDownload'=>'list',
+      	                       'versionsWithoutAttachments'=>'list',
       	                     'sectionBillReferenceFormat'=>'section',
       	                       'billReferenceFormat'=>'text',
       	                       'billNumSize'=>'number',
@@ -1477,6 +1486,7 @@ class Parameter extends SqlElement {
     }
     if(!Module::isModuleActive('moduleActivityStream')){
       unset($parameterList['showOnlyNotes']);
+      unset($parameterList['hideEmailsSent']);
     }
     if(!Module::isModuleActive('moduleOrganization')){
       unset($parameterList['organization']);

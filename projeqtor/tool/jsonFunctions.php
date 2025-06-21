@@ -45,7 +45,7 @@ function jsonGetFilterArray($filterObjectClass, $comboDetail=false, $idReportLay
       }
     }
     foreach ($arrayFilter as $idx=>$arr) {
-      if (pq_strpos($arr['sql']['attribute'], 'PlanningMode')>0) {
+      if (isset($arr['sql']['attribute']) && pq_strpos($arr['sql']['attribute'], 'PlanningMode')>0) {
         $arrayFilter[$idx]['sql']['attribute']=pq_str_replace(array(
             'idActivityPlanningMode', 
             'idTestSessionPlanningMode', 
@@ -79,11 +79,19 @@ function jsonGetFilterArray($filterObjectClass, $comboDetail=false, $idReportLay
 function jsonBuildSortCriteria(&$querySelect, &$queryFrom, &$queryWhere, &$queryOrderBy, &$idTab, $arrayFilter, $obj) {
   $objectClass=($obj)?get_class($obj):'';
   $table=$obj->getDatabaseTableName();
+  $orderClauses = [];
+  $groupStack = [];
   foreach ($arrayFilter as $crit) {
     if ($crit['sql']['operator']=='SORT') {
       $doneSort=false;
       $split=pq_explode('_', $crit['sql']['attribute']);
       if (pq_strpos($crit['sql']['attribute'], '__id')>0) $split=array();
+      
+      if (isset($crit['isGroup']) && $crit['isGroup'] == 1) { // (
+        $orderClauses[] = "(";
+        array_push($groupStack, true);
+      }
+      
       if (count($split)>1) {
         $externalClass=$split[0];
         $externalObj=new $externalClass();
@@ -116,6 +124,14 @@ function jsonBuildSortCriteria(&$querySelect, &$queryFrom, &$queryWhere, &$query
         $queryOrderBy.=($queryOrderBy=='')?'':', ';
         $queryOrderBy.=" ".$table.".".$obj->getDatabaseColumnName($crit['sql']['attribute'])." ".$crit['sql']['value'];
       }
+      
+      if (isset($crit['isGroup']) && $crit['isGroup'] == 2) { // )
+        if (!empty($groupStack)) {
+          array_pop($groupStack);
+          $orderClauses[] = ")";
+        }
+      }
+      
     }
   }
 }
@@ -135,8 +151,8 @@ function jsonBuildWhereCriteria(&$querySelect, &$queryFrom, &$queryWhere, &$quer
     $arrayFilter=array_values($arrayFilter);
     for ($i=0; $i<count($arrayFilter); $i++) {
       $crit=$arrayFilter[$i];
-      if ( ($crit['sql']['operator']=='IN' || $crit['sql']['operator']=='NOT IN') and $crit['sql']['value']=='0') continue; // Dynamic filter not set
-      if ($crit['sql']['operator']!='SORT') { // Sorting already applied previously
+      if ( isset($crit['sql']['operator']) and ($crit['sql']['operator']=='IN' || $crit['sql']['operator']=='NOT IN') and $crit['sql']['value']=='0') continue; // Dynamic filter not set
+      if (isset($crit['sql']['operator']) and $crit['sql']['operator']!='SORT') { // Sorting already applied previously
         $split=pq_explode('_', $crit['sql']['attribute']);
         if (pq_strpos($crit['sql']['attribute'], '__id')>0) $split=array();
         $critSqlValue=$crit['sql']['value'];
@@ -154,7 +170,7 @@ function jsonBuildWhereCriteria(&$querySelect, &$queryFrom, &$queryWhere, &$quer
           foreach ($splitVal as $idP) {
             $prod=new Product($idP);
             $critSqlValue.=', '.$idP;
-            $list=$prod->getRecursiveSubProjectsFlatList(false, false); // Will work only if selected is Product, not for Component
+            $list=$prod->getRecursiveSubProductsFlatList(false, false); // Will work only if selected is Product, not for Component
             foreach ($list as $idPrd=>$namePrd) {
               $critSqlValue.=', '.$idPrd;
             }

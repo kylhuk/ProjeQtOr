@@ -34,6 +34,10 @@
   
   $showOnlyNotes=Parameter::getUserParameter('showOnlyNotes');
   if($showOnlyNotes=='')$showOnlyNotes='NO';
+  
+  $hideEmailsSent=Parameter::getUserParameter('hideEmailsSent');
+  if($hideEmailsSent=='')$hideEmailsSent='NO';
+
   $objectClassScreen=RequestHandler::getClass('objectClass');
   $currentScreen=getSessionValue('currentScreen');
   if ($currentScreen=='Object') $currentScreen=$objectClassScreen;
@@ -72,11 +76,13 @@
   if($showOnlyNotes=='NO'){
     
     //if(securityCheckDisplayMenu(null,'Mail') and securityGetAccessRightYesNo('menu'.'Mail', 'read', '')=="YES"){
+    if ($hideEmailsSent !='YES'){
       $mailable= new Mailable();
       $idType=SqlElement::getSingleSqlElementFromCriteria('Mailable',array("name"=>$objectClass));
       $clause=array('refType'=>$idType->id,'refId'=>$objectId);
       $mail= new Mail();
       $mailsSend=$mail->getSqlElementsFromCriteria($clause,null,null,"mailDateTime ASC");
+    }
     //}
     
     $clauseWhere="refType='$objectClass' and refId=$objectId and ((operation='update' and colName='idStatus')  or (operation='insert' and (colName is null  or colName like ('Link|%'))) or (operation='delete'  and colName not like ('Link|%'))) ";

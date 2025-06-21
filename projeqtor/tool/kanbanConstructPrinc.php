@@ -44,6 +44,19 @@ function kanbanAddPrinc($line) {
 	return $addInPrinc;
 }
 
+function kanbanAddProjectName($line) {
+  $kanbanFullWidthElement = Parameter::getUserParameter ( "kanbanFullWidthElement" );
+  $addProjectName = '';
+  if ($line['idproject'] and $kanbanFullWidthElement == "on"){
+    $addProjectName .= '<table><tr>';
+    $projectName = SqlList::getNameFromId('Project',$line ['idproject']);
+    $addProjectName .= '<td style="display:flex;gap:5px;"><span class="imageColorNewGuiNoSelection"><div class="iconProject iconSize16"></div></span>
+        <div style="font-size: 12px;">'.$projectName.'</div></td>';
+    $addProjectName .= '</tr></table>';
+  }
+  return $addProjectName;
+}
+
 function kanbanAddProduct($line) {
   $addInProduct = '';
   $kanbanFullWidthElement = Parameter::getUserParameter ( "kanbanFullWidthElement" );

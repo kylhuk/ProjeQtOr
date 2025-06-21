@@ -36,7 +36,10 @@ $user = getSessionUser ();
 
 $showOnlyNotes=Parameter::getUserParameter('showOnlyNotes');
 if($showOnlyNotes=='')$showOnlyNotes='NO';
+$hideEmailsSent=Parameter::getUserParameter('hideEmailsSent');
+if($hideEmailsSent=='')$hideEmailsSent='NO';
 $displayInChatMode=(Parameter::getUserParameter('displayInChatMode'));
+$hideEmailsSent = Parameter::getUserParameter('hideEmailsSent');
 if (RequestHandler::isCodeSet('activityStreamNumberElement')) {
 	$activityStreamNumberElement=RequestHandler::getValue("activityStreamNumberElement");
 	Parameter::storeUserParameter("activityStreamNumberElement", $activityStreamNumberElement);
@@ -265,8 +268,10 @@ $mailsSend=array();
 
 if($showOnlyNotes=='NO'){
   //if(securityCheckDisplayMenu(null,'Mail') and securityGetAccessRightYesNo('menu'.'Mail', 'read', null)=="YES"){
-    $mail= new Mail();
-    $mailsSend=$mail->getSqlElementsFromCriteria(null,false,$clause,"mailDateTime DESC",null,true,$limitQuery);
+    if ($hideEmailsSent!='YES'){
+      $mail= new Mail();
+      $mailsSend=$mail->getSqlElementsFromCriteria(null,false,$clause,"mailDateTime DESC",null,true,$limitQuery);
+    }
   //}
   
   ///// search elements in history  for display on ActivityStream 
@@ -307,7 +312,6 @@ $onlyCenter = (RequestHandler::getValue ( 'onlyCenter' ) == 'true') ? true : fal
 	<table id="objectStream" style="width:100%;font-size:100% !important;"> 
 	<?php
      if($displayInChatMode=='NO'){
-
     	 $all=array();
     	 foreach ($notes as $idNote=>$note){
     	   $date=$note->creationDate;

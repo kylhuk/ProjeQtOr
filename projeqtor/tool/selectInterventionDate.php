@@ -298,9 +298,9 @@ foreach ($dates as $date) {
   displayLastOperationStatus($result??$resultx);
 
   $ass = SqlElement::getSingleSqlElementFromCriteria('Assignment', array('refType'=>$refType,'refId'=>$refId,'idResource'=>$resource));
-  $assigned = ($ass->assignedWork) ? $ass->assignedWork : 0;
-  $real = ($ass->realWork) ? $ass->realWork : 0;
-  $left = ($ass->leftWork) ? $ass->leftWork : 0;
+  $assigned = ($ass->assignedWork) ? Work::displayWork($ass->assignedWork): 0;
+  $real = ($ass->realWork) ? Work::displayWork($ass->realWork) : 0;
+  $left = ($ass->leftWork) ? Work::displayWork($ass->leftWork) : 0;
   ob_clean();
   echo '{"assigned":'.$assigned.',"real":'.$real.',"left":'.$left.'}';
 }

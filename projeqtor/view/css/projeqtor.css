@@ -1580,11 +1580,18 @@ td.noteData div table[border="1"] tr td, td.noteData div div table[border="1"] t
   color : #ffffff !important;
   font-weight: normal;
 }
+.imputationPlannedWorkCapacity {
+  background-color : #ffc90e !important;
+  color : #ff0000 !important;
+  font-weight: normal !important;
+}
+
 .imputationValidCapacity {
   background-color : #77ff77 !important;
   color : #ff0000 !important;
   font-weight: normal !important;
 }
+
 .imputationHasValue{
 	background: #ffffaa !important;
 }
@@ -4500,6 +4507,12 @@ div.ticketKanbanCustom .kanbanVersion{
 /*     border-radius:3px 0 0 3px ; */
     user-select: none;
 }
+
+.prev.todoList , .next.todoList {
+    height: 25px !important;
+    padding-top:6px !important;
+}
+
 
 .slideStatus{
 	vertical-align: middle;

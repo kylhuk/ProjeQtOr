@@ -41,15 +41,19 @@ class ActivityExpenseMain extends Expense {
   public $_sec_treatment;
   public $idStatus;
   public $idResponsible;
-  public $_tab_2_4 = array('amount','paymentDateShort', 'plannedAmount', 'plannedAmountLocal', 'realAmount', 'realAmountLocal');
+  public $_tab_3_4 = array('amount','Date', 'paymentDateMode', 'plannedAmount', 'plannedAmountLocal', 'realAmount', 'realAmountLocal');
   public $plannedAmount;
   public $expensePlannedDate;
+  public $idPaymentDateMode;
   public $plannedAmountLocal;
   public $expensePlannedDateLocal;
+  public $_void_1;
   public $realAmount;
   public $expenseRealDate;
+  public $_void_2;
   public $realAmountLocal;
   public $expenseRealDateLocal;
+  public $_void_4;
   public $idBudgetItem;
   public $paymentDone;
   public $idle;
@@ -81,6 +85,7 @@ class ActivityExpenseMain extends Expense {
       "name"=>"required",
       "idActivityExpenseType"=>"required",
       "expensePlannedDate"=>"",
+      "idPaymentDateMode"=>"mediumWidth",
       "plannedFullAmount"=>"hidden",
       "plannedTaxAmount"=>"hidden",
       "realFullAmount"=>"hidden",
@@ -210,6 +215,16 @@ class ActivityExpenseMain extends Expense {
       $colScript .= '  }';
       $colScript .= '  formChanged();';
       $colScript .= '</script>';
+    } else if ($colName=="idPaymentDateMode") {
+      $colScript .= '<script type="dojo/connect" event="onChange" >';
+      $colScript .= '  var value = this.value;';
+      $colScript .= '  if (value.trim() != "") {';
+      $colScript .= '    dijit.byId("expensePlannedDate").set("readonly",true);';
+      $colScript .= '  }else {';
+      $colScript .= '    dijit.byId("expensePlannedDate").set("readonly",false);';
+      $colScript .= '  }';
+      $colScript .= '  formChanged();';
+      $colScript .= '</script>';
     }
   
     return $colScript;
@@ -235,6 +250,25 @@ class ActivityExpenseMain extends Expense {
     $this->realFullAmount=$this->realAmount;
     $this->plannedFullAmountLocal=$this->plannedAmountLocal;
     $this->realFullAmountLocal=$this->realAmountLocal;
+    
+    if($this->idPaymentDateMode){
+      $activity = new Activity($this->idActivity);
+      $paymentDateMode = SqlList::getNameFromId('PaymentDateMode', $this->idPaymentDateMode, false);
+      switch ($paymentDateMode){
+        case "paymentStartDateMode" :
+          $this->expensePlannedDate = $activity->ActivityPlanningElement->plannedStartDate;
+          break;
+        case "paymentMedianDateMode" :
+          $daysDiff = round(dayDiffDates($activity->ActivityPlanningElement->plannedStartDate, $activity->ActivityPlanningElement->plannedEndDate)/2);
+          $medianDate = addDaysToDate($activity->ActivityPlanningElement->plannedStartDate, $daysDiff);
+          $this->expensePlannedDate = $medianDate;
+          break;
+        case "paymentEndDateMode" :
+          $this->expensePlannedDate = $activity->ActivityPlanningElement->plannedEndDate;
+          break;
+      }
+    }
+    
     return parent::save();
   }
   
@@ -262,6 +296,9 @@ class ActivityExpenseMain extends Expense {
     } else {
       self::$_fieldsAttributes['expensePlannedDateLocal']='hidden,calculated';
       self::$_fieldsAttributes['expenseRealDateLocal']='hidden,calculated';
+    }
+    if($this->idPaymentDateMode){
+      self::$_fieldsAttributes['expensePlannedDate']='readonly';
     }
   }
   

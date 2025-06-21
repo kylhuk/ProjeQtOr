@@ -38,6 +38,8 @@ class ResourceMaterialMain extends ResourceMain {
   public $initials;
   public $capacity=1;
   public $idCalendarDefinition;
+  public $idOrganization;
+  public $idTeam;
   public $startDate;
   public $idle;
   public $endDate;
@@ -74,7 +76,7 @@ class ResourceMaterialMain extends ResourceMain {
 	      "subcontractor"=>"hidden" ,
 	      "capacity"=>"hidden" ,
 	      "idOrganization"=>"" ,
-	      "idTeam"=>"hidden" ,
+	      "idTeam"=>"" ,
 	      "phone"=>"hidden" ,
 	      "mobile"=>"hidden" ,
 	      "fax"=>"hidden" ,

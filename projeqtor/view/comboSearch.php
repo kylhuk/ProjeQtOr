@@ -52,17 +52,17 @@
   <link rel="stylesheet" type="text/css" href="<?php echoStaticFileNameWithCacheMgt('css/projeqtorFlat.css');?>" />
   <link rel="shortcut icon" href="img/logo.ico" type="image/x-icon" />
   <link rel="icon" href="img/logo.ico" type="image/x-icon" />
-    <?php if (isNewGui()) {?>
+  <?php if (isNewGui()) {?>
   <link rel="stylesheet" type="text/css" href="<?php echoStaticFileNameWithCacheMgt('css/projeqtorNew.css');?>" />
   <script type="text/javascript" src="<?php echoStaticFileNameWithCacheMgt('js/dynamicCss.js');?>" ></script>
   <script type="text/javascript" src="<?php echoStaticFileNameWithCacheMgt('js/projeqtorNewGui.js');?>" ></script>
-  <script type="text/javascript" src="<?php echoStaticFileNameWithCacheMgt('js/projeqtorDataTools.js');?>" ></script>
   <script type="text/javascript" src="<?php echoStaticFileNameWithCacheMgt('../external/dojox/mobile/deviceTheme.js');?>" data-dojo-config="mblUserAgent: 'Custom'"></script>
   <?php }?>
   <script type="text/javascript" src="<?php echoStaticFileNameWithCacheMgt('../external/CryptoJS/rollups/md5.js');?>" ></script>
   <script type="text/javascript" src="<?php echoStaticFileNameWithCacheMgt('../external/CryptoJS/rollups/sha256.js');?>" ></script>
   <script type="text/javascript" src="<?php echoStaticFileNameWithCacheMgt('../external/phpAES/aes.js');?>" ></script>
   <script type="text/javascript" src="<?php echoStaticFileNameWithCacheMgt('../external/phpAES/aes-ctr.js');?>" ></script>
+  <script type="text/javascript" src="<?php echoStaticFileNameWithCacheMgt('js/projeqtorDataTools.js');?>" ></script>
   <script type="text/javascript" src="<?php echoStaticFileNameWithCacheMgt('js/projeqtor.js');?>" ></script>
   <script type="text/javascript" src="<?php echoStaticFileNameWithCacheMgt('js/jsgantt.js');?>"></script>
   <script type="text/javascript" src="<?php echoStaticFileNameWithCacheMgt('js/projeqtorWork.js');?>" ></script>

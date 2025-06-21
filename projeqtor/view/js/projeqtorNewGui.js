@@ -1277,12 +1277,12 @@ function displayFullScreenCK_close() {
   whichFullScreen=-1;
 }
 
-idFavoriteProjectList = null;
 function addRemoveFavProject (id,mode, skipRefreshProjectSelector){
 	var div = dojo.byId('divFavProject_'+id);
 	if(!div)return;
 	dojo.removeAttr(div, 'class');
 	dojo.removeAttr(div, 'onclick');
+	
   if(mode=='add'){
 	  var func= "event.stopPropagation();addRemoveFavProject('"+id+"','remove')";
 	  dojo.setAttr(div, 'onclick',func);
@@ -1294,6 +1294,11 @@ function addRemoveFavProject (id,mode, skipRefreshProjectSelector){
 		  favoriteProjectsArray = id;
 	  }
 	  saveDataToSession('favoriteProjectsArray', favoriteProjectsArray, true);
+    if(selectedFavoriteProject == '' && favoriteProjectsArray.length > 0){
+      dojo.byId('saveFavoriteListButtonDiv').style.display = '';
+      dojo.byId('favoriteProjectListName').style.display = 'flex';
+      dojo.byId('resetFavoriteListButtonDiv').style.display = '';
+    }
   }else{
 	  var func= "event.stopPropagation();addRemoveFavProject('"+id+"','add')";
 	  dojo.setAttr(div, 'onclick',func);
@@ -1310,6 +1315,12 @@ function addRemoveFavProject (id,mode, skipRefreshProjectSelector){
 		  favoriteProjectsArray = favoriteProjectsArray.substr(1);
 	  }
 	  saveDataToSession('favoriteProjectsArray', favoriteProjectsArray, true);
+    if(selectedFavoriteProject == '' && favoriteProjectsArray.length > 0){
+      dojo.byId('saveFavoriteListButtonDiv').style.display = '';
+      dojo.byId('favoriteProjectListName').style.display = 'flex';
+      dojo.byId('resetFavoriteListButtonDiv').style.display = '';
+    }
+    
 	  var isFavoriteSelected = dojo.byId('isFavoriteSelected').value;
 	  if(isFavoriteSelected == '1' && skipRefreshProjectSelector!==true){
 		  refreshProjectSelectorList(true);
@@ -1317,32 +1328,66 @@ function addRemoveFavProject (id,mode, skipRefreshProjectSelector){
   }
 }
 
-function saveFavoriteProjectList() {
-  if (dijit.byId('favoriteProjectListName')) {
-    if (dijit.byId('favoriteProjectListName').get('value') == "") {
-      showAlert(i18n("messageMandatory", new Array(i18n("colFavoriteName"))));
+function saveFavoriteProjectList(isEdit) {
+  if(isEdit == undefined || isEdit == null)isEdit = false;
+  if(!isEdit){
+    if (dijit.byId('favoriteProjectListName')) {
+      if (dijit.byId('favoriteProjectListName').get('value') == "") {
+        showAlert(i18n("messageMandatory", new Array(i18n("colFavoriteName"))));
+        return;
+      }
+      if(favoriteProjectsArray.length <= 0){
+      showAlert(i18n("noFavoriteProjectItem"));
       return;
+      }
+      dojo.byId('favoriteProjectName').value=dijit.byId('favoriteProjectListName').get(
+          'value');
+      var callback = function(){
+        clearDivDelayed('saveFavoriteProjectResult');
+        if(dojo.byId('idSelectedFavoriteProject'))selectedFavoriteProject=dojo.byId('idSelectedFavoriteProject').value;
+        setTimeout('selectFavoriteProjectList(\'\', \''+selectedFavoriteProject+'\', false, false, false);', 100);
+        setTimeout('dijit.byId("dialogProjectSelectorParameters").hide();', 110);
+      };
+      loadContent("../tool/saveFavoriteProjectList.php", "listStoredFavoriteProjectList", "favoriteProjectListForm", false,null,null,null,callback);
     }
-    if(favoriteProjectsArray.length <= 0){
-		showAlert(i18n("noFavoriteProjectItem"));
-		return;
+  }else{
+    if (dojo.byId('favoriteProjectListName')) {
+      var favoriteProjectName = dojo.byId('favoriteProjectListName').value;
+      var favoriteTitlePane = dijit.byId('projectSelectorFavoriteTitlePane');
+      if(!favoriteTitlePane.get('open')){
+        favoriteTitlePane.toggle();
+      }
+      dojo.byId('favoriteProjectListName').focus();
+      if (favoriteProjectName == "") {
+        dojo.byId('saveFavoriteMessage').innerHTML = i18n("messageMandatory", new Array(i18n("colFavoriteName")));
+        dojo.byId('saveFavoriteProjectResult').style.display='flex';
+        return;
+      }
+      if(favoriteProjectsArray.length <= 0){
+        dojo.byId('saveFavoriteMessage').innerHTML = i18n("noFavoriteProjectItem");
+        dojo.byId('saveFavoriteProjectResult').style.display='flex';
+        return;
+      }
+      var url='../tool/saveFavoriteProjectList.php?mode=fromProjectSelector';
+      dojo.xhrPost({
+        url : url+addTokenIndexToUrl(),
+        form : "favoriteProjectListForm",
+        handleAs : "text",
+        load : function(data, args) {
+          if(data)selectedFavoriteProject=data;
+          selectFavoriteProjectList('', selectedFavoriteProject, false, false, true);
+        }
+      });
     }
-    dojo.byId('favoriteProjectName').value=dijit.byId('favoriteProjectListName').get(
-        'value');
   }
-  var callback = function(){
-    clearDivDelayed('saveFavoriteProjectResult');
-  };
-  loadContent("../tool/saveFavoriteProjectList.php", "listStoredFavoriteProjectList",
-      "favoriteProjectListForm", false,null,null,null,callback);
 }
 
 function removeFavoriteProjectList(favoriteFlatList ,id){
 	var callback = function(){
 		clearDivDelayed('saveFavoriteProjectResult');
-		if(idFavoriteProjectList == id){
+		if(selectedFavoriteProject == id){
 			saveDataToSession('idFavoriteProjectList', '');
-			refreshProjectSelectorList(true);
+			refreshProjectSelectorList(true, fromProjectSelector);
 		}
 		if(favoriteFlatList.length > 0){
 		  if(favoriteFlatList.indexOf(','+id) != -1){
@@ -1351,17 +1396,33 @@ function removeFavoriteProjectList(favoriteFlatList ,id){
 			  favoriteFlatList = favoriteFlatList.replace(id,'');
 		  }
 		  if(favoriteFlatList.length <= 0 || favoriteFlatList == ''){
-			  refreshProjectSelectorList(true);
+			  refreshProjectSelectorList(true, fromProjectSelector);
 		  }
 		}else{
-			refreshProjectSelectorList(true);
+			refreshProjectSelectorList(true, fromProjectSelector);
 		}
 	};
 	loadContent("../tool/saveFavoriteProjectList.php?idFavoriteList="+id, "listStoredFavoriteProjectList",
 		      "favoriteProjectListForm", false,null,null,null,callback);
 }
 
-function changedSelectedProjectToFavorite(){
+function removeFavoriteProjectListFromSelector(id){
+  var url='../tool/saveFavoriteProjectList.php?idFavoriteList='+id;
+  dojo.xhrPost({
+    url : url+addTokenIndexToUrl(),
+    handleAs : "text",
+    load : function(data, args) {
+      if(selectedFavoriteProject == id){
+        selectFavoriteProjectList('', '', false);
+      }else{
+        refreshProjectSelectorList(true, true);
+      }
+    }
+  });
+}
+
+function changedSelectedProjectToFavorite(isEdit){
+  if(isEdit == undefined)isEdit=false;
   var projectChecked = '';
   dojo.query('.projectSelectorCheckbox .dijitCheckBoxInput').forEach(function(node){
     var checked = (dijit.byId(node.id).get('checked'))?true:false;
@@ -1377,34 +1438,48 @@ function changedSelectedProjectToFavorite(){
   if(projectChecked.length > 0){
     favoriteProjectsArray = projectChecked;
     saveDataToSession('favoriteProjectsArray', projectChecked, true);
-    saveFavoriteProjectList();
+    saveFavoriteProjectList(isEdit);
   }else{
     showAlert(i18n("noFavoriteProjectItem"));
   }
 }
 
-function selectFavoriteProjectList(favoriteProjectlist, idFavoriteList){
-	saveDataToSession('favoriteProjectsArray', favoriteProjectlist, true);
+function selectFavoriteProjectList(favoriteProjectlist, idFavoriteList, isEdit, hideParam, openDropDown){
+  if(isEdit==undefined || isEdit == null)isEdit=false;
+  if (hideParam==null || hideParam==undefined)hideParam=true;
+  if (openDropDown==null || openDropDown==undefined)openDropDown=false;
+	var favoriteProjectName = '';
+	if(isEdit && idFavoriteList){
+	  if(document.getElementById('favoriteProjectName_'+idFavoriteList)){
+	    favoriteProjectName = document.getElementById('favoriteProjectName_'+idFavoriteList).innerHTML;
+	  }
+	}
 	favoriteProjectsArray = favoriteProjectlist;
-	saveDataToSession('idFavoriteProjectList', idFavoriteList, true);
-	idFavoriteProjectList = idFavoriteList;
+	saveDataToSession('favoriteProjectsArray', favoriteProjectlist, true);
+	if(favoriteProjectName)saveDataToSession('favoriteProjectListName', favoriteProjectName, true);
 	var isFavoriteListSelected = dojo.byId('isFavoriteListSelected');
-	if(idFavoriteList == ''){
-		isFavoriteListSelected.value = 0;
-		if(favoriteProjectlist != ''){
-  		var chars = favoriteProjectlist.split(',');
-  		chars.forEach(function(el){
-  		  addRemoveFavProject(el,'remove',true);
-  		});
-		}
+	selectedFavoriteProject = idFavoriteList;
+	if(!isEdit){
+	  saveDataToSession('editFavoriteProject', '');
+	  saveDataToSession('idFavoriteProjectList', idFavoriteList, true);
+	  if(dijit.byId('favoriteProjectListName'))dijit.byId('favoriteProjectListName').set('value', '');
+	  if(idFavoriteList == ''){
+	    if(isFavoriteListSelected)isFavoriteListSelected.value = 0;
+	    saveDataToSession('favoriteProjectsArray', '');
+	  }else{
+	    var row = dojo.byId('favoriteList'+idFavoriteList);
+	    if(row)dojo.setAttr(row, 'class', 'dojoDndItemAnchor');
+	    isFavoriteListSelected.value = idFavoriteList;
+	  }
 	}else{
-		var row = dojo.byId('favoriteList'+idFavoriteList);
-		dojo.setAttr(row, 'class', 'dojoDndItemAnchor');
-		isFavoriteListSelected.value = idFavoriteList;
+	  saveDataToSession('editFavoriteProject', idFavoriteList);
+	  saveDataToSession('idFavoriteProjectList', '', true);
+	  if(isFavoriteListSelected)isFavoriteListSelected.value = 0;
+	  openDropDown=true;
 	}
 	saveDataToSession('project', '*');
-	refreshProjectSelectorList(true);
-  if (dijit.byId('dialogProjectSelectorParameters')) {
+	refreshProjectSelectorList(true, openDropDown, hideParam);
+  if (hideParam && dijit.byId('dialogProjectSelectorParameters')) {
     dijit.byId('dialogProjectSelectorParameters').hide();
   }
 	if (dojo.byId("GanttChartDIV")) {
@@ -1414,7 +1489,11 @@ function selectFavoriteProjectList(favoriteProjectlist, idFavoriteList){
 	      loadContent("portfolioPlanningList.php", "listDiv", 'listForm');
 	    } else if (dojo.byId("globalPlanning")) {
 	      loadContent("globalPlanningList.php", "listDiv", 'listForm');
-	    } else {
+	    } else if (dojo.byId("workPlan")) {
+        loadContent("workPlanList.php", "listDiv", 'listForm');
+      } else if (dojo.byId("planningWorkPlan")) {
+        loadContent("planningWorkPlanList.php", "listDiv", 'listForm');
+      } else {
 	      loadContent("planningList.php", "listDiv", 'listForm');
 	    }
 	}else if(dojo.byId('objectClass')){
@@ -1423,4 +1502,37 @@ function selectFavoriteProjectList(favoriteProjectlist, idFavoriteList){
 	}else{
 		refreshGrid();
 	}
+}
+
+function checkProjectToSelect(){
+  var showOKButton = 'none';
+  var showFavoriteName = 'none';
+  dojo.query('.projectSelectorCheckbox .dijitCheckBoxInput').forEach(function(node){
+    var checked = (dijit.byId(node.id).get('checked'))?true:false;
+    if(checked){
+      showOKButton = '';
+      showFavoriteName = 'flex';
+    }
+  });
+  dojo.byId('multiProjectSelectButtonDiv').style.display = showOKButton;
+  if(dojo.byId('saveFavoriteListButtonDiv').style.display == 'none')dojo.byId('saveNewFavoriteListButtonDiv').style.display = showOKButton;
+  dojo.byId('favoriteProjectListName').style.display = showFavoriteName;
+  resizeTitlePanProjectSelector();
+}
+
+function highlightFavoriteProject(id, mode){
+  var div = dojo.byId('divFavProject_'+id);
+  if(!div)return;
+  var isSelected = false;
+  if(dojo.hasClass(div, 'menu__as__Fav')){
+    div.style.display='';
+    isSelected = true;
+  }else if(dojo.hasClass(div, 'menu__add__Fav')){
+    div.style.display='none';
+  }
+  if(mode == 'mouseover' && !isSelected){
+    dojo.byId('divFavProject_'+id).style.display='';
+  }else if(mode == 'mouseout' && !isSelected){
+    dojo.byId('divFavProject_'+id).style.display='none';
+  }
 }

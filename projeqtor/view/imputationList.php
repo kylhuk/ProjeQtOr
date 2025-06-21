@@ -119,7 +119,19 @@ if(sessionValueExists('userName')){
 
 $showPlanned=Parameter::getUserParameter('imputationShowPlannedWork');
 if ($showPlanned===null or $showPlanned==='') $showPlanned=1;
-$hideDone=Parameter::getUserParameter('imputationHideDone');
+
+if(Parameter::getUserParameter('imputationHideDone')==""){
+  if(Parameter::getGlobalParameter('imputationHideDoneG')==""){
+    $hideDone="NO";
+  }else{
+    $hideDone=Parameter::getGlobalParameter('imputationHideDoneG');
+  }
+  if($hideDone=="NO")$hideDone=1;
+  if($hideDone=="YES")$hideDone=0;
+}else{
+  $hideDone=Parameter::getUserParameter('imputationHideDone');
+}
+
 $displayHandledGlobal=Parameter::getGlobalParameter('displayOnlyHandled');
 $hideNotHandled=Parameter::getUserParameter('imputationHideNotHandled');
 $limitResourceByProj=Parameter::getUserParameter("limitResourceByProject");
@@ -127,6 +139,8 @@ if ($displayHandledGlobal=="YES") {
 	$hideNotHandled=1;
 }
 $displayOnlyCurrentWeekMeetings=Parameter::getUserParameter('imputationDisplayOnlyCurrentWeekMeetings');
+$displayProjectColorImputation = Parameter::getUserParameter('imputationDisplayProjectColorImputation');
+$displayActivityColorImputation = Parameter::getUserParameter('imputationDisplayActivityColorImputation');
 $showId=false;
 if(Parameter::getUserParameter("showId")!=null && Parameter::getUserParameter("showId")==1)$showId=true;
 $showIdle = false;
@@ -368,9 +382,10 @@ if ($width and $rangeType=='month' and $width<1800){
               <td style="text-align: right; align: right;min-width:150px" >
             	  &nbsp;&nbsp;<?php echo i18n("labelHideDone");?>
               </td>
+
               <td style="width:10px;text-align: center; align: center;white-space:nowrap;">&nbsp;
                 <div title="<?php echo i18n('labelHideDone')?>" dojoType="dijit.form.CheckBox" type="checkbox" class="whiteCheck"
-                  id="listHideDone" name="listHideDone" <?php if ($hideDone) echo 'checked';?>>
+                  id="listHideDone" name="listHideDone" <?php if ($hideDone=="0") echo 'checked';?>>
                   <script type="dojo/method" event="onChange" >
                     return refreshImputationList();
                   </script>
@@ -388,6 +403,28 @@ if ($width and $rangeType=='month' and $width<1800){
                   </script>
 				        </div>&nbsp;
 				      </td>
+				      
+			  <td style="width:200px;text-align: right; align: right;min-width:150px" >
+      	        &nbsp;&nbsp;<?php echo i18n("labelDisplayProjectColorTimesheet");?>
+              </td>
+              <td style="width:10px;text-align: center; align: center;white-space:nowrap;">&nbsp;
+			    <div title="<?php echo i18n('displayProjectColorTimesheet')?>" dojoType="dijit.form.CheckBox" type="checkbox" 
+				     class="whiteCheck"
+				     id="listDisplayProjectColorImputation" name="listDisplayProjectColorImputation" <?php if ($displayProjectColorImputation) echo 'checked';?>>
+				       <script type="dojo/method" event="onChange" >
+                         return refreshImputationList();
+                       </script>
+			    </div>&nbsp;
+			 </td>
+			 <td style="width:10px;text-align: center; align: center;white-space:nowrap;">&nbsp;
+			    <div title="<?php echo i18n('displayActivityColorTimesheet')?>" dojoType="dijit.form.CheckBox" type="checkbox" 
+				     class="whiteCheck"
+				     id="listDisplayActivityColorImputation" name="listDisplayActivityColorImputation" <?php if ($displayActivityColorImputation) echo 'checked';?>>
+				       <script type="dojo/method" event="onChange" >
+                         return refreshImputationList();
+                       </script>
+			    </div>&nbsp;
+			 </td>
             </tr>
             <tr>
               <td style="text-align: right; align: right;min-width:150px" >
@@ -542,6 +579,8 @@ if ($width and $rangeType=='month' and $width<1800){
        <input type="checkbox" name="hideDone" id="hideDone" style="display: none;" />
        <input type="checkbox" name="hideNotHandled" id="hideNotHandled" style="display: none;" />
        <input type="checkbox" name="displayOnlyCurrentWeekMeetings" id="displayOnlyCurrentWeekMeetings" style="display: none;" />
+       <input type="checkbox" name="displayProjectColorImputation" id="displayProjectColorImputation" style="display: none;" />
+       <input type="checkbox" name="displayActivityColorImputation" id="displayActivityColorImputation" style="display: none;" />
        <input type="hidden" id="page" name="page" value="../report/imputation.php"/>
        <input type="hidden" id="outMode" name="outMode" value="" />
        <input type="hidden" name="yearSpinnerT" id="yearSpinnerT" value=""/>
@@ -558,7 +597,7 @@ if ($width and $rangeType=='month' and $width<1800){
       if(sessionValueExists('listShowIdleTimesheet') and getSessionValue('listShowIdleTimesheet')=='on'){
         $showIdle = true;
       }
-      ImputationLine::drawLines($userName, $rangeType, $rangeValue,$showIdle, $showPlanned, $print, $hideDone, $hideNotHandled, $displayOnlyCurrentWeekMeetings,$currentWeek,$currentYear, $showId, $hidePausedItem, $hideOffDays);?>
+      ImputationLine::drawLines($userName, $rangeType, $rangeValue,$showIdle, $showPlanned, $print, $hideDone, $hideNotHandled, $displayOnlyCurrentWeekMeetings,$currentWeek,$currentYear, $showId, $hidePausedItem, $hideOffDays,$displayProjectColorImputation,$displayActivityColorImputation);?>
      </form>
   </div>
 </div>

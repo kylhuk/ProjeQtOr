@@ -1842,6 +1842,8 @@ This section allows to add notes on items of elements.
 
 Notes are comments, that can be shared to track some information or progress.
 
+The display order for notes, whether in discussion mode or not, starts with the last one at the top. The last item in the discussion must be the date of the last reply.
+
 .. figure:: /images/GUI/COMMON_ZONE_Notes.png
    :alt: Notes
    

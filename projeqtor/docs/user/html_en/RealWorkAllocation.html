@@ -7,13 +7,13 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
-    <title>Real work allocation / Timesheet &#8212; ProjeQtOr User guide 12.1 documentation</title>
+    <title>Real work allocation / Timesheet &#8212; ProjeQtOr User guide 12.2 documentation</title>
     <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=fa44fd50" />
-    <link rel="stylesheet" type="text/css" href="_static/classic.css?v=3f452e31" />
+    <link rel="stylesheet" type="text/css" href="_static/classic.css?v=ce0d7025" />
     <link rel="stylesheet" href="_static/projeqtor.css" type="text/css" />
     
-    <script src="_static/documentation_options.js?v=c19c448c"></script>
-    <script src="_static/doctools.js?v=888ff710"></script>
+    <script src="_static/documentation_options.js?v=f664cee6"></script>
+    <script src="_static/doctools.js?v=9bcbadda"></script>
     <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
     
     <link rel="icon" href="_static/favicon.ico"/>
@@ -22,7 +22,7 @@
     <link rel="next" title="Collaboration" href="Collaboration.html" />
     <link rel="prev" title="Reports" href="Report.html" /> 
   </head><body>
-    <div class="related" role="navigation" aria-label="related navigation">
+    <div class="related" role="navigation" aria-label="Related">
       <h3>Navigation</h3>
       <ul>
         <li class="right" style="margin-right: 10px">
@@ -34,7 +34,7 @@
         <li class="right" >
           <a href="Report.html" title="Reports"
              accesskey="P">previous</a> |</li>
-        <li class="nav-item nav-item-0"><a href="index.html">ProjeQtOr User guide 12.1 documentation</a> &#187;</li>
+        <li class="nav-item nav-item-0"><a href="index.html">ProjeQtOr User guide 12.2 documentation</a> &#187;</li>
         <li class="nav-item nav-item-this"><a href="">Real work allocation / Timesheet</a></li> 
       </ul>
     </div>  
@@ -108,7 +108,7 @@
 <h4>Display<a class="headerlink" href="#display" title="Link to this heading">¶</a></h4>
 <p>The toggle buttons help you filter the information visible on your timesheet.</p>
 <p>Switch the button to the right (green button) to activate the display.</p>
-<p class="rubric">Weekly meetings only**</p>
+<p class="rubric">Weekly meetings only</p>
 <p>Recurring meetings display all meetings with one meeting per line. Depending on the period and frequency of your recurring meetings, many lines may be displayed.</p>
 <p>With this option, you only display meetings for the week displayed on the screen.</p>
 <p class="rubric">Closed items</p>
@@ -133,6 +133,14 @@
 <p class="rubric">Resource selected for the project only</p>
 <p>You can limit the display of the <a class="reference internal" href="#resourceselection"><span class="std std-ref">resource selection</span></a> drop-down list.</p>
 <p>If you have selected a project in your <a class="reference internal" href="Gui.html#project-selector"><span class="std std-ref">project selector</span></a> then you will only see the resources assigned to that project.</p>
+<p class="rubric">Projects Color en Activity color</p>
+<p>Ability to display project and/or activity colors directly on the timesheet.</p>
+<figure class="align-default" id="id8">
+<img alt="Planned work displayed zone" src="_images/REALWORK_ZONE_ProjectsColor.png" />
+<figcaption>
+<p><span class="caption-text">Planned work</span><a class="headerlink" href="#id8" title="Link to this image">¶</a></p>
+</figcaption>
+</figure>
 </section>
 <section id="filter">
 <h4>Filter<a class="headerlink" href="#filter" title="Link to this heading">¶</a></h4>
@@ -152,10 +160,10 @@
 <p class="rubric">Enter real as planned</p>
 <p>Planned work on an activity for a resource is carried forward for each day.</p>
 <p>If there is no figure displayed then it means that the resource is not supposed to be informed of the actual work on this activity during this period.</p>
-<figure class="align-default" id="id8">
+<figure class="align-default" id="id9">
 <img alt="Planned work for the resource" src="_images/REALWORK_ZONE_PlanWork.png" />
 <figcaption>
-<p><span class="caption-text">Planned work for the resource</span><a class="headerlink" href="#id8" title="Link to this image">¶</a></p>
+<p><span class="caption-text">Planned work for the resource</span><a class="headerlink" href="#id9" title="Link to this image">¶</a></p>
 </figcaption>
 </figure>
 <p>Even if planned work is planned for a resource, there is nothing forcing it to complete its work as expected.</p>
@@ -164,28 +172,28 @@
 <p>You have the possibility to reduce the granularity of your activity by distributing the work carried out on it into “different jobs”.</p>
 <p>This way you can accurately report which task you have carried out.</p>
 <p>It is necessary to activate the specific access <a class="reference internal" href="AccessRights.html#specific-access-right"><span class="std std-ref">Activation of the assignment breakdown</span></a></p>
-<figure class="align-default" id="id9">
+<figure class="align-default" id="id10">
 <img alt="Dispatched work for the activity" src="_images/REALWORK_ZONE_DispatchWork.png" />
 <figcaption>
-<p><span class="caption-text">Dispatched work for the activity</span><a class="headerlink" href="#id9" title="Link to this image">¶</a></p>
+<p><span class="caption-text">Dispatched work for the activity</span><a class="headerlink" href="#id10" title="Link to this image">¶</a></p>
 </figcaption>
 </figure>
 <p>Click on <a class="reference internal" href="_images/iconSplit.png"><img alt="Split" src="_images/iconSplit.png" style="width: 19.2px; height: 19.2px;" /></a> to dispatch the work on a line of your activity.</p>
 <p>In the popup, enter the name of your job, if it exists, it will be available in the drop-down list.</p>
-<figure class="align-default" id="id10">
+<figure class="align-default" id="id11">
 <img alt="Dispatch work Popup" src="_images/REALWORK_BOX_DispatchWork.png" />
 <figcaption>
-<p><span class="caption-text">Dispatch work Popup</span><a class="headerlink" href="#id10" title="Link to this image">¶</a></p>
+<p><span class="caption-text">Dispatch work Popup</span><a class="headerlink" href="#id11" title="Link to this image">¶</a></p>
 </figcaption>
 </figure>
 <p>If no job has been entered yet, click on <a class="reference internal" href="_images/iconAdd.png"><img alt="Add" src="_images/iconAdd.png" style="width: 19.2px; height: 19.2px;" /></a> to add a job.</p>
 <p>Enter the time you spent on this job.</p>
 <p>The <strong>Uncertainties</strong> and <strong>progress</strong> fields are not mandatory and can be left blank.</p>
 <p>Validate.</p>
-<figure class="align-default" id="id11">
+<figure class="align-default" id="id12">
 <img alt="Result dispatch work" src="_images/REALWORK_ZONE_ResultDispatchWork.png" />
 <figcaption>
-<p><span class="caption-text">Result dispatch work</span><a class="headerlink" href="#id11" title="Link to this image">¶</a></p>
+<p><span class="caption-text">Result dispatch work</span><a class="headerlink" href="#id12" title="Link to this image">¶</a></p>
 </figcaption>
 </figure>
 <p>The amount of work is automatically calculated.</p>
@@ -251,10 +259,10 @@
 <p>On the last row is the sum for all days of the week.</p>
 <p>It is a synthesis displayed for each project and globally for the whole week.</p>
 <p>The resource capacity is defined by the number of hours per day and the resource capacity (fte).</p>
-<figure class="align-default" id="id12">
+<figure class="align-default" id="id13">
 <img alt="Total of the day" src="_images/REALWORK_ZONE_TimesheetTotalDay.png" />
 <figcaption>
-<p><span class="caption-text">Total of the day Zone</span><a class="headerlink" href="#id12" title="Link to this image">¶</a></p>
+<p><span class="caption-text">Total of the day Zone</span><a class="headerlink" href="#id13" title="Link to this image">¶</a></p>
 </figcaption>
 </figure>
 <ul class="simple">
@@ -310,35 +318,35 @@ These messages can be sent at a frequency defined by email or displayed as an al
 <span id="timesheet-pool"></span><h2>Pool of ressource management<a class="headerlink" href="#pool-of-ressource-management" title="Link to this heading">¶</a></h2>
 <p>When the option <strong>display pools on Timesheet</strong> is activated, when a resource is assigned to an activity at the same time as a resource pool of which it is a part, then it will see the row for itself and the row for the resource pool.</p>
 <p>When the option is disabled then the resource only sees its line.</p>
-<figure class="align-default" id="id13">
+<figure class="align-default" id="id14">
 <img alt="Timesheet with resource and resource pool lines" src="_images/REALWORK_ZONE_TimesheetPool1.png" />
 <figcaption>
-<p><span class="caption-text">Timesheet with resource and resource pool lines</span><a class="headerlink" href="#id13" title="Link to this image">¶</a></p>
+<p><span class="caption-text">Timesheet with resource and resource pool lines</span><a class="headerlink" href="#id14" title="Link to this image">¶</a></p>
 </figcaption>
 </figure>
 <p>When the option is set to <strong>no</strong> then you can choose to display at least the left work to be done on this one.</p>
 <p>The following option <strong>show pool to update their left work</strong> allows you to display a row for the pool below the resource row to modify the left work.</p>
 <p>an icon then appears at the end of the resource line for the pool.</p>
-<figure class="align-default" id="id14">
+<figure class="align-default" id="id15">
 <img alt="icon pool of resources" src="_images/REALWORK_ZONE_IconPool.png" />
 <figcaption>
-<p><span class="caption-text">icon pool of resources for the left work</span><a class="headerlink" href="#id14" title="Link to this image">¶</a></p>
+<p><span class="caption-text">icon pool of resources for the left work</span><a class="headerlink" href="#id15" title="Link to this image">¶</a></p>
 </figcaption>
 </figure>
 <p>Click on it and a line is available to modify the left work for the pool of resources.</p>
-<figure class="align-default" id="id15">
+<figure class="align-default" id="id16">
 <img alt="pool of resources line" src="_images/REALWORK_ZONE_PoolRAF.png" />
 <figcaption>
-<p><span class="caption-text">pool of resource line</span><a class="headerlink" href="#id15" title="Link to this image">¶</a></p>
+<p><span class="caption-text">pool of resource line</span><a class="headerlink" href="#id16" title="Link to this image">¶</a></p>
 </figcaption>
 </figure>
 </section>
 <section id="timesheet-validation">
 <span id="validation-timesheet"></span><h2>Timesheet Validation<a class="headerlink" href="#timesheet-validation" title="Link to this heading">¶</a></h2>
-<figure class="align-default" id="id16">
+<figure class="align-default" id="id17">
 <img alt="Timesheet validation" src="_images/REALWORK_ZONE_TimesheetValidation.png" />
 <figcaption>
-<p><span class="caption-text">Timesheet validation</span><a class="headerlink" href="#id16" title="Link to this image">¶</a></p>
+<p><span class="caption-text">Timesheet validation</span><a class="headerlink" href="#id17" title="Link to this image">¶</a></p>
 </figcaption>
 </figure>
 <p>The timesheet validation screen allows the project manager to receive, verify and validate the time allocated weekly by the resources to an activity for all the projects.</p>
@@ -357,10 +365,10 @@ These messages can be sent at a frequency defined by email or displayed as an al
 <li><p><strong>Red:</strong> The filled workload is shorter or longer. It does not match the expected work.</p></li>
 <li><p><strong>Orange:</strong> the job is not the same as the expected job but the load is the same.</p></li>
 </ul>
-<figure class="align-default" id="id17">
+<figure class="align-default" id="id18">
 <img alt="orange code" src="_images/REALWORK_ZONE_ImputationOrange.png" />
 <figcaption>
-<p><span class="caption-text">Example of completed charges which generate the orange color code</span><a class="headerlink" href="#id17" title="Link to this image">¶</a></p>
+<p><span class="caption-text">Example of completed charges which generate the orange color code</span><a class="headerlink" href="#id18" title="Link to this image">¶</a></p>
 </figcaption>
 </figure>
 </section>
@@ -374,10 +382,10 @@ These messages can be sent at a frequency defined by email or displayed as an al
 <span id="index-2"></span><span id="id4"></span><h2>Monthly consolidation<a class="headerlink" href="#monthly-consolidation" title="Link to this heading">¶</a></h2>
 <p>Monthly consolidation allows you to view, control and validate resource allocations to a particular project for an entire month.
 This screen will list all the projects on which the user has visibility.</p>
-<figure class="align-default" id="id18">
+<figure class="align-default" id="id19">
 <img alt="Monthly consolidation screen" src="_images/REALWORK_SCR_MonthlyConsolidation.png" />
 <figcaption>
-<p><span class="caption-text">Monthly consolidation screen</span><a class="headerlink" href="#id18" title="Link to this image">¶</a></p>
+<p><span class="caption-text">Monthly consolidation screen</span><a class="headerlink" href="#id19" title="Link to this image">¶</a></p>
 </figcaption>
 </figure>
 <p><strong>Filters will limit the list:</strong></p>
@@ -420,10 +428,10 @@ This screen will list all the projects on which the user has visibility.</p>
 <li><p>a complex system, that of <a class="reference internal" href="HumanResources.html#human-resources"><span class="std std-ref">human resources</span></a>, linked to a system of contracts and rights acquired over time.</p></li>
 </ul>
 <p>Absences are related to an administrative type project.</p>
-<figure class="align-default" id="id19">
+<figure class="align-default" id="id20">
 <img alt="absences screen" src="_images/REALWORK_SCR_Absence.png" />
 <figcaption>
-<p><span class="caption-text">absences screen</span><a class="headerlink" href="#id19" title="Link to this image">¶</a></p>
+<p><span class="caption-text">absences screen</span><a class="headerlink" href="#id20" title="Link to this image">¶</a></p>
 </figcaption>
 </figure>
 <p>Only one project is necessary for all the resources, without them being allocated to this project.</p>
@@ -459,10 +467,10 @@ This screen will list all the projects on which the user has visibility.</p>
 <p>Click on the boxes of the dates concerned by non-productive work or use accelerators.</p>
 <p>The boxes are filled with the color of the leave type.</p>
 <p>If you use the human resources absence system, then you will see the dedicated project appear.</p>
-<figure class="align-default" id="id20">
+<figure class="align-default" id="id21">
 <img alt="list of projects and related activities on the absences screen" src="_images/REALWORK_ZONE_ListProject.png" />
 <figcaption>
-<p><span class="caption-text">list of projects and related activities on the absences screen</span><a class="headerlink" href="#id20" title="Link to this image">¶</a></p>
+<p><span class="caption-text">list of projects and related activities on the absences screen</span><a class="headerlink" href="#id21" title="Link to this image">¶</a></p>
 </figcaption>
 </figure>
 <p>Absences recorded via the human resources system will still be displayed on the absences screen.</p>
@@ -479,10 +487,10 @@ This screen will list all the projects on which the user has visibility.</p>
           </div>
         </div>
       </div>
-      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+      <div class="sphinxsidebar" role="navigation" aria-label="Main">
         <div class="sphinxsidebarwrapper">
             <p class="logo"><a href="index.html">
-              <img class="logo" src="_static/Projeqtor_Logo_White.png" alt="Logo"/>
+              <img class="logo" src="_static/Projeqtor_Logo_White.png" alt="Logo of ProjeQtOr User guide"/>
             </a></p>
   <div>
     <h3><a href="index.html">Table of Contents</a></h3>
@@ -527,7 +535,7 @@ This screen will list all the projects on which the user has visibility.</p>
     <p class="topless"><a href="Collaboration.html"
                           title="next chapter">Collaboration</a></p>
   </div>
-<div id="searchbox" style="display: none" role="search">
+<search id="searchbox" style="display: none" role="search">
   <h3 id="searchlabel">Quick search</h3>
     <div class="searchformwrapper">
     <form class="search" action="search.html" method="get">
@@ -535,13 +543,13 @@ This screen will list all the projects on which the user has visibility.</p>
       <input type="submit" value="Go" />
     </form>
     </div>
-</div>
+</search>
 <script>document.getElementById('searchbox').style.display = "block"</script>
         </div>
       </div>
       <div class="clearer"></div>
     </div>
-    <div class="related" role="navigation" aria-label="related navigation">
+    <div class="related" role="navigation" aria-label="Related">
       <h3>Navigation</h3>
       <ul>
         <li class="right" style="margin-right: 10px">
@@ -553,13 +561,13 @@ This screen will list all the projects on which the user has visibility.</p>
         <li class="right" >
           <a href="Report.html" title="Reports"
              >previous</a> |</li>
-        <li class="nav-item nav-item-0"><a href="index.html">ProjeQtOr User guide 12.1 documentation</a> &#187;</li>
+        <li class="nav-item nav-item-0"><a href="index.html">ProjeQtOr User guide 12.2 documentation</a> &#187;</li>
         <li class="nav-item nav-item-this"><a href="">Real work allocation / Timesheet</a></li> 
       </ul>
     </div>
     <div class="footer" role="contentinfo">
     &#169; Copyright 2015-2024, ProjeQtOr.
-      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 7.2.6.
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 8.1.3.
     </div>
   </body>
 </html>

@@ -55,6 +55,11 @@ function kanbanDisplayTicket($id, $type, $idKanban, $from, $line, $add, $mode) {
 	$hideStatus = ($hideStatus!='off')?true:false;
 	$hideType = Parameter::getUserParameter("kanbanHideType");
 	$hideType = ($hideType!='off')?true:false;
+	$hideProjectName = Parameter::getUserParameter("kanbanHideProjectName");
+	$hideProjectName = ($hideProjectName!='off')?true:false;
+	$modeColorTitle = Parameter::getUserParameter( "kanbanModeColorTitle" . Parameter::getUserParameter( "kanbanIdKanban" ) );
+	$hideColorTitle = Parameter::getUserParameter("kanbanHideColorTitle");
+	$hideColorTitle = ($hideColorTitle=='on')?true:false;
 	$hideProduct = Parameter::getUserParameter("kanbanHideProduct");
 	$hideProduct = ($hideProduct!='off')?true:false;
 	$hideActivityPlanning = Parameter::getUserParameter("kanbanHideActivityPlanning");
@@ -140,15 +145,42 @@ function kanbanDisplayTicket($id, $type, $idKanban, $from, $line, $add, $mode) {
               </tr>
             </table>
 	  </div>';
+    $backgroundColor = '#FFFFFF';
+	if ($hideColorTitle){
+      if($modeColorTitle=='colorProject'){
+        $itemForColor = new Project($line['idproject']);
+      }else if ($modeColorTitle=='colorItem'){
+        $itemForColor = new Activity($line['id']);
+      }else if($modeColorTitle=='colorType' and $line['idtickettype']){
+        $itemForColor = new Type($line['idtickettype']);
+      }else if($modeColorTitle=='colorPriority'){
+        $itemForColor = new Priority($line['idpriority']);
+      }else if($modeColorTitle=='colorUrgency'){
+        $itemForColor = new Urgency($line['idurgency']);
+      }
+      if (!empty($itemForColor)) $backgroundColor = $itemForColor->getColor();
+      $colorFont = getForeColor($backgroundColor);
+    }     
 	echo ' 
-      <div id="titleTicket' . $line['id'] . '" style="position:relative;background-color:#FFFFFF;width:100%;z-index:99;min-height: 25px;max-height: 25px;cursor:move;">
-        <div class="kanbanTitleTicket toto" id="name' . $line ['id'] . '">' . htmlEncode ( $line ['name'] ) . '</div>
+      <div id="titleTicket' . $line['id'] . '" style="position:relative;width:100%;background-color:#FFFFFF;z-index:99;min-height: 25px;max-height: 25px;cursor:move;">
+        <div class="kanbanTitleTicket" id="name' . $line ['id'] . '"' . (($hideColorTitle && $backgroundColor != '#FFFFFF') ? ' style="color:'.$colorFont.';background-color:' . $backgroundColor . ';"' : '') .'>' . htmlEncode ( $line ['name'] ) . '</div>
       </div>';
-     if($hideStatus){
-      echo '
-      <div id="divPrincItem' . $line ['id'] . '" style="position: relative;cursor:move;">
-        ' . kanbanAddPrinc ( $line ) . '        
-      </div>';
+	
+     if($hideStatus or $hideProjectName){
+       echo '<div style="display:flex;gap:5px;">';
+       if ($hideStatus){
+         echo '
+          <div id="divPrincItem' . $line ['id'] . '" style="position: relative;cursor:move;">
+            ' . kanbanAddPrinc ( $line ) . '
+          </div>';
+       }
+       if ($hideProjectName){
+         echo '
+          <div id="divProjectNameItem' . $line ['id'] . '" style="position: relative;cursor:move;display:flex; align-items: center;padding-left: 5px;">
+            ' . kanbanAddProjectName( $line ) . '
+          </div>';
+       }
+       echo '</div>';
      }
      echo '
       <div id="objectDescr' . $line ['id'] . '" dojoType="dijit.layout.ContentPane" region="center" class=""
@@ -349,13 +381,30 @@ echo '</div>';
             		echo '</tr>
               </table>
 		  </div>';
+            		
+        $backgroundColor = '#FFFFFF';
+        if ($hideColorTitle){
+          if($modeColorTitle=='colorProject'){
+            $itemForColor = new Project($line['idproject']);
+          }else if ($modeColorTitle=='colorItem'){
+            $itemForColor = new Activity($line['id']);
+          }else if($modeColorTitle=='colorType' and $line['idtickettype']){
+            $itemForColor = new Type($line['idtickettype']);
+          }else if($modeColorTitle=='colorPriority'){
+            $itemForColor = new Priority($line['idpriority']);
+          }else if($modeColorTitle=='colorUrgency'){
+            $itemForColor = new Urgency($line['idurgency']);
+          }
+          if (!empty($itemForColor)) $backgroundColor = $itemForColor->getColor();
+          $colorFont = getForeColor($backgroundColor);
+        }
 		echo ' 
-        <div id="titleTicket' . $line['id'] . '" style="position:relative;background-color:#FFFFFF;width:100%;z-index:99;min-height: 38px;max-height: 38px;cursor:move;">
-          <div style="font-size:13px;" class="kanbanTitleTicket kanbanTitleSmallTiles" id="name' . $line ['id'] . '">' . htmlEncode ( $line ['name'] ) . '</div>
+        <div id="titleTicket' . $line['id'] . '" style="position:relative;width:100%;background-color:#FFFFFF;z-index:99;min-height: 38px;max-height: 38px;cursor:move;">
+          <div '.($hideColorTitle ? ' style="'. (($backgroundColor == '#FFFFFF') ? '' : 'background-color:' . $backgroundColor . ';') .';font-size:13px;color:'.$colorFont.'"' : 'style="font-size:13px;"').' class="kanbanTitleTicket kanbanTitleSmallTiles" id="name' . $line ['id'] . '">' . htmlEncode ( $line ['name'] ) . '</div>
         </div>';
        $hideStatus = Parameter::getUserParameter("kanbanHideStatus");
        $hideStatus = ($hideStatus!='off')?true:false;
-       if($hideStatus){
+       if($hideStatus){ //no large kanban = no Project Name
         echo '
         <div id="divPrincItem' . $line ['id'] . '" style="position: relative;cursor:move;">
           ' . kanbanAddPrinc ( $line ) . '        

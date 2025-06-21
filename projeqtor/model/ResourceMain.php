@@ -1121,7 +1121,11 @@ class ResourceMain extends SqlElement {
       }
       if (array_key_exists($res->id, $listVisibleLinkedObj)) {
         if (!$print and  securityCheckDisplayMenu(null, $subClass) and securityGetAccessRightYesNo('menu'.$subClass, 'read', '') == "YES"){
-          $goto=' onClick="gotoElement(\''.$subClass.'\',\'' . htmlEncode($res->id) . '\');" style="cursor: pointer;" ';
+          if($res->isMaterial =="1"){
+          $goto=' onClick="gotoElement(\'ResourceMaterial\',\'' . htmlEncode($res->id) . '\');" style="cursor: pointer;" ';
+          }else{
+            $goto=' onClick="gotoElement(\''.$subClass.'\',\'' . htmlEncode($res->id) . '\');" style="cursor: pointer;" ';
+          }
         }else {
           $goto="";
         }

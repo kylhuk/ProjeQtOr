@@ -142,6 +142,8 @@ function refreshImputationList() {
   enableWidget("listShowIdle");
   enableWidget("listShowPlannedWork");
   enableWidget("showId");
+  enableWidget("listDisplayProjectColorImputation");
+  enableWidget("listDisplayActivityColorImputation");
   if (dojo.byId('hideNotHandled') && dijit.byId('listHideNotHandled')) {
   //if (dojo.byId('hideNotHandled') && dojo.byId('listHideNotHandled')) {
     //dojo.byId('hideNotHandled').checked=dojo.byId('listHideNotHandled').checked;
@@ -157,6 +159,17 @@ function refreshImputationList() {
     dojo.byId('displayOnlyCurrentWeekMeetings').checked = true;
   }else{
     dojo.byId('displayOnlyCurrentWeekMeetings').checked = false;
+  }
+  
+  if(dijit.byId('listDisplayProjectColorImputation').get('value')=='on'){
+    dojo.byId('displayProjectColorImputation').checked = true;
+  }else{
+    dojo.byId('displayProjectColorImputation').checked = false;
+  }
+  if(dijit.byId('listDisplayActivityColorImputation').get('value')=='on'){
+    dojo.byId('displayActivityColorImputation').checked = true;
+  }else{
+    dojo.byId('displayActivityColorImputation').checked = false;
   }
   loadContent('../view/refreshImputationList.php','workDiv','listForm',false);
   return true;
@@ -276,7 +289,12 @@ function blockImputationSave() {
   if (checkFormChangeInProgress()) {
     return false;
   }
-  disableWidget('saveParameterButton');
+  var divs = document.getElementsByClassName("imputationPlannedWorkCapacity");
+  if (divs.length > 0){
+    unblockImputationSave()
+  }else {
+    disableWidget('saveParameterButton'); 
+  }
 }
 function unblockImputationSave() {
   enableWidget('saveParameterButton');
@@ -380,7 +398,8 @@ function showPoolLinesToUpdate(rowId, button){
  * @return
  */
 // var oldImputationWorkValue=0;
-function dispatchWorkValueChange(rowId,colId,date) {
+var listPlannedWork = {};
+function dispatchWorkValueChange(rowId,colId,date,isPlannedWork) {
   var oldWorkValue=dojo.byId('workOldValue_' + rowId + '_' + colId).value;
   // var oldWorkValue=oldImputationWorkValue;
   if (oldWorkValue == null || oldWorkValue == '') {
@@ -390,6 +409,8 @@ function dispatchWorkValueChange(rowId,colId,date) {
   if (isNaN(newWorkValue)) {
     newWorkValue=0;
   }
+  listPlannedWork[colId] = (listPlannedWork[colId] === undefined) ? (isPlannedWork ? isPlannedWork : 0) : listPlannedWork[colId];
+  if (newWorkValue==0 && isPlannedWork) listPlannedWork[colId]=0;
   if (parseInt(dojo.byId('isAdministrative_' + rowId + '_' + colId).value) == 0) {
     // daysWorkFuture daysWorkFutureBlocking
     isFuture=dojo.byId('colIsFuture_' + colId).value == 1;
@@ -532,8 +553,10 @@ function dispatchWorkValueChange(rowId,colId,date) {
   disableWidget("listShowIdle");
   disableWidget("listShowPlannedWork");
   disableWidget("showId");
+  disableWidget("listDisplayProjectColorImputation");
+  disableWidget("listDisplayActivityColorImputation");
   unblockImputationSave();
-  checkCapacity(date);
+  checkCapacity(date,listPlannedWork[colId]);
   dijit.byId('totalWork').set("value",parseFloat(dijit.byId('totalWork').get("value")) + diff);
   totalWork=Math.round(parseFloat(dijit.byId('totalWork').get("value")) * 100) / 100;
   businessDay=Math.round(parseFloat(dojo.byId('businessDay').value) * 100) / 100;
@@ -636,6 +659,8 @@ function dispatchLeftWorkValueChange(rowId,isOnRealTime) {
   disableWidget("listShowIdle");
   disableWidget("listShowPlannedWork");
   disableWidget("showId");
+  disableWidget("listDisplayProjectColorImputation");
+  disableWidget("listDisplayActivityColorImputation");
   unblockImputationSave();
   if (dojo.byId('leftChanged_' + rowId)) {
     dojo.byId('leftChanged_' + rowId).value='1';
@@ -757,7 +782,7 @@ function enterRealAsPlanned(nbDays) {
   }
 }
 
-function checkCapacity(date) {
+function checkCapacity(date,isPlannedWork) {
   var capacity=parseFloat(dojo.byId('resourceCapacity_' + date).value);
   capacity=Math.round(capacity * 100) / 100;
   var maxDailyWork=parseFloat(dojo.byId('resourceMaxDailyWork').value);
@@ -765,14 +790,17 @@ function checkCapacity(date) {
   // for (colId=1; colId<=7; colId++) {
   colId=dojo.byId('colId_' + date).value;
   valSum=Math.round(parseFloat(dijit.byId('colSumWork_' + colId).get("value")) * 100) / 100;
+  listPlannedWork[colId]=isPlannedWork;
   if (maxDailyWork && valSum > maxDailyWork) {
     dijit.byId('colSumWork_' + colId).set("class","imputationBlockedCapacity imputation");
   } else if (valSum > capacity) {
     // dojo.style('colSumWork_' + colId, "backgroung","red");
     dijit.byId('colSumWork_' + colId).set("class","imputationInvalidCapacity imputation");
-  } else if (valSum < capacity) {
+  } else if (valSum < capacity && !isPlannedWork) {
     dijit.byId('colSumWork_' + colId).set("class","displayTransparent imputation");
     // domClass.remove('colSumWork_' + colId, "imputationInvalidCapacity");
+  } else if (isPlannedWork){
+    dijit.byId('colSumWork_' + colId).set("class","imputationPlannedWorkCapacity imputation");
   } else {
     // dojo.style('colSumWork_' + colId, "backgroung","red");
     dijit.byId('colSumWork_' + colId).set("class","imputationValidCapacity imputation");
@@ -791,6 +819,14 @@ function validFutureWorkDate() {
 }
 
 function saveImputation() {
+  var divs = document.getElementsByClassName("imputationPlannedWorkCapacity");
+  Array.from(divs).forEach(function(div) {
+    var nextSibling = div.nextElementSibling;
+    if (nextSibling && nextSibling.tagName.toLowerCase() === 'input' && nextSibling.id.startsWith("colId_")) {
+      var date = nextSibling.id.replace("colId_", "");
+      checkCapacity(date,0);
+    }     
+  });
   var futureInput=dojo.byId('daysWorkFuture').value != '0' ? true : false;
   var futureInputBlocking=dojo.byId('daysWorkFutureBlocking').value != '0' ? true : false;
   var maxDailyWork=Math.round(parseFloat(dojo.byId('resourceMaxDailyWork').value) * 100) / 100;
@@ -851,7 +887,8 @@ function saveImputation() {
   enableWidget("listShowIdle");
   enableWidget("listShowPlannedWork");
   enableWidget("showId");
-
+  enableWidget("listDisplayProjectColorImputation");
+  enableWidget("listDisplayActivityColorImputation");
 }
 
 function dispatchWork(refType,refId) {
