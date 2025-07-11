@@ -28,11 +28,11 @@ $showIdle=(sessionValueExists('projectSelectorShowIdle') and getSessionValue('pr
 $showHandlelProject=Parameter::getUserParameter('projectSelectorShowHandlelProject');
 $limitProjectLevel=Parameter::getUserParameter('projectSelectorLimitProjectLevel');
 $displayMode="standard";
-if (sessionValueExists('projectSelectorDisplayMode')) {
-  $displayMode=getSessionValue('projectSelectorDisplayMode');
-}
+// if (sessionValueExists('projectSelectorDisplayMode')) {
+//   $displayMode=getSessionValue('projectSelectorDisplayMode');
+// }
 $favoriteProject = new FavoriteProjectList();
-$favoriteProjectList = $favoriteProject->getSqlElementsFromCriteria(array('idUser'=>$user->id),null,null,'sortOrder');
+$favoriteProjectList = $favoriteProject->getSqlElementsFromCriteria(array('idUser'=>$user->id),null,null,'name ASC');
 $favoriteProjFlatList = implode(',', SqlList::getListWithCrit('FavoriteProjectList', array('idUser'=>$user->id), 'id'));
 $favoriteProjectArray = pq_trim(Parameter::getUserParameter('favoriteProjectsArray'));
 $isFavoriteListSelected = 0;
@@ -41,7 +41,12 @@ $favoriteListName = '';
 if(pq_trim($idFavoriteProjectList) != ''){
   $favoriteListName = SqlList::getNameFromId('FavoriteProjectList', $idFavoriteProjectList);
   $isFavoriteListSelected=1;
+}else if(sessionValueExists("favoriteProjectListName")){
+  $favoriteListName=getSessionValue("favoriteProjectListName");
 }
+$noName = RequestHandler::getBoolean('noName');
+if($noName)$favoriteListName='';
+
 $allvisibility=0;
 if (securityGetAccessRight('menuProject', 'read')=='ALL') { // If can see ALL projects, can show the "show idle" switch as visibility noe define from (possibly closed) allocation
   $allvisibility=1;
@@ -51,7 +56,7 @@ if($displayMode=="select"){
   $favoriteEditDisabled='display:none';
 }
 $lastTab = Parameter::getUserParameter('projectSelectorTab');
-if(!pq_trim($lastTab)){
+if(!pq_trim($lastTab) or $lastTab=="favoritesProjectTab"){
   $lastTab = 'selectorFormatTab';
 }
 ?>
@@ -140,7 +145,7 @@ if(!pq_trim($lastTab)){
         </td>
       </tr>
       <tr><td></td><td>&nbsp;</td></tr>
-      <tr>
+      <tr style="display:none;">
         <td style="text-align: right;width:250px;white-space:nowrap;white-space:nowrap">
           <?php echo i18n("projectListDisplayMode");?>&nbsp;<?php echo (isNewGui())?'':':';?>&nbsp;
         </td>
@@ -169,6 +174,7 @@ if(!pq_trim($lastTab)){
       <tr><td></td><td>&nbsp;</td></tr>
     </table>  
   </div>
+  <?php if(1==0){?>
   <div id="favoritesProjectTab" data-dojo-type="dijit/layout/ContentPane" title="<?php echo i18n('Favorite');?>" data-dojo-props="<?php echo ($lastTab == 'favoritesProjectTab')?'selected:true':'';?>"> 
     <script type="dojo/connect" event="onShow" args="evt">
       dijit.byId('projectSelectorTabContainer').watch("selectedChildWidget", function(name, oldValue, newValue) {
@@ -220,11 +226,12 @@ if(!pq_trim($lastTab)){
                   <tr>
                     <td colspan="2">
                       <div id="listStoredFavoriteProjectList" name="listStoredFavoriteProjectList" dojoType="dijit.layout.ContentPane" region="center" style="width:100%;height:100px;overflow-y: auto;">
+                      <input type="hidden" id="idSelectedFavoriteProject" name="idSelectedFavoriteProject" value="<?php echo $idFavoriteProjectList;?>" />
                       <table width="100%" id="dndListFavoriteSelector" jsId="dndListFavoriteSelector" dojotype="dojo.dnd.Source" withhandles="true" data-dojo-props="accept: ['tableauFavoriteList']">
                         <?php if(count($favoriteProjectList)>0){?>
                         <tr style="height:22px;">
-                          <td colspan="2" style="cursor:pointer;<?php echo (!isNewGui())?'font-size:8pt;':'';?>font-style:italic;padding:5px;"
-                            class="filterData" onClick="selectFavoriteProjectList('<?php echo $favoriteProjectArray;?>', '');" title="<?php echo i18n("resetFavoriteList"); ?>"><?php echo i18n('noFavorite');?></td>
+                          <td colspan="3" style="cursor:pointer;<?php echo (!isNewGui())?'font-size:8pt;':'';?>font-style:italic;padding:5px;height: 22px;"
+                            class="filterData ganttTaskrow" onClick="selectFavoriteProjectList('<?php echo $favoriteProjectArray;?>', '');" title="<?php echo i18n("resetFavoriteList"); ?>"><?php echo i18n('noFavorite');?></td>
                         </tr>
                           <?php foreach ($favoriteProjectList as $favoriteProject){
                             $favoriteProjectItemList = SqlList::getListWithCrit('FavoriteProjectItem', array('idFavoriteProjectList'=>$favoriteProject->id), 'idProject');
@@ -232,14 +239,19 @@ if(!pq_trim($lastTab)){
                             $selectedListClass = ($favoriteProject->id == $idFavoriteProjectList)?'dojoDndItemAnchor':'';
                             $selectedBackgroundColor = ($favoriteProject->id == $idFavoriteProjectList)?'favoriteProjectListSelected':'';
                           ?>
-                          <tr class="dojoDndItem <?php echo $selectedListClass;?>" dndType="tableauFavoriteList" id="favoriteList<?php echo $favoriteProject->id;?>">
-                            <td style="cursor:pointer;<?php echo (!isNewGui())?'font-size:8pt;':'';?>font-style:italic;padding:5px;"
+                          <tr class="dojoDndItem <?php echo $selectedListClass;?> ganttTaskrow" dndType="tableauFavoriteList" id="favoriteList<?php echo $favoriteProject->id;?>">
+                            <td style="cursor:pointer;<?php echo (!isNewGui())?'font-size:8pt;':'';?>font-style:italic;padding:5px;height: 22px;"
                               class="filterData <?php echo $selectedBackgroundColor;?>" onClick="selectFavoriteProjectList('<?php echo $favoriteProjectItemList;?>', '<?php echo $favoriteProject->id;?>');" title="<?php echo i18n("selectStoredFavorite"); ?>">
                                <!-- <span class="dojoDndHandle handleCursor"><img style="width:<?php //echo (isNewGui())?'10px;float:left':'6px;';?>" src="css/images/iconDrag.gif" />&nbsp;&nbsp;</span> -->
-                               <span style="position:relative;top:2px;margin:3px"><?php echo htmlEncode($favoriteProject->name);?></span></td>
+                               <span id="favoriteProjectName_<?php echo $favoriteProject->id;?>" style="position:relative;top:2px;margin:3px"><?php echo htmlEncode($favoriteProject->name);?></span></td>
                             </td>
-                            <td class="filterData dndHidden" width="22px" align="center">
-                              <a src="css/images/smallButtonRemove.png" onClick="removeFavoriteProjectList('<?php echo $favoriteProjFlatList;?>', '<?php echo htmlEncode($favoriteProject->id);?>')" title="<?php echo i18n('removeStoredFavorite');?>">
+                            <td class="filterData dndHidden" width="16px" align="center" style="height: 22px;">
+                              <a onClick="selectFavoriteProjectList('<?php echo $favoriteProjectItemList;?>', '<?php echo $favoriteProject->id;?>', true);" title="<?php echo i18n('editStoredFavorite');?>">
+                                <?php echo formatSmallButton('Edit');?>
+                              </a>
+                            </td>
+                            <td class="filterData dndHidden" width="16px" align="center" style="height: 22px;">
+                              <a onClick="removeFavoriteProjectList('<?php echo $favoriteProjFlatList;?>', '<?php echo htmlEncode($favoriteProject->id);?>')" title="<?php echo i18n('removeStoredFavorite');?>">
                                 <?php echo formatSmallButton('Remove');?>
                               </a>
                             </td>
@@ -247,8 +259,8 @@ if(!pq_trim($lastTab)){
                         <?php }?>
                       <?php }else{?>
                         <tr style="height:22px;">
-                          <td colspan="2" style="cursor:pointer;<?php echo (!isNewGui())?'font-size:8pt;':'';?>font-style:italic;padding:5px;"
-                            class="filterData" onClick="selectFavoriteProjectList('<?php echo $favoriteProjectArray;?>','');" title="<?php echo i18n("resetFavoriteList"); ?>"><?php echo i18n('noFavorite');?></td>
+                          <td colspan="3" style="cursor:pointer;<?php echo (!isNewGui())?'font-size:8pt;':'';?>font-style:italic;padding:5px;height: 22px;"
+                            class="filterData ganttTaskrow" onClick="selectFavoriteProjectList('<?php echo $favoriteProjectArray;?>','');" title="<?php echo i18n("resetFavoriteList"); ?>"><?php echo i18n('noFavorite');?></td>
                         </tr>
                       <?php }?>  
                       </table>
@@ -261,6 +273,7 @@ if(!pq_trim($lastTab)){
       </table>
     </form>
   </div>
+  <?php }?>
   <div id="othersTab" data-dojo-type="dijit/layout/ContentPane" title="<?php echo i18n('menuOther');?>" data-dojo-props="<?php echo ($lastTab == 'othersTab')?'selected:true':'';?>"> 
     <script type="dojo/connect" event="onShow" args="evt">
       dijit.byId('projectSelectorTabContainer').watch("selectedChildWidget", function(name, oldValue, newValue) {

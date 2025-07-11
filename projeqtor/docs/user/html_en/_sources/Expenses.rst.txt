@@ -239,10 +239,11 @@ This can be used for all kinds of project cost :
 Activity expenses
 *****************
 
-An activity expense is directly linked to an activity and therefore consolidated up to the project.
+The payment due date can be retrieved from the activity.
 
-One stores cost information directly on the activity and adds to the stored project and resource information.
+Choose from the start, middle, or end of the activity associated with the expense.
 
+Save and the date is automatically displayed.
 
 .. figure:: /images/GUI/EXPENSES_SCR_expenseActivity.png
    :alt: Expense activity

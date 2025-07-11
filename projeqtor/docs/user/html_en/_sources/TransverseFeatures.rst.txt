@@ -40,6 +40,7 @@ This filter allows you to restrict the display by ...
 * Periods
 * Show the closed items
 * Show only notes
+* Hide email sent
    
 You can also select the amount of information to display and restrict the list to the screen. 
    

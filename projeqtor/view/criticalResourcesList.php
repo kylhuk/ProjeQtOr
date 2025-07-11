@@ -55,13 +55,13 @@ if (sessionValueExists('project')) {
   if (is_numeric($defaultProject)) $proj=$defaultProject;
 }
 if ($proj=="*" or ! $proj) { 
-	$proj=' , ';
+	//$proj=' , ';
+	$proj=null;
 } else {
-	$proj = " ," .$proj;
+	//$proj = ",".$proj;
 }
-
 if (getSessionValue('idProjectCriticalResources')) {
-	$proj = ' ,' .getSessionValue('idProjectCriticalResources');
+  $proj.= (($proj)?",":"").getSessionValue('idProjectCriticalResources');
 }
 if (getSessionValue('scaleCriticalResources')) {
   $scale = getSessionValue('scaleCriticalResources');

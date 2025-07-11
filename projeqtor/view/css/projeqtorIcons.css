@@ -982,6 +982,8 @@
 .ProjeQtOrFlatRed .iconConfirm32 { background-image: url(customIcons/red/iconConfirm.png);  background-repeat: no-repeat; }
 .ProjeQtOrNewGui .iconConfirm32 { background-image: url(customIcons/new/iconConfirm.svg);  background-repeat: no-repeat; }
 
+.ProjeQtOrNewGui .iconCheck { background-image: url(customIcons/new/iconCheck.svg);  background-repeat: no-repeat; }
+
 .ProjeQtOrNewGui .iconConsole { background-image: url(customIcons/new/iconConsole.svg);  background-repeat: no-repeat; }
 .ProjeQtOrNewGui .iconKawa { background-image: url(customIcons/new/iconKawa.svg);  background-repeat: no-repeat; }
 
@@ -1313,9 +1315,12 @@
 
 
 .ProjeQtOrNewGui .iconFavoris { background-image: url(customIcons/new/iconFavoris.svg);  background-repeat: no-repeat; }
+.ProjeQtOrNewGui .iconFavorite { background-image: url(customIcons/new/Favorite.svg);  background-repeat: no-repeat; }
+.ProjeQtOrNewGui .iconIsFavorite { background-image: url(customIcons/new/FavoriteFull.svg);  background-repeat: no-repeat; }
 .ProjeQtOrNewGui .iconFavorisIcon { background-image: url(customIcons/new/iconFavorisIcon.svg);  background-repeat: no-repeat; }
 .ProjeQtOrNewGui .iconFavorisIconTxt { background-image: url(customIcons/new/iconFavorisIconTxt.svg);  background-repeat: no-repeat; }
 .ProjeQtOrNewGui .iconFavorisTxt { background-image: url(customIcons/new/iconFavorisTxt.svg);  background-repeat: no-repeat; }
+
 
 .iconFeasibility { background-image: url(images/iconFeasibility32.png);  background-repeat: no-repeat;  }
 .ProjeQtOrFlatBlue .iconFeasibility { background-image: url(customIcons/blue/iconFeasibility.png);  background-repeat: no-repeat; }
@@ -2546,6 +2551,8 @@
 
 .iconProspectType{ background-image: url(customIcons/new/iconProspectType.svg);  background-repeat: no-repeat; }
 
+.iconProspectEventType{ background-image: url(customIcons/new/iconEventType.svg);  background-repeat: no-repeat; }
+
 /* Q */
 
 .iconQuality { background-image: url(images/iconQuality32.png);  background-repeat: no-repeat;  }
@@ -2933,6 +2940,7 @@
 /* T */
 
 
+.ProjeQtOrNewGui .iconButtonTab { background-image: url(customIcons/new/iconTab.svg) !important;  background-repeat: no-repeat; }
 
 .iconTeam { background-image: url(images/iconTeam32.png);  background-repeat: no-repeat; }
 .ProjeQtOrFlatBlue .iconTeam { background-image: url(customIcons/blue/iconTeam.png);  background-repeat: no-repeat;}
@@ -3245,6 +3253,8 @@
 .iconLinkStream22 { background-image: url(images/iconLink.png);  background-size: 22px 22px;}
 .iconLinkStream32 { background-image: url(images/iconLink.png);  background-size: 32px 32px;}
 .ProjeQtOrNewGui .iconLinkStream { background-image: url(customIcons/new/iconLink.svg);  }
+
+.ProjeQtOrNewGui .iconButtonLink { background-image: url(customIcons/new/iconLink.svg);  }
 
 .iconAttachStream16 { background-image: url(images/iconAttach.png);  background-size: 16px 16px;}
 .iconAttachStream22 { background-image: url(images/iconAttach.png);  background-size: 22px 22px;}
@@ -3681,3 +3691,7 @@ IconAdd existante
 .ProjeQtOrNewGui .iconPlanningBaseline { background-image: url(customIcons/new/iconBaseline.svg);  background-repeat: no-repeat; }
 .ProjeQtOrNewGui .iconPlanningValidation { background-image: url(customIcons/new/iconValidation.svg);  background-repeat: no-repeat; }
 
+.iconButtonListAtt { background-image: url(customIcons/new/iconEmailAttachment.svg);  background-repeat: no-repeat; margin-left:2px; display:inline-block;}
+.iconButtonListNot { background-image: url(customIcons/new/iconNote.svg);  background-repeat: no-repeat; margin-left:2px; display:inline-block; }
+.iconButtonListLnk { background-image: url(customIcons/new/iconLink.svg); margin-left:2px; display:inline-block;}
+.iconButtonListHeader {zoom:80%; -webkit-filter : saturate(100) brightness(0) !important; filter: saturate(100) brightness(0) !important;}

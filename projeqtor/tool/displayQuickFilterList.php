@@ -40,7 +40,7 @@ if(!isset($dontDisplay))$dontDisplay = false;
       $objectType = $idClassType;
     }
   }
-  if ($objectClass=='Planning' or $objectClass=='GlobalPlanning' or $objectClass=='VersionsPlanning' or $objectClass=='ResourcePlanning'){
+  if ($objectClass=='Planning' or $objectClass=='GlobalPlanning' or $objectClass=='VersionsPlanning' or $objectClass=='ResourcePlanning' or $objectClass=='PlanningWorkPlan'){
     $objectClass='Activity';
     $dontDisplay=true;
   }
@@ -504,10 +504,26 @@ if(!isset($dontDisplay))$dontDisplay = false;
              </td> 
 	    </tr>
 	 <?php } ?>
+	 	   <tr>
+	   <td style="text-align:right;padding:5px 5px 12px 0;" class="">
+          <button dojoType="dijit.form.Button" type="button" class="mediumTextButton">
+            <?php echo i18n('buttonReset');?>
+            <?php $listStatus = $object->getExistingStatus(); $lstStat=(count($listStatus));?>
+            <?php $listTags = $object->getExistingTags(); $lstTags=(count($listTags));?>
+            <script type="dojo/method" event="onClick">
+              var lstStat = <?php echo json_encode($lstStat); ?>;
+              var lstTag = <?php echo json_encode($lstTags); ?>;
+              resetFilterQuick(lstStat, lstTag);
+              resizeListDiv();
+              dijit.byId('listFilterFilter').closeDropDown();
+            </script>
+          </button>
+        </td>
+        </tr>
       
        <!-- sumOn -->
       <tr style="border-top:solid 1px;color:var(--color-medium);"><tr>
-      <tr style="width:100%;display:flex;padding-top:15px;gap:10px;">
+      <tr style="width:100%;display:flex;padding:18px 0 0 0;gap:10px;height:33px;">
         <td style="text-align:right;width:37%;min-width:120px;"> <span class=""><?php echo ucfirst(i18n("sumOnColumn"));?><?php if (!isNewGui()) echo ':';?></span></td>
         <td style="width:53%;position:relative; top:-8px;">
         <?php $curVal=Parameter::getUserParameter("listSumOnFilter$objectClass");?>
@@ -576,25 +592,6 @@ if(!isset($dontDisplay))$dontDisplay = false;
             </script>
           </div>
          </td>
-        </tr>
-        <tr style="border-top:solid 1px;color:var(--color-medium);"></tr>
-
-	    <td style="text-align:right;padding:15px 5px 0 0;" class="">
-          <button dojoType="dijit.form.Button" type="button" class="mediumTextButton">
-            <?php echo i18n('buttonReset');?>
-            <?php $listStatus = $object->getExistingStatus(); $lstStat=(count($listStatus));?>
-            <?php $listTags = $object->getExistingTags(); $lstTags=(count($listTags));?>
-            <script type="dojo/method" event="onClick">
-              var lstStat = <?php echo json_encode($lstStat); ?>;
-              var lstTag = <?php echo json_encode($lstTags); ?>;
-              resetFilterQuick(lstStat, lstTag);
-              resizeListDiv();
-              dijit.byId('listFilterFilter').closeDropDown();
-            </script>
-          </button>
-        </td>
-        <tr>
-            <td style="height:5px;"></td>
         </tr>
         
      </table>

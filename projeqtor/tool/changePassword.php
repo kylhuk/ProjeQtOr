@@ -117,6 +117,7 @@
     $user->salt=$salt;
     $user->crypto=$crypto;
     $user->passwordChangeDate=date('Y-m-d');
+    $user->mustChangePassword = 0;
     $result=$user->save();
     if (getLastOperationStatus($result)=='OK') {
       $result=i18n('passwordChanged');

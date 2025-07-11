@@ -25,8 +25,6 @@ Resource availability is defined by assigning it to a project.
 
 * Resources are needed for project planning
   
-  See: :ref:`assignment-section`
-
 * A resource can be a group of people 
 
   or a fictitious resource with a FTE> 1
@@ -511,23 +509,29 @@ List of the resources members of the team.
 .. _material-resource:
 
 Material resources
-******************
+##################
 
-It is possible to create a resource that is "material" so that it can be reserved with work. But this work will not add to the project. On the other hand, if this resource has a cost, it is added.
+It is possible to create a resource that is "material" so that it can be reserved with work. 
 
-This material resource will be able to be planned just like a human resource with a capacity (ETP) of 1 that you will not be able to modify.
+This work will not be added to the project. On the other hand, if this resource has a cost, it is added.
 
-The human, overcapacity and overbooking fields are not available for this type of resource.
+This material resource will be planned just like a human resource with a capacity (ETP) of 1 that you will not be able to modify.
 
-However, a hardware resource can have a supporting but unsupported resource or an incompatible resource. For example a trailer could support a truck. Or an automatic car may be incompatible with a resource that does not know how to drive this type of car.
+The human resource properties for overcapacity and overbooking are not available for this type of resource.
 
-A hardware resource cannot be part of a resource pool. Exclusively human.
+However, a material resource can have a supporting or supported resource or an incompatible resource. 
+
+For example a trailer could support a truck. Or an automatic car may be incompatible with a resource that does not know how to drive this type of car.
+
+A material resource cannot be part of a resource pool. This is restricted to human resources.
+
+A material resource can be attached to an organization.
 
 
 .. _calendars:
 
 Calendars
-*********
+#########
 
 .. sidebar:: Concepts 
 

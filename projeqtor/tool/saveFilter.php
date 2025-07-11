@@ -30,7 +30,6 @@
  */
 
 require_once "../tool/projeqtor.php";
-
 $user=getSessionUser();
 
 // $comboDetail=false;
@@ -38,7 +37,6 @@ $user=getSessionUser();
 //   $comboDetail=true;
 // }
 $comboDetail=RequestHandler::isCodeSet('comboDetail');
-
 if (! $comboDetail and ! $user->_arrayFilters) {
   $user->_arrayFilters=array();
 } else if ($comboDetail and ! $user->_arrayFiltersDetail) {
@@ -51,7 +49,7 @@ if (! $comboDetail and ! $user->_arrayFilters) {
 // }
 //$filterObjectClass=$_REQUEST['filterObjectClass'];
 $filterObjectClass=RequestHandler::getClass('filterObjectClass',true);
-$objectClass=($filterObjectClass=='Planning' or $filterObjectClass=='VersionsPlanning' or $filterObjectClass=='ResourcePlanning' )?'Activity':$filterObjectClass;
+$objectClass=($filterObjectClass=='Planning' or $filterObjectClass=='VersionsPlanning' or $filterObjectClass=='ResourcePlanning' or $filterObjectClass=='PlanningWorkPlan')?'Activity':$filterObjectClass;
 $objectClass=(pq_substr($objectClass,0,7)=='Report_')?pq_substr($objectClass,7):$objectClass;
 
 // Get existing filter info
@@ -115,6 +113,9 @@ if (! $name) {
     //ADD qCazelles - Dynamic filter - Ticket #78
     $criteria->orOperator=(isset($filterCriteria["orOperator"]))?$filterCriteria["orOperator"]:0;
     $criteria->isDynamic=(isset($filterCriteria["isDynamic"]))?$filterCriteria["isDynamic"]:0;
+    $criteria->isGroup=(isset($filterCriteria["isGroup"]))?$filterCriteria["isGroup"]:0;
+    $criteria->indentLevel=(isset($filterCriteria["indentLevel"]))?$filterCriteria["indentLevel"]:0;
+    
     if (isset($filterCriteria["isDynamic"]) and $filterCriteria["isDynamic"]=="1") {
 		  $dynamicFilter=1;
     }

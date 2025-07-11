@@ -427,7 +427,7 @@ class Importable extends SqlElement {
 								$field=formatBrowserDateToDate($field); // Detect if format is correct
 							}
 						}
-					} else if ($dataType == 'int' and pq_substr($title[$idx], 0, 2) != 'id') { // --------------------------------------
+					} else if ($dataType == 'int' and ! isForeignKey($title[$idx]) ) { // --------------------------------------
 					  if ($fldName=='refId' or $fldName=='ref1Id' or $fldName=='ref2Id' or $fldName=='predecessorRefId' or $fldName=='successorRefId') {
 					    // Nothing, may contain Text
 					  } else {
@@ -458,7 +458,7 @@ class Importable extends SqlElement {
 					  }
 					  $sub = $obj->$subClass;
 					  if (property_exists($subClass, $fldName)) {
-					    if (pq_substr($fldName, 0, 2) == 'id' and pq_substr($fldName, 0, 4) != 'idle' and pq_strlen($fldName) > 2 and !is_numeric($field) and $field!=null) {
+					    if (isForeignKey($fldName) and ! is_numeric($field) and $field!=null) {
 					      $clsSearch=pq_substr($fldName, 2);
 					      if ($clsSearch=='Resource') $clsSearch='Affectable';
 					      $obj->$subClass->$fldName = SqlList::getIdFromName($clsSearch, $field);
@@ -469,7 +469,7 @@ class Importable extends SqlElement {
 					    continue;
 					  }
 					} else if (property_exists($obj, $title[$idx])) {
-						if (pq_substr($fldName, 0, 2) == 'id' and pq_substr($fldName, 0, 4) != 'idle' and pq_strlen($fldName) > 2 and !is_numeric($field) and $field!=null) {
+					  if (isForeignKey($fldName) and ! is_numeric($field) and $field!=null) {
 							if ($fldName=='idProject' or $fldName=='idActivity') {
 							  $crit=array('name'=>$field);
 							  if ($fldName=='idActivity' and property_exists($obj, 'idProject') and $obj->idProject) {
@@ -495,6 +495,7 @@ class Importable extends SqlElement {
 							  //$clsSearch=pq_substr($fldName, 2);
 							  $clsSearch=pq_substr(foreignKeyWithoutAlias($fldName), 2);
 							  if ($clsSearch=='Resource') $clsSearch='Affectable';
+							  if ($clsSearch=='Contact') $clsSearch='Affectable';
 						    $obj->$fldName = SqlList::getIdFromName($clsSearch, $field, (($fldName=='id'.get_class($obj))?true:false));
 							}
 						} else if ( ($fldName=='refId' or $fldName=='ref1Id' or $fldName=='ref2Id' or $fldName=='predecessorRefId' or $fldName=='successorRefId') 

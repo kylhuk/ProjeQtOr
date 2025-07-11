@@ -178,7 +178,7 @@ class DocumentVersionMain extends SqlElement {
   		}
   		$this->fileSize=@filesize($this->importFile);
   	}
-  	$pos=strrpos($this->fileName,'.');
+  	$pos=pq_strpos($this->fileName,'.');
   	if ($pos) {
   	  $this->fullName.=pq_substr($this->fileName,$pos);
   	}
@@ -290,7 +290,7 @@ class DocumentVersionMain extends SqlElement {
     if (! file_exists($uploaddir)) {
     	$dir->createDirectory();
     }
-    $fileName=$this->fileName;
+    $fileName= $this->fileName ? $this->fileName : 'noFileNameAdmitted';
      $ext = pq_strtolower ( pathinfo ( $fileName, PATHINFO_EXTENSION ) );
 //     if (pq_substr($ext,0,3)=='php' or pq_substr($ext,0,4)=='phtm'  or $ext=='phar' or $ext=='pgif') {
 //     	$fileName.='.projeqtor.txt';

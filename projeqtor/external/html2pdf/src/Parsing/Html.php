@@ -108,13 +108,13 @@ class Html
             'h1', 'h2', 'h3', 'h4', 'h5', 'h6',
             'bookmark', 'fieldset', 'legend',
             'draw', 'circle', 'ellipse', 'path', 'rect', 'line', 'g', 'polygon', 'polyline',
-            'option'
+            'option', 'nostyle'
         );
 
         // list of the tags to move space
         $tagsToSpace = array(
             'span', 'font', 'label',
-            'strong', 'b',
+            'strong', 'b', 'nostyle', 
             'address', 'cite', 'em', 'i', 'samp',
             'cite', 's',
             'ins', 'u',

@@ -476,7 +476,7 @@ class InputMailboxTicket extends SqlElement {
           }
         }
         $title = "Cannot connect to ticket mailbox #$this->id";
-        $content = pq_mb_substr(imap_last_error().' - ticket mailbox closed, next try in 1 hour');
+        $content = imap_last_error().' - ticket mailbox closed, next try in 1 hour';
         sendNotification($receivers, $this, "ALERT", $title, $content, $error);
       }
       $resMb=$this->save();
@@ -636,7 +636,7 @@ class InputMailboxTicket extends SqlElement {
         }
       }
       
-      $msgPlain=self::extractBodyPlain($body);
+      $msgPlain=self::extractBodyPlain($body,$bodyHtml);
       $msgHtml=self::extractBodyHtml($bodyHtml);
       $msgTruncated=self::truncateBodyHtml($bodyHtml);
       
@@ -695,17 +695,24 @@ class InputMailboxTicket extends SqlElement {
         $resSaveNote=$note->save();
         $status=getLastOperationStatus($resSaveNote);
         if ($status=='OK') {
+          $timestampImg = date('Y-m-d h:i:s');
+          $timestampImg = pq_strtotime($timestampImg);
           //$objAtch=new $class($id);
           $sizeAttach = ($this->sizeAttachment)*1024*1024;
           $listAtt = $mail->getAttachments();
           foreach ($listAtt as $att){
+            $imageCid = $att->id;
+            $posImgCid = strpos($imageCid,"@");
+            if($posImgCid!==false){
+              $imageCid = pq_substr($imageCid, 0, $posImgCid);
+            }
             $attch = new Attachment();
             $attch->refType = $class;
             $attch->refId = $id;
             $attch->idPrivacy=1;
             $attch->type='file';
             $namefileWithPath = $att->filePath;
-            $embededImg='src="cid:'.$att->id.'"';
+              $embededImg='src="cid:'.$att->id.'"';
             $attch->fileName = $att->name;
             $ext = pq_strtolower ( pathinfo ( $attch->fileName, PATHINFO_EXTENSION ) );
             // TODO EmbededImages
@@ -718,8 +725,8 @@ class InputMailboxTicket extends SqlElement {
                 mkdir("../files/images/",0777,true);
               }
               // This is an embeded image, do not save as attachment but as image embeded
-              rename($att->filePath, "../files/images/".$att->id);
-              $note->note=pq_str_replace($embededImg, 'src="../files/images/'.$att->id.'"', $note->note);
+              rename($att->filePath, "../files/images/".$timestampImg.'_'.$imageCid);
+              $note->note=pq_str_replace($embededImg, 'src="../files/images/'.$timestampImg.'_'.$imageCid.'"', $note->note);
               $note->_noHistory=true;
               $note->save();
               continue; // Do not treat as attachment
@@ -829,7 +836,11 @@ class InputMailboxTicket extends SqlElement {
           $idStatus = SqlElement::getFirstSqlElementFromCriteria('Status', array('isCopyStatus'=>'1'));
           $ticket->idStatus = $idStatus->id;
           $knownUser=Affectable::getAffectableFromEmail($mailFrom);
-          if($knownUser and $knownUser->id) $ticket->idContact = $knownUser->id;
+          if (Parameter::getGlobalParameter('requestorLimitToContact')=="YES"){
+            if($knownUser and $knownUser->id and $knownUser->isContact) $ticket->idContact = $knownUser->id;
+          }else {
+            if($knownUser and $knownUser->id) $ticket->idContact = $knownUser->id;
+          }
           if($knownUser and $knownUser->id and $knownUser->isUser) $ticket->idUser = $knownUser->id;
           // Transaction mode required for PostgreSql
           Sql::beginTransaction();
@@ -872,9 +883,16 @@ class InputMailboxTicket extends SqlElement {
           }
           
           if(getLastOperationStatus($resultTicket)=='OK'){
+            $timestampImg = date('Y-m-d h:i:s');
+            $timestampImg = pq_strtotime($timestampImg);
             $sizeAttach = ($this->sizeAttachment)*1024*1024;
             $listAtt = $mail->getAttachments();
             foreach ($listAtt as $att){
+              $imageCid = $att->id;
+              $posImgCid = strpos($imageCid,"@");
+              if($posImgCid!==false){
+                $imageCid = pq_substr($imageCid, 0, $posImgCid);
+              }
               $attch = new Attachment();
               $attch->refType = 'Ticket';
               $attch->refId = $ticket->id;
@@ -892,8 +910,8 @@ class InputMailboxTicket extends SqlElement {
                   mkdir("../files/images/",0777,true);
                 }
                 // This is an embeded image, do not save as attachment but as image embeded
-                rename($att->filePath, "../files/images/".$att->id);
-                $ticket->description=pq_str_replace($embededImg, 'src="../files/images/'.$att->id.'"', $ticket->description);
+                rename($att->filePath, "../files/images/".$timestampImg.'_'.$imageCid);
+                $ticket->description=pq_str_replace($embededImg, 'src="../files/images/'.$timestampImg.'_'.$imageCid.'"', $ticket->description);
                 $ticket->_noHistory=true;
                 $ticket->save();
                 continue; // Do not trat as attachment
@@ -1038,12 +1056,12 @@ class InputMailboxTicket extends SqlElement {
    *  - truncate to remove original message
    *  - truncate to remove signature
    */  
-  public static function extractBodyPlain($body) {
+  public static function extractBodyPlain($body, $bodyHtml) {
     if (! $body) return '';
     // Search end of Message (this is valid for text only, treatment of html messages would require other code)
-    
+      
     $posEndMsg=strrpos($body,"###PROJEQTOR###");
-    if(! $posEndMsg){
+    if($posEndMsg){
       $checkThunderAndGmail=pq_strpos($body,"\r\n>");
       //$checkSeparator=pq_strpos($body,"____________________");
       if($checkThunderAndGmail and $checkThunderAndGmail<$posEndMsg){
@@ -1076,6 +1094,8 @@ class InputMailboxTicket extends SqlElement {
       }
     }
     if (!$posEndMsg) { // Message not received with previous methods, try another one
+      $posClass=pq_strpos($body,'directAccess=true&objectClass=');
+      if (! $posClass) $posClass=pq_strpos($body,'directAccess=true&amp;objectClass=');
       $posEndMsgDe=strrpos(pq_substr($body,0,$posClass), "\n");
       $posDe=strrpos(pq_substr($body,0,$posEndMsgDe), "De : ");
       if ($posDe>2) {

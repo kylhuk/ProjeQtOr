@@ -171,7 +171,7 @@ class TicketMain extends SqlElement {
         WorkElement::lockRealWork();
       }
     }
-    if (!$this->id and getSessionUser()->isContact) {
+    if (!$this->id) {
       $this->idContact=getSessionUser()->id;
     }
   }
@@ -525,6 +525,16 @@ class TicketMain extends SqlElement {
   		} 
   	}
 
+    if($this->idActivity){
+  	  $act = new Activity($this->idActivity);
+  	  $act->isPlanningActivity = "1";
+  	  $act->save();
+  	}elseif(isset($old->idActivity)){
+      $act = new Activity($old->idActivity);
+  	  $act->isPlanningActivity = "0";
+  	  $act->save();
+    }
+    
     if(!$old->id){
       $newStatPeriod = new StatusPeriod();
       $newStatPeriod->refId = $this->id;

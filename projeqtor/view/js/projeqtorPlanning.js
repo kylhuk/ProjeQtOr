@@ -247,6 +247,28 @@ function lockSaveRefresh(){
   }
 }
 
+function GotoPlanningToday(){
+  var today = [];
+  dojo.query('.specificDayToday').forEach(function(node){
+    today.push(node);
+  });
+  if(today){
+    var currentPos = today[0].offsetTop;
+    var containerScroll=document.getElementById('rightGanttChartDIV').scrollTop;
+    var containerHeight=document.getElementById('rightGanttChartDIV').offsetHeight;
+    var newPos=null;
+    if (currentPos<containerScroll || currentPos>containerScroll+containerHeight) {
+      newPos=currentPos-(containerHeight/2)+10;
+      if (newPos<0) newPos=0;
+    }
+    if(today.length > 1){
+      setTimeout("scrollBarIntoView(null,"+newPos+", true, "+today[0].id+");",100);
+    }else{
+      setTimeout("scrollBarIntoView(null,"+newPos+", false, "+today[0].id+");",100);
+    }
+  }
+}
+
 function changedIdProjectPlan(value) {
   var selectField=dijit.byId("idProjectPlan").get("value");
   if (selectField.length <= 0) {
@@ -927,6 +949,12 @@ function drawGantt(onlyRefresh) {
   var gFormat = "day";
   if (g) {
     gFormat = g.getFormat();
+    if (dijit.byId('selectBaselineBottom')) {
+      g.setBaseBottomName(dijit.byId('selectBaselineBottom').get('displayedValue'));
+    }
+    if (dijit.byId('selectBaselineTop')) {
+      g.setBaseTopName(dijit.byId('selectBaselineTop').get('displayedValue'));
+    }
   }
   // Only first display, refresh JSGantt object
   if (! onlyRefresh) {
@@ -942,16 +970,16 @@ function drawGantt(onlyRefresh) {
     g.setDateInputFormat('yyyy-mm-dd'); // Set format of input dates ('mm/dd/yyyy', 'dd/mm/yyyy', 'yyyy-mm-dd')
     g.setDateDisplayFormat('default'); // Set format to display dates ('mm/dd/yyyy', 'dd/mm/yyyy', 'yyyy-mm-dd')
     g.setFormatArr("day", "week", "month", "quarter"); // Set format options (up
+    // to 4 :
+    // "minute","hour","day","week","month","quarter")
+    if (ganttPlanningScale) {
+      g.setFormat(ganttPlanningScale,true);
+    }
     if (dijit.byId('selectBaselineBottom')) {
       g.setBaseBottomName(dijit.byId('selectBaselineBottom').get('displayedValue'));
     }
     if (dijit.byId('selectBaselineTop')) {
       g.setBaseTopName(dijit.byId('selectBaselineTop').get('displayedValue'));
-    }
-    // to 4 :
-    // "minute","hour","day","week","month","quarter")
-    if (ganttPlanningScale) {
-      g.setFormat(ganttPlanningScale,true);
     }
     g.setStartDateView(startDateView);
     g.setEndDateView(endDateView);
@@ -1646,6 +1674,7 @@ function showGanttOneLine(i, pID) {
       }
     }
   }
+  if (isPredecessorSuccessorEnabled()) g.DrawDependencies(true);
 }
 function hideGanttOneLine(i, pID) {
   if (! dojo.byId("childrow_"+pID)) return;
@@ -1962,7 +1991,7 @@ function highlightPlanningLine(id, planningEditMode, autoScrollPlanning) {
   if(planningEditMode == undefined)planningEditMode=false;
   var vRowObj1 = JSGantt.findObj('child_' + id);
   if (vRowObj1) {
-    // vRowObj1.className = "dojoxGridRowSelected dojoDndItem";// ganttTask" +
+    // vRowObj1.className = "dojoxGridRowSelected dojoDndItem";// ganttTask" +h
     // pType;
     if(planningEditMode){
       dojo.addClass(vRowObj1, "editModeRowSelected");
@@ -1982,11 +2011,17 @@ function highlightPlanningLine(id, planningEditMode, autoScrollPlanning) {
     }
   }
 }
-function scrollBarIntoView(id, topPos, forWorkPlan) {
+var scrollBarIntoViewRetry=0;
+function scrollBarIntoView(id, topPos, forWorkPlan, today) {
   if(forWorkPlan == undefined)forWorkPlan=false;
+  if(today == undefined)today=null;
   if (topPos==undefined) topPos=null;
-  var bar=dojo.byId("bardiv_"+id);
-  if (!bar) return;
+  var bar=(today)?dojo.byId(today):dojo.byId("bardiv_"+id);
+  if (!bar) {
+    scrollBarIntoViewRetry++;
+    if (scrollBarIntoViewRetry<=5) setTimeout("scrollBarIntoView("+id+","+topPos+");",500*scrollBarIntoViewRetry);
+    return;
+  }
   pos=bar.offsetLeft;
   var divName = (forWorkPlan)?'workPlanRightGanttChartDIV':'rightGanttChartDIV';
   if (topPos==null) document.getElementById(divName).scrollLeft=pos-100;
@@ -2002,16 +2037,25 @@ function selectPlanningLine(selClass, selId, autoscroll) {
   for (var i = 0; i < vTaskList.length; i++) {
     scope = vTaskList[i].getScope();
     spl = scope.split("_");
-    if (spl.length > 2 && spl[1] == selClass && spl[2] == selId) {
+    var taskListClass = spl[1];
+    if (taskListClass=='Replan' || taskListClass=='Construction' || taskListClass=='Fixed') taskListClass='Project';
+    if (spl.length > 2 && taskListClass == selClass && spl[2] == selId) {
       tId = vTaskList[i].getID();
       idProject = vTaskList[i].getProjectId();
     }
   }
   if (tId != null) {
-    if(currentRowToEdit!= null && tId != currentRowToEdit && idProject != null){
+    if(currentRowToEdit == null)currentRowToEdit=tId;
+    if(currentRowToEdit!= null && idProject != null){
+    //if(currentRowToEdit!= null tId!=currentRowToEdit && idProject != null){
       if (selClass=='Replan' || selClass=='Construction' || selClass=='Fixed') selClass='Project';
-      JSGantt.closeEditRowObjectPlanning();
-      setTimeout('JSGantt.planningRowClickAction(\''+tId+'\', '+selId+', \''+selClass+'\', '+idProject+')', 100);
+      cachedAction = cachedEditRowPlanningClick;
+      //JSGantt.closeEditRowObjectPlanning();
+      if(currentRowToEdit==tId && cachedAction && cachedAction.indexOf('true')){
+        setTimeout(cachedAction, 100);
+      }else{
+        setTimeout('JSGantt.planningRowClickAction(\''+tId+'\', '+selId+', \''+selClass+'\', '+idProject+')', 100);
+      }
     }else{
       unselectPlanningLines();
       highlightPlanningLine(tId, false, autoscroll);
@@ -2368,7 +2412,12 @@ function drawPredecessorsAndSuccessors() {
   	drawPredecessorsAndSuccessorsScrollPosition=null;
   }
 }
-
+function isPredecessorSuccessorEnabled() {
+  if (!dojo.byId("predecessorSequence") || ! dojo.byId("successorSequence")) return false;
+  var valuePred=dojo.byId("predecessorSequence").innerHTML;
+  var valueSucc=dojo.byId("successorSequence").innerHTML;
+  return (valuePred || valueSucc)?true:false;
+}
 function getPredecessorsFromCurrent(vGanttCurrentLine,listToShow,valuePred) {
   line=g.getLineByID(vGanttCurrentLine);
   if (!line) return listToShow;

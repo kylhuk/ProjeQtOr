@@ -709,6 +709,13 @@ animation: fadeIn ease 0.5s;
 .ProjeQtOrNewGui .sectionBadge {
 	top:18px;
 	background: var(--color-dark);
+}
+
+.ProjeQtOrNewGui .titleFilterCriteria{
+	font-style: italic;
+	color:#696969;
+	font-weight: 600;
+	padding: 5px 0 2px 0;
 }	
 
 .ProjeQtOrNewGui .menuBarItem, .ProjeQtOrNewGui #menuBarShow .dijitIcon, .ProjeQtOrNewGui .hideStreamNewGuiTopBar,
@@ -815,8 +822,12 @@ animation: fadeIn ease 0.5s;
 	background : transparent;
 	color: var;
 }
-.ProjeQtOrNewGui #toolBarDiv .dijitButtonNode, .ProjeQtOrNewGui .dijitReset.dijitInline.dijitButtonNode {
+.ProjeQtOrNewGui #toolBarDiv .dijitButtonNode, .ProjeQtOrNewGui .dijitReset.dijitInline.dijitButtonNode,
+.ProjeQtOrNewGui .dijitDisabled .dijitReset.dijitInline.dijitButtonNode {
 	border:none;
+}
+.ProjeQtOrNewGui .listTitle .dijitDisabled .dijitReset.dijitInline.dijitButtonNode {
+	border:none !important;
 }
 .ProjeQtOrNewGui .menuBarItem {
 	padding: 5px 1px 3px 1px !important;
@@ -989,12 +1000,19 @@ animation: fadeIn ease 0.5s;
   content : "";
 }
 */
-.ticketKanBanColor.dojoDndItemAnchor, .simple-grid .dojoDndItemAnchor, .ganttTaskrow.dojoDndItemAnchor, .ganttTaskrow.dojoDndItemSelected {
+.ticketKanBanColor.dojoDndItemAnchor, .simple-grid .dojoDndItemAnchor,
+.ganttTaskrow.dojoDndItemAnchor, .ganttTaskrow.dojoDndItemSelected,
+.ganttTaskmile.dojoDndItemAnchor, .ganttTaskmile.dojoDndItemSelected,
+.ganttTaskgroup.dojoDndItemAnchor, .ganttTaskgroup.dojoDndItemSelected {
   border-left:0 !important;
 }
 
 .ganttTaskrow.dojoDndItemAnchor .dojoDndHandle.handleCursor td,
-.ganttTaskrow.dojoDndItemSelected .dojoDndHandle.handleCursor td {
+.ganttTaskrow.dojoDndItemSelected .dojoDndHandle.handleCursor td,
+.ganttTaskmile.dojoDndItemAnchor .dojoDndHandle.handleCursor td,
+.ganttTaskmile.dojoDndItemSelected .dojoDndHandle.handleCursor td,
+.ganttTaskgroup.dojoDndItemAnchor .dojoDndHandle.handleCursor td,
+.ganttTaskgroup.dojoDndItemSelected .dojoDndHandle.handleCursor td {
 	background-color: var(--color-secondary) !important;
 }
 */
@@ -1265,6 +1283,43 @@ animation: fadeIn ease 0.5s;
 	height:30px;
 }
 
+.ProjeQtOrNewGui .filterStored{
+	font-size:100%;
+	padding: 0px 10px;
+	height:30px;
+}
+
+.operatorFilter {
+	height: 27px;
+	border: none;
+	margin-top:5px;
+	border-radius: 5px;
+	color:white;
+	font-weight:bold;
+	cursor:pointer;
+}
+
+.operatorFilterAndOr {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 28px;
+    height: 22px;
+    border-radius: 4px;
+    color: white;
+}
+
+.parenthesisFilter {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 28px;
+    height: 22px;
+    border-radius: 4px;
+    color: white;
+    background-color:#3399ff;
+}
+
 .titleQuickFilter {
     position: relative; 
     background-color: var(--color-darker); 
@@ -1283,6 +1338,18 @@ animation: fadeIn ease 0.5s;
     bottom: -8px; 
     background-color: var(--color-darker); 
     z-index: -1;
+}
+
+.filterTitleSection  {
+	width:50%;
+	background-color:var(--color-dark);
+	color:var(--color-white);
+	border-radius: 5px;
+	height:32px; 
+	display:flex;
+	align-items:center; 
+	padding-left:8px;
+	margin-bottom:5px;
 }
 
 .ProjeQtOrNewGui .dijitTitlePane .dijitTitlePaneTitle,
@@ -1597,11 +1664,11 @@ select option:checked {
 	border:none;
 }
 .ProjeQtOrNewGui .colorSelector {
-  background-image: url(images/colorSelectorBig.png);
+  background-image: url(images/colorSelectorPalette.png);
   background-repeat: no-repeat;
-  width: 26px;
-  height: 26px;
-  background-size:26px;
+  width: 37px;
+  height: 25px;
+  background-size: 37px 25px;
   text-align: center;
 }
 .ProjeQtOrNewGui .shortlabel {
@@ -1950,12 +2017,13 @@ element.style {
 
 .ProjeQtOrNewGui .kanbanTitleTicket.kanbanTitleSmallTiles {
   min-height: 22px;
-  max-height: 38px;
+  max-height: 30px;
+  line-height: 20px;
 }
 
 .ProjeQtOrNewGui .kanbanTitleTicket:not(.kanbanTitleSmallTiles) {
-  min-height: 22px;
-  max-height: 22px;
+  min-height: 25px;
+  max-height: 25px;
 }
 
 .ProjeQtOrNewGui .kanbanTitleTicket:hover {
@@ -2297,8 +2365,9 @@ element.style {
 .ProjeQtOrNewGui .ganttLeftTitle input {
 	color:#ffffff;
 }
+.ProjeQtOrNewGui .ganttLeftTitle .imputationPlannedWorkCapacity input,
 .ProjeQtOrNewGui .ganttLeftTitle .imputationValidCapacity input,
-.ProjeQtOrNewGui .ganttLeftTitle .imputationInvalidCapacity input   {
+.ProjeQtOrNewGui .ganttLeftTitle .imputationInvalidCapacity input {
   color:#505050;
 }
 .ProjeQtOrNewGui .ganttLeftTitle .imputation {
@@ -2887,4 +2956,9 @@ label.tagsClass, .ProjeQtOrNewGui label.tagsClass {
   background-image: url(images/iconHiddenNo.png);
   cursor:pointer;
   margin:auto;
+}
+
+input[type="color" i] {
+  background-color: transparent;
+
 }

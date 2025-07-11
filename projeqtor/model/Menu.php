@@ -343,7 +343,7 @@ class Menu extends SqlElement {
         }
         
         if($defaultMenu == 'menuBarRecent' and !in_array($menu->name,$customMenuArray) or ($defaultMenu == 'menuBarCustom')){
-          echo '<div class="comboButtonInvisible" dojoType="dijit.form.DropDownButton"id="addFavorite'.$class.'_'.$idFavoriteRow.'" name="addFavorite'.$class.'" style="position:absolute;top:22px;left:0px;height: 0px; overflow: hidden; ">';
+          echo '<div class="comboButtonInvisible" dojoType="dijit.form.DropDownButton"id="addFavorite'.$class.'_'.$idFavoriteRow.'" name="addFavorite'.$class.'" style="position:absolute;top:22px;left:20px;height: 0px; overflow: hidden; ">';
           echo '<div dojoType="dijit.TooltipDialog" id="dialogFavorite'.$class.'_'.$idFavoriteRow.'" style="cursor:pointer;"onMouseEnter="clearTimeout(closeFavoriteTimeout);"onMouseLeave="hideFavoriteTooltip(200,\''.$class.'\',\''.$idFavoriteRow.'\')"';
                     
           if (!in_array($menu->name,$customMenuArray)){

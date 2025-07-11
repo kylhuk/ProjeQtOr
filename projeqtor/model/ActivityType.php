@@ -36,6 +36,7 @@ class ActivityType extends Type {
   public $code;
   public $idWorkflow;
   public $idActivityPlanningMode;
+  public $defaultDuration;
   public $priority;
   public $color;
   public $sortOrder=0;
@@ -88,6 +89,7 @@ class ActivityType extends Type {
                                           "lockCancelled"=>"nobr",
                                           "canHaveSubActivity"=>"nobr",
                                           "activityOnRealTime"=>"nobr",
+                                          'defaultDuration'=>'hidden'
   );
   private static $_colCaptionTransposition = array('idActivityPlanningMode'=>'defaultPlanningMode');
   private static $_databaseColumnName = array('idActivityPlanningMode'=>'idPlanningMode');
@@ -172,6 +174,9 @@ class ActivityType extends Type {
     if(Module::isModuleActive("moduleTodoList")){
       self::$_fieldsAttributes["mandatorySubTaskOnDone"]='nobr';
       self::$_fieldsAttributes["_lib_mandatorySubTaskOnDone"]='';
+    }
+    if ($this->idActivityPlanningMode and PlanningMode::isFixedDuration($this->idActivityPlanningMode)) {
+      self::$_fieldsAttributes["defaultDuration"]='';
     }
   }
   

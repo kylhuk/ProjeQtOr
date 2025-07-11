@@ -639,8 +639,10 @@ if ($scale=='month' or $scale=='quarter') {
       if ($maxCapacity[$keyAss]!=$resWork['capacity'] or $minCapacity[$keyAss]!=$resWork['capacity']) {
         echo '<div style="display:block;background-color:transparent;position:absolute;bottom:0px;left:0px;width:100%;border-top:1px solid grey;height:'.$heightNormal.'px;"></div>';
       }
-      if ($heightNormal!=$heightCapacity and isset($variableCapacity[$keyAss][$dt])) {
-        echo '<div style="display:block;background-color:transparent;position:absolute;bottom:0px;left:0px;width:100%;border-top:1px solid red;height:'.$heightCapacity.'px;"></div>';
+      if ($heightNormal!=$heightCapacity and isset($variableCapacity[$keyAss][date('Y-m-d',firstDayofWeek(pq_substr($weekNumber,4),pq_substr($weekNumber,0,4)))]) ) {
+        $colorCapa='1px solid red';
+        if ($variableCapacity[$keyAss][$dt]==0) $colorCapa='4px solid #9933CC';
+        echo '<div style="display:block;background-color:transparent;position:absolute;bottom:0px;left:0px;width:100%;border-top:'.$colorCapa.';height:'.$heightCapacity.'px;"></div>';
       }
       echo '</td>';
     }

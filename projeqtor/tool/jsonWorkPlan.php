@@ -1,5 +1,4 @@
 <?PHP
-use Illuminate\Support\Facades\Request;
 /*** COPYRIGHT NOTICE *********************************************************
  *
  * Copyright 2009-2017 ProjeQtOr - Pascal BERNARD - support@projeqtor.org
@@ -80,8 +79,9 @@ if($projectDate == 'on'){
   $startDate="";
   $endDate="";
 }
-if(array_key_exists('planningStartDateView',$_REQUEST))$startDate=RequestHandler::getDatetime('planningStartDateView');
-if(array_key_exists('planningEndDateView',$_REQUEST))$endDate= RequestHandler::getDatetime('planningEndDateView');
+// Get planning min and max date removed due to display lag
+// if(array_key_exists('planningStartDateView',$_REQUEST))$startDate=RequestHandler::getDatetime('planningStartDateView');
+// if(array_key_exists('planningEndDateView',$_REQUEST))$endDate= RequestHandler::getDatetime('planningEndDateView');
 $scale = Parameter::getUserParameter('planningScale');
 if($scale == ''){
   $scale = 'day';
@@ -106,7 +106,7 @@ if($selectResource == '' and $selectPoolName)$selectResource=$selectPoolName;
 if($detailResource)$selectResource=$detailResource;
 $selectedPool=false;
 $resource = new ResourceAll($selectResource);
-if(!$showDetailPool and $resource->id and $resource->isResourceTeam){
+if($resource->id and $resource->isResourceTeam){
   $selectedPool=true;
 }
 $selectTeam=RequestHandler::getId('teamName');
@@ -154,6 +154,7 @@ if(!$showProject){
 
 $showPoolForResource = Parameter::getUserParameter('workPlanShowPoolForResource');
 $showResourceWithoutWork = Parameter::getUserParameter('workPlanShowResourceWithoutWork');
+$hideAssignationWihtoutLeftWork = RequestHandler::getBoolean('hideAssignationWihtoutLeftWork');
 
 $pe=new PlanningElement();
 $ass=new Assignment();
@@ -232,19 +233,15 @@ $today=date('Y-m-d');
 
 if($refType and $refId and !$selectResource){
   $allowedResource = array();
+  $ass = new Assignment();
   if($refType != 'Project'){
-    $crit=array('refType'=>$refType, 'refId'=>$refId);
-    $lstAss = SqlList::getListWithCrit('Assignment', $crit, 'idResource');
-    foreach ($lstAss as $id) {
-      $allowedResource[$id]=SqlList::getNameFromId('ResourceAll', $id, false);
-    }
+    $where=($hideAssignationWihtoutLeftWork)?"refType='$refType' and refId=$refId and leftWork!=0":"refType='$refType' and refId=$refId";
   }else{
-    $ass = new Assignment();
-    $where = "idProject in ".getVisibleProjectsList(!$showIdleProjects, $refId);
-    $lstAss = $ass->getSqlElementsFromCriteria(null,null,$where);
-    foreach ($lstAss as $ass) {
-      $allowedResource[$ass->idResource]=SqlList::getNameFromId('ResourceAll', $ass->idResource, false);
-    }
+    $where=($hideAssignationWihtoutLeftWork)?"idProject in ".getVisibleProjectsList(!$showIdleProjects, $refId)." and leftWork!=0":"idProject in ".getVisibleProjectsList(!$showIdleProjects, $refId);
+  }
+  $lstAss = $ass->getSqlElementsFromCriteria(null,null,$where);
+  foreach ($lstAss as $ass) {
+    $allowedResource[$ass->idResource]=SqlList::getNameFromId('ResourceAll', $ass->idResource, false);
   }
 }
 
@@ -442,6 +439,7 @@ if (Sql::$lastQueryNbRows == 0) {
           if($resAr["topid"] and $line["reftype"]){
             $list[$keyAll]["isparent"]=true;;
           }
+          $resAr["isadministrative"]=false;
           $list[$keyRes]=$resAr;
           $sumReal=0;
           $sumPlanned=0;
@@ -477,6 +475,8 @@ if (Sql::$lastQueryNbRows == 0) {
         $resPr["idresource"]=$idResource;
         $resPr["topid"]=$idRes;
         $resPr["isparent"]=false;
+        $projType = new ProjectType($prj->idProjectType);
+        $resPr["isadministrative"]=($projType->code == 'ADM')?true:false;
         if ($line['projectisunderconstruction']==1) {
           $resPr['iconClass']='Construction';
         }
@@ -545,6 +545,8 @@ if (Sql::$lastQueryNbRows == 0) {
             $list[$keyRes]["isparent"]=true;
           }
         }
+        $projType = new ProjectType($proj->idProjectType);
+        $line["isadministrative"]=($projType->code == 'ADM')?true:false;
         $keyElm=$keyProj.'_'.$line['reftype'].'#'.$line['refid'];
 		$list[$keyElm]=$line;
 		if (! $list[$keyRes]["realstartdate"] or $line['realstartdate'] < $list[$keyRes]["realstartdate"]) {
@@ -795,13 +797,13 @@ if (Sql::$lastQueryNbRows == 0) {
   	  }
     }
   	$wk=new PlannedWork();
-    $querySelect = "select SUM(w.work) as work, w.workDate, w.idAssignment,";
+    $querySelect = "select SUM(w.work) as work, w.workDate, w.idAssignment, w.surbooked, w.surbookedWork, ";
     $querySelect .= (Sql::isPgsql())?" string_agg(DISTINCT $groupConcat, ',') as arrayKey":" group_concat(DISTINCT $groupConcat SEPARATOR ',') as arrayKey";
     $queryFrom = " from ".$wk->getDatabaseTableName()." w";
     $queryWhere = " where w.idResource in ".transformListIntoInClause($resourceList);
     $queryWhere .= ($isFromPlanning)?"":" and w.idProject in " . getVisibleProjectsList(! $showIdleProjects, $detailProject);
     $queryWhere .= " and w.idProject not in " . Project::getAdminitrativeProjectList();
-    $groupBy = " group by w.idResource, w.workDate, w.idProject, w.idAssignment";
+    $groupBy = " group by w.idResource, w.workDate, w.idProject, w.idAssignment, w.surbooked, w.surbookedWork";
     $groupBy .= ($showDetailElement)?", w.refType, w.refId":"";
     $query = $querySelect.$queryFrom.$queryWhere.$groupBy." ORDER BY w.workDate ASC";
     $result=Sql::query($query);
@@ -840,8 +842,10 @@ if (Sql::$lastQueryNbRows == 0) {
       }
       if((!$dateStatus or $date <= $dateStatus) and !$overLimitedFixedDuration){
         $statusColor = "#50BB50";
+        $isLate = false;
       }else{
         $statusColor = "#BB5050";
+        $isLate = true;
       }
   	  if (!isset($workDate[$keyAll]))$workDate[$keyAll]=array();
   	  if(!isset($workDate[$keyAll]['dates']))$workDate[$keyAll]['dates']=array();
@@ -874,6 +878,14 @@ if (Sql::$lastQueryNbRows == 0) {
         }else{
           $workDate[$keyAll]['dates'][$date]['planned']['Assignments'][$statusColor]['work']+=floatval($line['work']);
         }
+        if(!isset($workDate[$keyAll]['dates'][$date]['planned']['Assignments'][$statusColor]['isLateColor'])){
+          $workDate[$keyAll]['dates'][$date]['planned']['Assignments'][$statusColor]['isLateColor']=$isLate;
+        }
+        if(!isset($workDate[$keyAll]['dates'][$date]['planned']['Assignments'][$statusColor]['surbookedWork'])){
+          $workDate[$keyAll]['dates'][$date]['planned']['Assignments'][$statusColor]['surbookedWork']=$line['surbookedwork'];
+        }else{
+          $workDate[$keyAll]['dates'][$date]['planned']['Assignments'][$statusColor]['surbookedWork']+=$line['surbookedwork'];
+        }
         if(!isset($workDate[$keyAll]['dates'][$date]['planned']['Globals']['work'])){
           $workDate[$keyAll]['dates'][$date]['planned']['Globals']['work']=floatval($line['work']);
         }else{
@@ -898,6 +910,14 @@ if (Sql::$lastQueryNbRows == 0) {
             $workDate[$keyRes]['dates'][$date]['planned']['Assignments'][$statusColor]['work']=floatval($line['work']);
           }else{
             $workDate[$keyRes]['dates'][$date]['planned']['Assignments'][$statusColor]['work']+=floatval($line['work']);
+          }
+          if(!isset($workDate[$keyRes]['dates'][$date]['planned']['Assignments'][$statusColor]['isLateColor'])){
+            $workDate[$keyRes]['dates'][$date]['planned']['Assignments'][$statusColor]['isLateColor']=$isLate;
+          }
+          if(!isset($workDate[$keyRes]['dates'][$date]['planned']['Assignments'][$statusColor]['surbookedWork'])){
+            $workDate[$keyRes]['dates'][$date]['planned']['Assignments'][$statusColor]['surbookedWork']=$line['surbookedwork'];
+          }else{
+            $workDate[$keyRes]['dates'][$date]['planned']['Assignments'][$statusColor]['surbookedWork']+=$line['surbookedwork'];
           }
           if(!isset($workDate[$keyRes]['dates'][$date]['planned']['Globals']['work'])){
             $workDate[$keyRes]['dates'][$date]['planned']['Globals']['work']=floatval($line['work']);
@@ -926,6 +946,14 @@ if (Sql::$lastQueryNbRows == 0) {
           }else{
             $workDate[$keyProj]['dates'][$date]['planned']['Assignments'][$statusColor]['work']+=floatval($line['work']);
           }
+          if(!isset($workDate[$keyProj]['dates'][$date]['planned']['Assignments'][$statusColor]['isLateColor'])){
+            $workDate[$keyProj]['dates'][$date]['planned']['Assignments'][$statusColor]['isLateColor']=$isLate;
+          }
+          if(!isset($workDate[$keyProj]['dates'][$date]['planned']['Assignments'][$statusColor]['surbookedWork'])){
+            $workDate[$keyProj]['dates'][$date]['planned']['Assignments'][$statusColor]['surbookedWork']=$line['surbookedwork'];
+          }else{
+            $workDate[$keyProj]['dates'][$date]['planned']['Assignments'][$statusColor]['surbookedWork']+=$line['surbookedwork'];
+          }
           if(!isset($workDate[$keyProj]['dates'][$date]['planned']['Globals']['work'])){
             $workDate[$keyProj]['dates'][$date]['planned']['Globals']['work']=floatval($line['work']);
           }else{
@@ -952,6 +980,14 @@ if (Sql::$lastQueryNbRows == 0) {
             $workDate[$keyElm]['dates'][$date]['planned']['Assignments'][$statusColor]['work']=floatval($line['work']);
           }else{
             $workDate[$keyElm]['dates'][$date]['planned']['Assignments'][$statusColor]['work']+=floatval($line['work']);
+          }
+          if(!isset($workDate[$keyElm]['dates'][$date]['planned']['Assignments'][$statusColor]['isLateColor'])){
+            $workDate[$keyElm]['dates'][$date]['planned']['Assignments'][$statusColor]['isLateColor']=$isLate;
+          }
+          if(!isset($workDate[$keyElm]['dates'][$date]['planned']['Assignments'][$statusColor]['surbookedWork'])){
+            $workDate[$keyElm]['dates'][$date]['planned']['Assignments'][$statusColor]['surbookedWork']=$line['surbookedwork'];
+          }else{
+            $workDate[$keyElm]['dates'][$date]['planned']['Assignments'][$statusColor]['surbookedWork']+=$line['surbookedwork'];
           }
           if(!isset($workDate[$keyElm]['dates'][$date]['planned']['Globals']['work'])){
             $workDate[$keyElm]['dates'][$date]['planned']['Globals']['work']=floatval($line['work']);
@@ -1125,25 +1161,58 @@ if (Sql::$lastQueryNbRows == 0) {
 	$tmpMinStartDate = date('Y-m-d', firstDayofWeek($minWeek[1], $minWeek[0]));
 	$maxWeek = explode('-', weekFormat($maxEndDate));
 	$tmpMaxEndDate = lastDayofWeek($maxWeek[1], $maxWeek[0]);
+	$resTeamCapacity = array();
 	foreach ($resourceList as $idResource){
 	  $tmpStart = $tmpMinStartDate;
 	  $res = new ResourceAll($idResource, true);
+	  if($res->isResourceTeam)continue;
 	  while ($tmpStart <= $tmpMaxEndDate){
 	    $date = $tmpStart;
 	    $capacity = $res->getCapacityPeriod($tmpStart);
 	    if($scale == 'month' or $scale == 'quarter'){
-	        $date = weekFormat($tmpStart);
-	        $capacity=(isOffDay($tmpStart, $res->idCalendarDefinition))?0:$capacity;
+          $date = weekFormat($tmpStart);
+          $capacity=(isOffDay($tmpStart, $res->idCalendarDefinition))?0:$capacity;
 	    }
+        $resTeamAff = new ResourceTeamAffectation();
+        $rtaList = $resTeamAff->getSqlElementsFromCriteria(array('idResource'=>$res->id, 'idle'=>'0'));
+        foreach ($rtaList as $rta){
+          if ($rta->endDate==null or $rta->endDate>=$today) {
+            $capacityAll = 0;
+            $rtaRate = $rta->rate/100;
+            if($selectTeam or $selectOrganization){
+              $capacityAll = $capacity;
+            }else{
+              $capacityAll = $capacity*$rtaRate;
+            }
+            $where = "workDate = '$date' and refType='Activity' and refId in (".implode(',', $actListId).") and idResource = $res->id";
+            $where .= " and idProject in ".Project::getAdminitrativeProjectList();
+            $work = new Work();
+            $adminWork = $work->sumSqlElementsFromCriteria('work', null, $where);
+            $adminWorkPool = $adminWork*$rtaRate;
+            $adminWork = ($adminWork > 1-$rtaRate)?$adminWork - (1-$rtaRate):0;
+            $capacityAll = ($capacityAll > 0 and $adminWork > 0)?$capacityAll-$adminWork:$capacityAll;
+            $resTeam = new ResourceTeam($rta->idResourceTeam);
+            if(!isset($resTeamCapacity[$rta->idResourceTeam][$date]['capacity'])){
+              $resTeamCapacity[$rta->idResourceTeam][$date]['capacity']=$capacityAll;
+            }else{
+              $resTeamCapacity[$rta->idResourceTeam][$date]['capacity']+=$capacityAll;
+            }
+            if(!isset($resTeamCapacity[$rta->idResourceTeam][$date]['isoffday'])){
+              $resTeamCapacity[$rta->idResourceTeam][$date]['isoffday']=isOffDay($tmpStart, $resTeam->idCalendarDefinition);
+            }else{
+              $resTeamCapacity[$rta->idResourceTeam][$date]['isoffday']+=isOffDay($tmpStart, $resTeam->idCalendarDefinition);
+            }
+          }
+        }
         if(!isset($resourceCalendar[$idResource][$date]['capacity'])){
           $resourceCalendar[$idResource][$date]['capacity']=$capacity;
         }else{
           $resourceCalendar[$idResource][$date]['capacity']+=$capacity;
         }
         if(!isset($resourceCalendar['all'][$date]['capacity'])){
-          $resourceCalendar['all'][$date]['capacity']=(!$res->isResourceTeam)?$capacity:0;
+          $resourceCalendar['all'][$date]['capacity']=$capacity;
         }else{
-          $resourceCalendar['all'][$date]['capacity']+=(!$res->isResourceTeam)?$capacity:0;
+          $resourceCalendar['all'][$date]['capacity']+=$capacity;
         }
         if(!isset($resourceCalendar[$idResource][$date]['isoffday'])){
           $resourceCalendar[$idResource][$date]['isoffday']=isOffDay($tmpStart, $res->idCalendarDefinition);
@@ -1152,20 +1221,21 @@ if (Sql::$lastQueryNbRows == 0) {
         }
         if(!isset($resourceCalendar['all'][$date]['isoffday'])){
           if($selectResource){
-            $resourceCalendar['all'][$date]['isoffday']=(!$res->isResourceTeam and $capacity)?isOffDay($tmpStart, $res->idCalendarDefinition):0;
+            $resourceCalendar['all'][$date]['isoffday']=isOffDay($tmpStart, $res->idCalendarDefinition);
           }else{
-            $resourceCalendar['all'][$date]['isoffday']=(!$res->isResourceTeam and $capacity)?isOffDay($tmpStart):0;
+            $resourceCalendar['all'][$date]['isoffday']=isOffDay($tmpStart);
           }
         }else{
           if($selectResource){
-            $resourceCalendar['all'][$date]['isoffday']+=(!$res->isResourceTeam and $capacity)?isOffDay($tmpStart, $res->idCalendarDefinition):0;
+            $resourceCalendar['all'][$date]['isoffday']+=isOffDay($tmpStart, $res->idCalendarDefinition);
           }else{
-            $resourceCalendar['all'][$date]['isoffday']+=(!$res->isResourceTeam and $capacity)?isOffDay($tmpStart):0;
+            $resourceCalendar['all'][$date]['isoffday']+=isOffDay($tmpStart);
           }
         }
 	    $tmpStart = addDaysToDate($tmpStart, 1);
 	  }
 	}
+	$resourceCalendar = array_merge_preserve_keys($resourceCalendar, $resTeamCapacity);
 	if(count($list) > 0){
 	  echo '{"identifier":"id",' ;
 	  echo ' "items":[';

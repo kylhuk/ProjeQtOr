@@ -101,7 +101,7 @@ $displayHistory = ($paramHistoryVisible == 'NO')?false:true;
    
 <div id="mainPlanningDivContainer" dojoType="dijit.layout.BorderContainer">
 	<div dojoType="dijit.layout.ContentPane" region="top" id="listHeaderDiv" height="27px"
-	style="z-index: 3; position: relative; overflow: visible !important;">
+	style="z-index: 3; position: relative; overflow: visible !important;min-height: 34px;">
 		<table width="100%" style="height:36px" class="listTitle" >
 		  <tr height="32px">
 		    <td style="vertical-align:top; min-width:100px; width:15%;">

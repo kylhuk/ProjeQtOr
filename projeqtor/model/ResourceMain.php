@@ -383,9 +383,16 @@ class ResourceMain extends SqlElement {
       $wherePlanned=$where." and idResource=" . Sql::fmtId($this->id);
     }
     $pw=new PlannedWork();
-    $pwList=$pw->getSqlElementsFromCriteria(null,false,$wherePlanned.(($simulation)?' and 1=0':''));
+    $group=($withProjectRepartition)?'workDate,idProject':'workDate';
+    // PBER #9930
+    //$pwList=$pw->getSqlElementsFromCriteria(null,false,$wherePlanned.(($simulation)?' and 1=0':''));
+    $pwList=$pw->sumSqlElementsFromCriteria('work', null, $wherePlanned.(($simulation)?' and 1=0':''),$group);
     $listTopProjectsArray=array();
-    foreach ($pwList as $work) {
+    if ($pwList) foreach ($pwList as $workArray) {
+      $work = new PlannedWork();
+      $work->workDate=$workArray['workdate'];
+      $work->work=$workArray['sumwork'];
+      if (($withProjectRepartition)) $work->idProject=$workArray['idproject'];
       $date=$work->workDate;
       if (array_key_exists($date,$result)) {
         $val=$result[$date];
@@ -399,7 +406,7 @@ class ResourceMain extends SqlElement {
         if (array_key_exists($projectKey,$listTopProjectsArray)) {
           $listTopProjects=$listTopProjectsArray[$projectKey];
         } else {
-          $proj = new Project($work->idProject);
+          $proj = new Project($work->idProject,true);
           $listTopProjects=$proj->getTopProjectList(true);
           $listTopProjectsArray[$projectKey]=$listTopProjects;
         }
@@ -441,7 +448,7 @@ class ResourceMain extends SqlElement {
         if (($aff->startDate and $aff->startDate>$work->workDate) or ($aff->endDate and $aff->endDate<$work->workDate)) {
           $workToTakeIntoAccount=0;
         } else if ($aff->rate!=100) {
-          $mbr=new Resource($work->idResource);
+          $mbr=new Resource($work->idResource,true);
           $mbrCapa=$mbr->getCapacityPeriod($work->workDate);
           $maxCapaPool=round($mbrCapa*$aff->rate/100,2);
           if($workToTakeIntoAccount>$mbrCapa-$maxCapaPool) {
@@ -459,7 +466,7 @@ class ResourceMain extends SqlElement {
         if (array_key_exists($projectKey,$listTopProjectsArray)) {
           $listTopProjects=$listTopProjectsArray[$projectKey];
         } else {
-          $proj = new Project($work->idProject);
+          $proj = new Project($work->idProject,true);
           $listTopProjects=$proj->getTopProjectList(true);
           $listTopProjectsArray[$projectKey]=$listTopProjects;
         }
@@ -488,17 +495,6 @@ class ResourceMain extends SqlElement {
       }
       $real[$key][$date]=$work->work;
     }
-    // will add structure for ResourceTeam management
-    // ['team'] => 0 or 1
-    // ['members'] => array (only if ['team']=1)
-    //     [idResource] => array (result of getWork)
-    // ['periods'] => array (only if ['team']=1)
-    //     [startDate] => array
-    //         ['start'] => startDate
-    //         ['end'] => endDate
-    //         ['rate'] => global rate (summ for all members on the period)
-    //         ['idResource'] => array
-    //             [idResource] => capacity allocated for the resource
     $result['real']=$real;
     $result['team']=$this->isResourceTeam;
     if ($result['team']) {
@@ -507,13 +503,9 @@ class ResourceMain extends SqlElement {
       $rtaList=$rta->getSqlElementsFromCriteria(array('idResourceTeam'=>$this->id, 'idle'=>'0'));
       $result['periods']=ResourceTeamAffectation::buildResourcePeriods($this->id);
       foreach ($rtaList as $rta) {
-        $rr=new Resource($rta->idResource);
-        $result['members'][$rr->id]=$rr->getWork($startDate, $withProjectRepartition, $simulation);
-        //foreach($result['members'][$rr->id] as $keyM=>$valM) { // Add work on unit resource to Team to subtract availability
-          //if ($keyM=='real' or pq_substr($keyM,0,7)=='Project' or $keyM=='isMemberOf') continue;
-          //if (!isset($result[$keyM])) $result[$keyM]=0;
-          //$result[$keyM]+=$valM;
-        //}
+        $rr=new Resource($rta->idResource,true);
+        //$result['members'][$rr->id]=$rr->getWork($startDate, $withProjectRepartition, $simulation);
+        $result['members'][$rr->id]=$rr->getWork($startDate, false, $simulation); // PBER : #9930 for optimization - Remove if side effect
       }
     } else {
       $result['isMemberOf']=array();
@@ -543,7 +535,7 @@ class ResourceMain extends SqlElement {
     $supportResourceList=$resourceSupport->getSqlElementsFromCriteria($critArray, false);
     foreach ($supportResourceList as $sup) {
       $result['support'][$sup->idSupport]=$sup->rate;
-    }   
+    }
     return $result; 
   }
   
@@ -1121,7 +1113,11 @@ class ResourceMain extends SqlElement {
       }
       if (array_key_exists($res->id, $listVisibleLinkedObj)) {
         if (!$print and  securityCheckDisplayMenu(null, $subClass) and securityGetAccessRightYesNo('menu'.$subClass, 'read', '') == "YES"){
-          $goto=' onClick="gotoElement(\''.$subClass.'\',\'' . htmlEncode($res->id) . '\');" style="cursor: pointer;" ';
+          if($res->isMaterial =="1"){
+          $goto=' onClick="gotoElement(\'ResourceMaterial\',\'' . htmlEncode($res->id) . '\');" style="cursor: pointer;" ';
+          }else{
+            $goto=' onClick="gotoElement(\''.$subClass.'\',\'' . htmlEncode($res->id) . '\');" style="cursor: pointer;" ';
+          }
         }else {
           $goto="";
         }

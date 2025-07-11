@@ -80,10 +80,11 @@ class Expense extends SqlElement {
     ';
 
   private static $_fieldsAttributes=array("idProject"=>"required",
+                                  "scope"=>"hidden",
                                   "name"=>"required",
                                   "idExpenseType"=>"required",
                                   "idStatus"=>"required",
-  								                "idUser"=>"hidden",
+                                  "idUser"=>"hidden",
                                   "day"=>"hidden",
                                   "week"=>"hidden",
                                   "month"=>"hidden",

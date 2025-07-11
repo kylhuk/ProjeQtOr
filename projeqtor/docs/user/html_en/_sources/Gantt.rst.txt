@@ -84,40 +84,56 @@ The tools are dedicated to the planning view.
 
 
 
-.. topic:: **Interface areas**
 
 
-   |zero| :ref:`Predecessor & Successor<predecessor-successor>`
+.. _Toolbar-Gantt-topic:
 
-   |one| :ref:`Quick mode block<mode-block>`
+.. topic:: **Gantchart Toolbar**
 
-   |two| :ref:`Planning calculation<ActivityPlanningCalculation>`
+   |zero| :ref:`Scroll to today<scroll-today>`
+
+   |one| :ref:`Predecessor & Successor<predecessor-successor>`
+
+   |two| :ref:`Quick mode block<mode-block>`
    
-   |three| :ref:`Automatique run plan<auto-run>`
+   |three| :ref:`Planning calculation<ActivityPlanningCalculation>`
    
-   |four| :ref:`Baseline<save-baseline>`
+   |four| :ref:`Automatique run plan<auto-run>`
    
-   |five| :ref:`New planning element<new-element-gantt>`
+   |five| :ref:`Baseline<save-baseline>`
    
-   |six| :ref:`Advanced filter<advanced-filter-gantt>`
+   |six| :ref:`New planning element<new-element-gantt>`
    
-   |seven| :ref:`Columns<displayed-columns-gantt>`
+   |seven| :ref:`Advanced filter<advanced-filter-gantt>`
    
-   |eight| :ref:`Options<options-planning>`
+   |eight| :ref:`Columns<displayed-columns-gantt>`
    
-   |nine| :ref:`Layout mode<options-layout>`
+   |nine| :ref:`Options<options-planning>`
    
-   |ten| :ref:`Display<display-from>`
+   |ten| :ref:`Layout mode<options-layout>`
    
-   |eleven| :ref:`Display options<checkbox-gantt>`  
+   |eleven| :ref:`Display<display-from>`
    
-   |twelve| :ref:`Planning validation<planning-validation>` 
+   |twelve| :ref:`Display options<checkbox-gantt>` 
       
-   |thirteen| :ref:`Timeline<timeline-option>`
+   |thirteen| :ref:`Planning validation<planning-validation>` 
    
-   |fourteen| :ref:`Print and Export<print-export-gantt>`   
+   |fourteen| :ref:`Timeline<timeline-option>`
    
-   
+   |fifteen| :ref:`Print and Export<print-export-gantt>` 
+
+
+
+
+.. _scroll-today:
+
+Scroll to today
+---------------
+
+By clicking this button, you force the Gantt display to return to the current day.
+
+
+
 
 
 .. _predecessor-successor:
@@ -137,7 +153,7 @@ Double-click |Successor8| to display all successors of the selected element.
 
 Click on |Clear| to clear the selection of the predecessor or successor
 
-:ref:`[back]<Toolbar-Gantt>`
+:ref:`[back]<Toolbar-Gantt-topic>`
 
 
 
@@ -155,7 +171,7 @@ This specific blocking mode allows you to not update the schedule automatically 
 
 .. Warning:: Some displays may not reflect the correct values
 
-:ref:`[back]<Toolbar-Gantt>`
+:ref:`[back]<Toolbar-Gantt-topic>`
 
 
 
@@ -267,7 +283,7 @@ The calculations are programmed according to a frequency of CRON type (every min
    Global Parameters into the chapter :ref:`Automatic planning Calculation<automatic-planning-calcul>`
 
 
-:ref:`[back]<Toolbar-Gantt>`
+:ref:`[back]<Toolbar-Gantt-topic>`
 
 
 .. _save-baseline:
@@ -338,7 +354,7 @@ This option will be very useful for you to compare possible drifts and explain t
    Baseline display on Gantt chart
    
 
-:ref:`[back]<Toolbar-Gantt>`
+:ref:`[back]<Toolbar-Gantt-topic>`
 
 
 .. _new-element-gantt:
@@ -360,7 +376,7 @@ Add a new planning element
 You can create several elements on the planning view and more on to the :ref:`Global planning<gantt-planning>`.
 
 
-:ref:`[back]<Toolbar-Gantt>`
+:ref:`[back]<Toolbar-Gantt-topic>`
 
 
 
@@ -374,7 +390,7 @@ The advanced filter allows to define clause to filter and sort.
 
 More details: :ref:`filters<filters>`
    
-:ref:`[back]<Toolbar-Gantt>` 
+:ref:`[back]<Toolbar-Gantt-topic>` 
  
  
 .. _displayed-columns-gantt:
@@ -386,7 +402,7 @@ This functionality allows to define columns displayed in the progress data view.
 
 More details: :ref:`Display and organize the columns<columns>`. 
  
-:ref:`[back]<Toolbar-Gantt>` 
+:ref:`[back]<Toolbar-Gantt-topic>` 
  
  
  
@@ -399,7 +415,7 @@ Display other options
  
 Clicking the icon will bring up the additional options window with the specific tools for the Gantt. 
 
-:ref:`[back]<Toolbar-Gantt>` 
+:ref:`[back]<Toolbar-Gantt-topic>` 
 
 
 
@@ -414,7 +430,7 @@ If you choose a vertical display mode globally, you can display the planning vie
 
 More details: :ref:`Change the layout mode<menu-display>`
 
-:ref:`[back]<Toolbar-Gantt>`
+:ref:`[back]<Toolbar-Gantt-topic>`
 
 
  
@@ -437,7 +453,7 @@ If the display is truncated because the project is too long, think to change the
 
    Save your dates of display to retrieve them on every connection.
 
-:ref:`[back]<Toolbar-Gantt>`
+:ref:`[back]<Toolbar-Gantt-topic>`
 
 
 
@@ -459,7 +475,7 @@ Show WBS
          
       Task list without and with WBS Display
    
-   :ref:`[back]<Toolbar-Gantt>`
+   :ref:`[back]<Toolbar-Gantt-topic>`
 
 
 .. _color-left:
@@ -478,7 +494,7 @@ Color on left part
    
       :ref:`Custom color<custom-color>`
       
-   :ref:`[back]<Toolbar-Gantt>`
+   :ref:`[back]<Toolbar-Gantt-topic>`
 
 
 
@@ -491,7 +507,7 @@ Activity colors by type
    You can apply the color defined for the :ref:`activity types<activity-type>` directly on the Gantt exactly as when you define it in the management section of your activity. 
       
      
-   :ref:`[back]<Toolbar-Gantt>`
+   :ref:`[back]<Toolbar-Gantt-topic>`
          
      
    
@@ -520,7 +536,7 @@ Resource
       :ref:`display-parameters`
       
       
-      :ref:`[back]<Toolbar-Gantt>`   
+      :ref:`[back]<Toolbar-Gantt-topic>`   
    
       
 .. _name-bars:
@@ -537,7 +553,7 @@ Name on bars
          
       Bar name
          
-   :ref:`[back]<Toolbar-Gantt>`      
+   :ref:`[back]<Toolbar-Gantt-topic>`      
       
       
 .. _critical-path:
@@ -569,7 +585,7 @@ Critical path
                
          
          
-   :ref:`[back]<Toolbar-Gantt>`
+   :ref:`[back]<Toolbar-Gantt-topic>`
    
 
 
@@ -582,7 +598,7 @@ Technical progress
          
    You can display both progress bars at the same time on the same activity bar.      
          
-   :ref:`[back]<Toolbar-Gantt>`
+   :ref:`[back]<Toolbar-Gantt-topic>`
 
 
 
@@ -592,7 +608,7 @@ Template project
 
    You can display or hide the template type projects in the area list.
    
-   :ref:`[back]<Toolbar-Gantt>`
+   :ref:`[back]<Toolbar-Gantt-topic>`
 
    
 Closed element
@@ -600,7 +616,7 @@ Closed element
   
    Allows to list closed items on the projects.
    
-   :ref:`[back]<Toolbar-Gantt>`
+   :ref:`[back]<Toolbar-Gantt-topic>`
 
 
 
@@ -614,7 +630,7 @@ Assignment without left work
             
       Hide assignment without left work.
          
-   :ref:`[back]<Toolbar-Gantt>`
+   :ref:`[back]<Toolbar-Gantt-topic>`
 
 
 .. _lockDetail:
@@ -629,7 +645,7 @@ Lock bar detail
    Activate this option so that the detail remains displayed
          
          
-   :ref:`[back]<Toolbar-Gantt>`
+   :ref:`[back]<Toolbar-Gantt-topic>`
 
 
 
@@ -654,7 +670,7 @@ Detail on simply click
          
               
          
-   :ref:`[back]<Toolbar-Gantt>`
+   :ref:`[back]<Toolbar-Gantt-topic>`
    
 
 
@@ -665,7 +681,7 @@ Auto scroll to planning bar
 
    When you click on an item in the list box (WBS) and this item is not displayed/visible directly on the Gantt chart then an auto scroll is executed to this item to visualize it on the chart.
    
-   :ref:`[back]<Toolbar-Gantt>`
+   :ref:`[back]<Toolbar-Gantt-topic>`
 
 
 
@@ -706,7 +722,7 @@ If the "validated" fields are not completed, then these dates will be replaced b
 If the "validated" fields are completed then they will be kept.
     
 
-:ref:`[back]<Toolbar-Gantt>`  
+:ref:`[back]<Toolbar-Gantt-topic>`  
 
   
 
@@ -723,7 +739,7 @@ Show or hide the timeline and set the maximum number of lines the timeline shoul
    :ref:`project Timeline<projectTimeline>`
 
 
-:ref:`[back]<Toolbar-Gantt>`
+:ref:`[back]<Toolbar-Gantt-topic>`
 
 
 .. _print-export-gantt:
@@ -777,7 +793,7 @@ It is highly faster than standard PDF export.
       * To disable if for all browsers, add the parameter **$pdfPlanningBeta='false';** 
         Default (when **$pdfPlanningBeta** parameter is not set) is *enabled with Chrome, disabled with other browsers* 
 
-:ref:`[back]<Toolbar-Gantt>`
+:ref:`[back]<Toolbar-Gantt-topic>`
 
 
 
@@ -797,7 +813,7 @@ If not, the name of the resources will not be available in the MS-Project applic
    
    :ref:`User Parameters<user-parameters>` 
         
-:ref:`[back]<Toolbar-Gantt>`
+:ref:`[back]<Toolbar-Gantt-topic>`
 
 
 
@@ -846,6 +862,8 @@ You can add/remove tasks to the Timeline with a single right click.
 * Timeline scale automatically adapts to selected tasks.
    
 * You can hide the Timeline in the Gantt planning view options.
+
+* You can add milestones.
 
 :ref:`[back]<gantt-chart-view-menu>`
 
@@ -976,12 +994,26 @@ This number is representative of the level of your element.
 
 If you change the order of the lines by moving elements then these numbers will be automatically updated with all its successors.
 
+.. figure:: /images/GUI/GANTT_ZONE_WBS.png
+   :alt: Structure list of WBS
+   
+   Structure list of WBS
 
 
+The colored blocks in front of the WBS task names reflect the colors of the bars.
 
-* If the **Detail on simply click** option is enabled, click on a line to display the detail area 
+* They are red/light red when a task is late.
 
-* If the **Detail on simply click** option is not enabled, then click on |View| to view the detail.
+* They are green/light green when the task is on schedule.
+
+* They are purple when a resource is unavailable for the task.
+
+
+.. tip:: 
+
+   * If the **Detail on simply click** option is enabled, click on a line to display the detail area 
+   
+   * If the **Detail on simply click** option is not enabled, then click on |View| to view the detail.
 
 
 .. seealso:: 
@@ -1029,6 +1061,17 @@ Click the field once if the **Simple click on details** option is disabled, doub
 The controls relating to the choice of certain fields, such as for the planning modes, are well executed even in free edit mode.
    
 Either with a single click if the “detail on single click” option is deactivated, or by double clicking if the option is activated.
+
+You can use your keyboard to move around and confirm your changes.
+
+
+* ``Tab`` to move within the row.
+
+* ``↑``, ``↓``, ``←``, ``→`` keyboard navigation arrows to move between rows and lists.
+
+* ``Enter`` to confirm the change, like Ctrl + S.
+
+
 
 Dependancies
 ============
@@ -1953,13 +1996,13 @@ This highest priority planning mode. The workload assigned with this planning mo
 Planning codes
 ##############
 
-.. list-table:: Frozen Delights!
+.. list-table::
    :header-rows: 1
 
    * - Code
      - Planning modes
    * - :ref:`ASAP<mode-assoon>`
-     - as soon as possible
+     - As soon as possible
    * - :ref:`GROUP<mode-worktogether>`
      - Work together
    * - :ref:`START<mode-startbefore>`
@@ -1980,7 +2023,7 @@ Planning codes
      - Regular in full days                                     
    * - :ref:`HALF<mode-regularHalf>`
      - Regular in half days
-   * - :ref:`QUART:ref:`<mode-regularQuarter>`
+   * - :ref:`QUART<mode-regularQuarter>`
      - Regular in quarter days     
    * - :ref:`RECW<mode-recurring>`
      - Recurring
@@ -2084,7 +2127,7 @@ Work together
 Fixed duration
 **************
 
-* The task is planned by duration. The validated duration field must be filled in.
+* The task is planned by duration. The Validated Duration field is a required field. If you do not fill it out, it will be set to 1 automatically.
 
 * If work is assigned to the task, the scheduling behavior is the same as "Regular Between Dates".
 
@@ -2145,7 +2188,7 @@ Parent activity
 Duration driven
 ***************
 
-* The task is planned by duration which is fixed.
+* The task is planned by duration which is fixed. If you do not fill it out, it will be set to 1 automatically.
 
 * If the allocation of resources exceeds the set validated duration then the distribution of remaining work becomes overuse.
 
@@ -2178,6 +2221,8 @@ Constrained duration
 
 This planning mode behaves similarly to the "fixed duration" and "Duration driven" modes with some additional specificities.
 
+The Validated Duration field is a required field. If you do not fill it out, it will be set to 1 automatically.
+
 This is a priority mode compared to the "as soon as possible" or "work together" mode.
 
 It offers the possibility to shift the validated start date and the end date using the handles on each side of the bar.
@@ -2197,6 +2242,7 @@ It offers the possibility to shift the validated start date and the end date usi
 * Possible inter-project overbooking.
 
 * Respect of the allocation and the assignment rate by project and activity.
+
 
 
 

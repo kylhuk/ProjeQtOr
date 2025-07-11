@@ -438,6 +438,9 @@ class InputMailboxImport extends SqlElement {
         $subject=InputMailboxTicket::convertEmojis($subject);
         // Sender
         $sender=$mail->fromAddress;
+        $senderId=null;
+        $resultImport="";
+        $resultImportMail="";
         $usr=Affectable::getAffectableFromEmail($sender);
         if($usr->isUser == 1){
           $senderId=$usr->id;
@@ -450,8 +453,6 @@ class InputMailboxImport extends SqlElement {
           if ($actionKO!='NONE') InputMailboxHistory::storeHistory($mbI,$mail->subject, $mailFrom,$result,true, "import");
           continue;
         }
-        $resultImport="";
-        $resultImportMail="";
         $listAtt = $mail->getAttachments();
         $fileExt="";
         foreach ($listAtt as $att){;

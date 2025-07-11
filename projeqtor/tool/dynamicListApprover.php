@@ -47,8 +47,11 @@ $objList=new Affectable();
 $aff=new Affectation();
 $critWhere = "idle='0' and exists(select 'x' from " . $aff->getDatabaseTableName() . " aff ";
 $critWhere .= " where aff.idResource=" . $objList->getDatabaseTableName() . ".id ";
-if(property_exists(get_class($obj), 'idProject')){
-  $critWhere .= ($obj->idProject)?" and aff.idProject='" . Sql::fmtId($obj->idProject) . "'":"";
+if(property_exists(get_class($obj), 'idProject') and $obj->idProject){
+  $prj=new Project($obj->idProject);
+  $lstTopPrj=$prj->getTopProjectList(true);
+  $in=transformValueListIntoInClause($lstTopPrj);
+  $critWhere .= ($obj->idProject)?" and aff.idProject in $in":"";
 }
 $critWhere .= ")";
 $list=$objList->getSqlElementsFromCriteria(null,false,$critWhere, 'name asc');

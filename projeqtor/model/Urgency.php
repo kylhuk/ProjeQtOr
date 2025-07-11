@@ -39,7 +39,7 @@ class Urgency extends SqlElement {
   public $sortOrder=0;
   public $idle;
   //public $_sec_void;
-  
+  private static $_cacheColor=array();
   // Define the layout that will be used for lists
   private static $_layout='
     <th field="id" formatter="numericFormatter" width="10%"># ${id}</th>
@@ -79,6 +79,16 @@ class Urgency extends SqlElement {
    */
   protected function getStaticLayout() {
     return self::$_layout;
+  }
+  
+  public function getColor() {
+    if (isset(self::$_cacheColor[$this->id])) return self::$_cacheColor[$this->id];
+    $color="#FFFFFF";
+    if ($this->color) {
+      $color=$this->color;
+    }
+    self::$_cacheColor[$this->id]=$color;
+    return $color;
   }
   
 }

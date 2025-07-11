@@ -7260,6 +7260,7 @@ class TCPDF {
 	 */
 	protected function ImagePngAlpha($file, $x, $y, $wpx, $hpx, $w, $h, $type, $link, $align, $resize, $dpi, $palign, $filehash='') {
 		// create temp images
+		if ($file=='../view/img/mime/unknown.png') return; //ticket #10175
 		if (empty($filehash)) {
 			$filehash = md5($file);
 		}

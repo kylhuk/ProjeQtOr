@@ -193,7 +193,7 @@ if($positionListDiv == 'top'){
   
 <div id="mainPlanningDivContainer" dojoType="dijit.layout.BorderContainer">
 	<div dojoType="dijit.layout.ContentPane" region="top" id="listHeaderDiv" 
-	 style="z-index: 3; position: relative; overflow: visible !important;padding-bottom:5px;">
+	 style="z-index: 3; position: relative; overflow: visible !important;padding-bottom:5px;min-height: 34px;">
 	  <script type="dojo/method" event="onUnload" >
       if (! drawGanttInProgress) resetPlanningFieldDescription();  
       return true;
@@ -224,8 +224,8 @@ if($positionListDiv == 'top'){
 		        <input type="hidden" id="objectClass" name="objectClass" value="<?php echo $objectClass;?>" /> 
 		        <input type="hidden" id="objectId" name="objectId" value="<?php echo $objectId;?>" />
 		        <input type="hidden" id="idProjectForCalendar" name="idProjectForCalendar" value="<?php echo Project::getIdProjectForIdCalendarDefinition();?>" />
-		        <input type="hidden" id="planningStartDateView" name="planningStartDateView" value="" /> 
-		        <input type="hidden" id="planningEndDateView" name="planningEndDateView" value="" />
+<!-- 		        <input type="hidden" id="planningStartDateView" name="planningStartDateView" value="" />  -->
+<!-- 		        <input type="hidden" id="planningEndDateView" name="planningEndDateView" value="" /> -->
 		        <input type="hidden" id="paramLayoutScreen" name="paramLayoutScreen" value="<?php echo $positionListDiv;?>" />
 		        <?php if (!isNewGui()) { // =========================================================== NOT NEW GUI?>
 		        <table style="width: 100%;">
@@ -288,10 +288,20 @@ if($positionListDiv == 'top'){
 		        <?php if (isNewGui()) { // ========================================================= NEW GUI?>
 		        <table style="width: 100%;">
 		          <tr>
-		            <td style="width:90%;">&nbsp;
-                </td>
+		            <td style="width:90%;">&nbsp;</td>
+		            <td>
+		              <div> 
+		                <button id="todayPlanningScroll" dojoType="dijit.form.Button" 
+                          title="<?php echo i18n('gotoPlanningScroll');?>" class="buttonIconNewGui detailButton"
+                          iconClass="dijitIcon iconToday iconSize22">
+                          <script type="dojo/connect" event="onClick" args="evt">
+                            GotoPlanningToday();
+                          </script>
+		                </button>
+		              </div>
+		            </td>
                 <?php if ($canPlan) { ?>
-		            <td style="width:auto;position:relative;min-width:90px;">
+		            <td style="width:auto;position:relative;min-width:100px;">
 		              <div id="predecessorSequence" class="dependencySequence" style="left:0px;"></div>
 		              <div class="iconSucessorPredecessor iconSize60 imageColorNewGuiNoSelection">
 		                <div title="<?php echo i18n('helpPredecessorButton');?>" id="predecessor" class="dependencyPredecessor" onclick="drawButtonPredecessorElement();" style="left: -4px;"></div>
@@ -320,7 +330,7 @@ if($positionListDiv == 'top'){
                     <?php drawButtonPlan(); ?>
                     </div>    
 		            </td>
-		            <td style="width:70px; position:relative;padding-right:20px;">
+		            <td style="width:70px; min-width:22px; position:relative;padding-right:20px;">
                     <?php drawOptionAutomatic();?>
                 </td>
                 <?php } ?>

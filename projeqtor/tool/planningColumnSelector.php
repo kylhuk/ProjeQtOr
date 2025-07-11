@@ -52,7 +52,7 @@ if($planningType == 'portfolio'){
 
 foreach ($columnsAll as $order=>$col) {
     if ( (isset($resourcePlanning) and ($col=='ValidatedWork' or $col=='Resource' or pq_substr($col,-4)=='Cost') )
-        or (isset($portfolioPlanning) and ($col=='Resource' or $col=='IdPlanningMode' or $col=='Responsible' or $col=='RespInitial') )
+        or (isset($portfolioPlanning) and ($col=='Resource' or $col=='IdPlanningMode' or $col=='RespInitial' or $col=='IdResource') )
         or (isset($versionPlanning) and (pq_substr($col,-4)=='Cost' or $col=='Responsible' or $col=='RespInitial' or $col=='ValidatedStartDate' or $col=='ValidatedEndDate'))
         or (isset($contractGantt) and ($col=='Responsible' or $col=='RespInitial' or $col=='ValidatedStartDate' or $col=='ValidatedEndDate'))) {
         // nothing
@@ -110,7 +110,13 @@ foreach ($columnsAll as $order=>$col) {
           $project = new Project();
           $colName = $project->getColCaption($colName);
           echo $colName . "</label>";
-        }else{
+        }else if ($planningType == 'portfolio' and $col=='IdContact'){
+          echo i18n('colBillContact') . "</label>";
+  	    }else if ($planningType == 'portfolio' and $col=='IdUser'){
+  	      echo i18n('colCreator') . "</label>";
+  	    }else if ($planningType == 'portfolio' and $col=='Responsible'){
+  	      echo i18n('colManager') . "</label>";
+  	    }else{
           echo i18n('col' . $col) . "</label>";
         }
   	  }
@@ -118,7 +124,7 @@ foreach ($columnsAll as $order=>$col) {
   	  echo '<div dojoType="dijit.form.NumberSpinner" id="planningColumnSelectorWidthId'.$order.'" ';
   	  echo ($desc[$col]['show']==0)?'disabled="disabled" ':'';
   	  echo ' onChange="changePlanningColumnWidth(\'' . $col . '\',this.value,\'' . $planningType . '\')"; ';
-  	  echo ' constraints="{ min:'.$desc[$col]['minWidth'].', max:500, places:0 }"';
+  	  echo ' constraints="{ min:'.($desc[$col]['minWidth']??50).', max:500, places:0 }"';
   	  echo ' style="width:50px; text-align: center;" value="'.htmlEncode($desc[$col]['width']).'" >';
   	  echo '</div>'; // NumberSpinner
   	  echo '&nbsp;</div>'; // style="float: right
@@ -160,7 +166,7 @@ foreach ($columnsAll as $order=>$col) {
   	  echo '<div dojoType="dijit.form.NumberSpinner" id="planningColumnSelectorWidthId'.$order.'" ';
   	  echo ($desc[$col]['show']==0)?'disabled="disabled" ':'';
   	  echo ' onChange="changePlanningColumnWidth(\'' . $col . '\',this.value,\'' . $planningType . '\')"; ';
-  	  echo ' constraints="{ min:'.$desc[$col]['minWidth'].', max:500, places:0 }"';
+  	  echo ' constraints="{ min:'.($desc[$col]['minWidth']??50).', max:500, places:0 }"';
   	  echo ' style="width:50px; text-align: center;" value="'.htmlEncode($desc[$col]['width']).'" >';
   	  echo '</div>'; // NumberSpinner
   	  echo '&nbsp;</div>'; // style="float: right

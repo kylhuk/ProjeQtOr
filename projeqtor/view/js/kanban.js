@@ -428,6 +428,21 @@ function kanbanSeeWork() {
   });
 }
 
+function kanbanModeColorTitle() {
+  showWait();
+  dojo.xhrGet({
+    url:"../tool/kanbanModeColorTitle.php"+addTokenIndexToUrl('?'),
+    handleAs:"text",
+    load:function(data,args) {
+      loadContent("../view/kanbanView.php?idKanban=" + data,"divKanbanContainer");
+      //hideWait();
+    },
+    error:function() {
+      hideWait();
+    }
+  });
+}
+
 function kanbanFindTitle(type) {
   title=i18n('dialogKanbanUpdate');
   if (type == "addKanban") {
@@ -521,6 +536,20 @@ function kanbanHideBacklog() {
   showWait();
   dojo.xhrGet({
     url:"../tool/kanbanUpdateParameter.php?param=kanbanHideBacklog"+addTokenIndexToUrl(),
+    handleAs:"text",
+    load:function(data,args) {
+      loadContent("../view/kanbanView.php","divKanbanContainer");
+    },
+    error:function() {
+      hideWait();
+    }
+  });
+}
+
+function kanbanHideColorTitle() {
+  showWait();
+  dojo.xhrGet({
+    url:"../tool/kanbanUpdateParameter.php?param=kanbanHideColorTitle"+addTokenIndexToUrl(),
     handleAs:"text",
     load:function(data,args) {
       loadContent("../view/kanbanView.php","divKanbanContainer");
@@ -633,6 +662,20 @@ function kanbanHideType() {
   showWait();
   dojo.xhrGet({
     url:"../tool/kanbanUpdateParameter.php?param=kanbanHideType"+addTokenIndexToUrl(),
+    handleAs:"text",
+    load:function(data,args) {
+      loadContent("../view/kanbanView.php","divKanbanContainer");
+    },
+    error:function() {
+      hideWait();
+    }
+  });
+}
+
+function kanbanHideProjectName() {
+  showWait();
+  dojo.xhrGet({
+    url:"../tool/kanbanUpdateParameter.php?param=kanbanHideProjectName"+addTokenIndexToUrl(),
     handleAs:"text",
     load:function(data,args) {
       loadContent("../view/kanbanView.php","divKanbanContainer");

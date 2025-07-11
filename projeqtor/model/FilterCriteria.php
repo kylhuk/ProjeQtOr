@@ -43,6 +43,8 @@ class FilterCriteria extends SqlElement {
   //ADD qCazelles - Dynamic filter - Ticket #78
   public $isDynamic;
   public $orOperator;
+  public $isGroup;
+  public $indentLevel;
   public $isReportList;
   //END ADD qCazelles - Dynamic filter - Ticket #78
   

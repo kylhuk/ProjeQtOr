@@ -242,10 +242,12 @@ if ($_SERVER['REQUEST_METHOD']=='GET') {
         	$where="";
         	while (isset($split[$cpt])) {
         		$where.=($where)?" and ":'';
+        		$where.='(';
         		$addWhere=$split[$cpt];
         		//if ( pq_strpos(pq_strtolower($addWhere), 'like')>-1) $addWhere=pq_str_replace('*','%',$addWhere);
         		$addWhere=pq_str_replace('id IN ()', 'id IN (0)', $addWhere);
         		$where.=$addWhere;
+        		$where.=')';
         		$cpt++;
         	}
         	// 

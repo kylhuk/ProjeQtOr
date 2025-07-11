@@ -998,7 +998,6 @@ static function isTheLeaveProject($id=null) {
    */  
   public function drawSubProjects($selectField=null, $recursiveCall=false, $limitToUserProjects=false, $limitToActiveProjects=false, $level=0,$limitProjectLevel=false, $noVAlignTop=false) {
     scriptLog("Project($this->id)->drawSubProjects(selectField=$selectField, recursiveCall=$recursiveCall, limitToUserProjects=$limitToUserProjects, limitToActiveProjects=$limitToActiveProjects)");
-    
     global $outMode, $drawCheckBox, $displayWidth;
   	self::$_drawSubProjectsDone[$this->id]=$this->name;
     if ($limitToUserProjects) {
@@ -1019,8 +1018,7 @@ static function isTheLeaveProject($id=null) {
     $result="";
     $clickEvent=' onClick=""';
     if ($outMode=='html' or $outMode=='pdf') $clickEvent='';
-    $favoriteProjectList = pq_trim(Parameter::getUserParameter('favoriteProjectsArray'));
-    $idFavoriteProjectList = pq_trim(Parameter::getUserParameter('idFavoriteProjectList'));   
+    $idFavoriteProjectList = pq_trim(Parameter::getUserParameter('idFavoriteProjectList')); 
     if (! $idFavoriteProjectList and $limitToUserProjects and $user->_accessControlVisibility != 'ALL' and ! $recursiveCall) {
       $subList=array();
     	foreach($visibleProjectsList as $idP=>$nameP) {
@@ -1030,10 +1028,10 @@ static function isTheLeaveProject($id=null) {
       	        $subList[pq_substr($idP,1)]=$proj->name;
     		}
     	}
-    } else if ($favoriteProjectList!='' and $idFavoriteProjectList!='') {
+    } else if ($idFavoriteProjectList!='') {
       unsetSessionValue('visibleProjectsList');
       $topList=array();
-      $favoriteProjectArray = pq_explode(',', $favoriteProjectList);
+      $favoriteProjectArray = SqlList::getListWithCrit('FavoriteProjectItem', array('idFavoriteProjectList'=>$idFavoriteProjectList), 'idProject');
       $subPrjLimited=array();
       foreach ($favoriteProjectArray as $id){
         $prj = new Project($id,true);
@@ -1060,17 +1058,146 @@ static function isTheLeaveProject($id=null) {
   	  $subList=$this->getSubProjectsList($limitToActiveProjects,true);
   	  //$subList=$this->getRecursiveSubProjectsFlatList($limitToActiveProjects,true);
     }
+    
+    $selectedProject='*';
+    if(sessionValueExists('project')){
+      $selectedProject=getSessionValue('project');
+    }
+    $favProjItem = new FavoriteProjectItem();
+    $favProjItemList = array();
+    $editFavoriteProject = pq_trim(getSessionValue('editFavoriteProject'));
+    if($editFavoriteProject != ''){
+      $favProjItemList = SqlList::getListWithCrit('FavoriteProjectItem', array('idFavoriteProjectList'=>$editFavoriteProject), 'idProject');
+      Parameter::storeUserParameter('favoriteProjectsArray', implode(',', $favProjItemList));
+    }
+    $favoriteProjectItemList = implode(',', $favProjItemList);
+    
     if ($selectField!=null and ! $recursiveCall) { 
-      $result .= '<table ><tr><td>';
+      $collapsedList=Collapsed::getCollaspedList();
+      $isFavoriteListSelected = 0;
+      $idFavoriteProjectList = pq_trim(getSessionValue('idFavoriteProjectList'));
+      if(pq_trim($idFavoriteProjectList) != ''){
+        $isFavoriteListSelected=1;
+      }
+      $favoriteName = '';
+      $displayOKButton = 'display:none;';
+      $displayFavoriteName = 'none';
+      $displaySaveButton = 'display:none;';
+      $displayNewSaveButton = 'display:none;';
+      $displayEditButton = 'display:none;';
+      $displayCancelButton = 'display:none;';
+      $favoriteProjectItemList = '';
+      if($selectedProject != "*")$displayOKButton = '';
+      if($editFavoriteProject != '' or $selectedProject != "*"){
+        $displayFavoriteName='flex';
+        $favoriteName = SqlList::getNameFromId('FavoriteProjectList', $editFavoriteProject, false);
+      }
+      if($idFavoriteProjectList != ''){
+        setSessionValue('favoriteProjectListName', $favoriteName);
+        $displaySaveButton = 'display:none;';
+        $displayEditButton = '';
+        $displayCancelButton = '';
+      }else if($editFavoriteProject != ''){
+        $displaySaveButton = '';
+        $displayNewSaveButton = 'display:none;';
+        $displayEditButton = 'display:none;';
+        $displayCancelButton = '';
+      }else if($selectedProject != "*"){
+        $displayNewSaveButton = '';
+      }
+      $result .= '<table style="width:100%"><tr><td>';
       $allProject = ($idFavoriteProjectList != '')?i18n('favoriteProject'):i18n('allProjects');
       $clickEvent=' onClick=\'setSelectedProject("*", "<i>' . $allProject . '</i>", "' . $selectField . '");\' ';
       if ($outMode=='html' or $outMode=='pdf') $clickEvent='';
-      $result .= '<div ' . $clickEvent . ' class="'.(($outMode=='html' or $outMode=='pdf')?'':'menuTree').'" style="width:100%;height:22px;margin-top:-3px;padding-top:3px;margin-bottom:5px;">';
-      $result .= '<i>' . $allProject . '</i>';
-      $result .= '</div></td></tr></table>';
+      $result .= '<div style="position: relative; display: flex; align-items: baseline;">';
+      $result .= '  <div ' . $clickEvent . ' class="'.(($outMode=='html' or $outMode=='pdf')?'':'menuTree').'" style="width:100%;height:22px;margin-top:-3px;padding-top:3px;margin-bottom:5px;">';
+      $result .= '    <i>' . $allProject . '</i>';
+      $result .= '  </div>';
+      $result .= '  <div id="multiProjectSelectButtonDiv" style="z-index:999;padding:0px 5px 0px 5px;background:white;'.$displayOKButton.'">';
+      $result .= '    <a id="multiProjectSelectButton" onClick="selectedMultiProject();" title="'.i18n('multiProjectSelectHelp').'">';
+      $result .=        formatSmallButton('Check', true);
+      $result .= '    </a>';
+      $result .= '  </div>';
+      if($idFavoriteProjectList != '' or $editFavoriteProject != ''){
+        $result .= '<div id="resetProjectListButtonDiv" style="z-index:999;padding:0px 5px 0px 5px;background:white;">';
+        $result .= '  <a id="resetProjectListButton" onClick="selectFavoriteProjectList(\'\', \'\', false, false, true);" title="'.i18n('resetFavoriteList').'">';
+        $result .=      formatSmallButton('Cancel');
+        $result .= '  </a>';
+        $result .= '</div>';
+      }
+      $result .= '</div>';
+      $result .= '</td></tr></table>';
+      $result .= '<div dojoType="dijit.TitlePane" id="projectSelectorFavoriteTitlePane" open="'.( array_key_exists("projectSelectorFavoriteTitlePane", $collapsedList)?'false':'true').'"';
+      $result .= 'onHide="saveCollapsed(\'projectSelectorFavoriteTitlePane\');resizeTitlePanProjectSelector(false, '.count($favProjItemList).');" onShow="saveExpanded(\'projectSelectorFavoriteTitlePane\');resizeTitlePanProjectSelector(true, '.count($favProjItemList).');" title="'.i18n('Favorite').'" style="width:100%;padding-bottom:5px;">';
+      $result .= '<form dojoType="dijit.form.Form" id="favoriteProjectListForm" name="favoriteProjectListForm" onSubmit="return false;">';
+      $result .= '  <input type="hidden" id="isFavoriteListSelected" name="isFavoriteListSelected" value="'.$isFavoriteListSelected.'"/>';
+      $result .= '  <div style="position: relative; display: flex; align-items: baseline;padding-right:5px;">';
+      $result .= '    <div id="favoriteNameListDiv" style="position: relative; width: 90%;">';
+      $result .= '      <input type="text" id="favoriteProjectListName" name="favoriteProjectListName" placeholder="'.i18n('colFavoriteProjectName').'" value="'.htmlEncode($favoriteName).'"';
+      $result .= '        style="width: 90%; border: 1px solid var(--color-medium); border-radius: 5px; margin-bottom: 15px; padding: 5px; display: '.$displayFavoriteName.'; align-items: center;" class="input required" />';
+      $result .= '    </div>';
+      $result .= '    <div id="saveFavoriteListButtonDiv" style="z-index:999;padding:5px;background:white;'.$displaySaveButton.'">';
+      $result .= '      <a id="saveFavoriteListButton" onClick="changedSelectedProjectToFavorite(true);" title="'.i18n('saveFavoriteProjectList').'">';
+      $result .=          formatSmallButton('Save');
+      $result .= '      </a>';
+      $result .= '    </div>';
+      $result .= '    <div id="saveNewFavoriteListButtonDiv" style="z-index:999;padding:5px;background:white;'.$displayNewSaveButton.'">';
+      $result .= '      <a id="saveNewFavoriteListButton" onClick="changedSelectedProjectToFavorite(true);" title="'.i18n('transformFavoriteProjectList').'">';
+      $result .=          formatSmallButton('Favoris', true);
+      $result .= '      </a>';
+      $result .= '    </div>';
+      if($editFavoriteProject != '' ){
+        $result .= '    <div id="resetFavoriteListButtonDiv" style="z-index:999;padding:5px;background:white;'.$displayCancelButton.'">';
+        $result .= '      <a id="resetFavoriteListButton" onClick="selectFavoriteProjectList(\'\', \''.$editFavoriteProject.'\', false, false, true);" title="'.i18n('resetFavoriteList').'">';
+        $result .=          formatSmallButton('Cancel');
+        $result .= '      </a>';
+        $result .= '    </div>';
+      }
+      $result .= '  </div>';
+      $result .= '</form>';
+      
+      $result .= '  <div id="favoriteListDiv" style="max-height:140px;overflow-y:auto;">';
+      $result .= '  <div id="favoriteListContentPane" name="favoriteListContentPane" dojoType="dijit.layout.ContentPane" region="center"></div>';
+      $result .= '  <table width="100%">';
+      
+      $fav=new FavoriteProjectList();
+      $crit=array('idUser'=> $user->id);
+      $orderByFilter = "name ASC";
+      $favoriteList=$fav->getSqlElementsFromCriteria($crit,false,null,$orderByFilter);
+      $favoriteProjFlatList = implode(',', SqlList::getListWithCrit('FavoriteProjectList', array('idUser'=>$user->id), 'id'));
+      $fontSize = (!isNewGui())?'font-size:8pt;':'';
+      foreach ($favoriteList as $favoriteProject){
+        $favoriteProjectItemList = SqlList::getListWithCrit('FavoriteProjectItem', array('idFavoriteProjectList'=>$favoriteProject->id), 'idProject');
+        $favoriteProjectItemList = implode(',', $favoriteProjectItemList);
+        $selectedBackgroundColor = ($favoriteProject->id == $idFavoriteProjectList)?'favoriteProjectListSelected':'';
+        $result .= '<tr class="ganttTaskrow" id="favoriteList'.$favoriteProject->id.'">';
+        $result .= '<input type="hidden" id="favoriteProjectList_'.$favoriteProject->id.'" name="favoriteProjectList_'.$favoriteProject->id.'" value="'.$favoriteProjectItemList.'" />';
+        $result .= '  <td style="cursor:pointer;'.$fontSize.'font-style:italic;padding:5px;height: 18px;"';
+        $result .= '    class="filterData '.$selectedBackgroundColor.'" onClick="selectFavoriteProjectList(\''.$favoriteProjectItemList.'\', \''.$favoriteProject->id.'\', false, true, true);" title="'.i18n("selectStoredFavorite").'">';
+        $result .= '     <span id="favoriteProjectName_'.$favoriteProject->id.'" style="position:relative;top:2px;margin:3px">'.htmlEncode($favoriteProject->name).'</span></td>';
+        $result .= '  </td>';
+        $result .= '  <td class="filterData" width="16px" align="center" style="height: 16px;">';
+        $result .= '     <a onClick="selectFavoriteProjectList(\''.$favoriteProjectItemList.'\', \''.$favoriteProject->id.'\', true)" title="'.i18n('editStoredFavorite').'">';
+        $result .=         formatSmallButton('Edit');
+        $result .= '     </a>';
+        $result .= '  </td>';
+        $result .= '  <td class="filterData" width="16px" align="center" style="height: 16px;">';
+        $result .= '    <a src="css/images/smallButtonRemove.png" onClick="removeFavoriteProjectListFromSelector(\''.htmlEncode($favoriteProject->id).'\')" title="'.i18n('removeStoredFavorite').'">';
+        $result .=        formatSmallButton('Remove');
+        $result .= '    </a>';
+        $result .= '  </td>';
+        $result .= '</tr>'; 
+      }
+      $result .= '</table></div>';
+      $result .= '</div>';
+      $result .= '<div dojoType="dijit.TitlePane" id="projectSelectorProjectTitlePane" open="'.( array_key_exists("projectSelectorProjectTitlePane", $collapsedList)?'false':'true').'"';
+      $result .= 'onHide="saveCollapsed(\'projectSelectorProjectTitlePane\');" onShow="saveExpanded(\'projectSelectorProjectTitlePane\');" title="'.i18n('tabProjects').'" style="width:100%;padding-bottom:5px;">';
+      $heightSelectorList=getSessionValue('screenHeight')-400;
+      $projTitlePanMaxHeight = (array_key_exists("projectSelectorFavoriteTitlePane", $collapsedList))?'max-height:'.$heightSelectorList.'px;':'';
+      $result .= '<div id="projectTitlePaneDiv" style="overflow-x:hidden;overflow-y:auto;'.$projTitlePanMaxHeight.'">';
     }
     if(isNewGui()){
-      $result .='<table style="width:100%;margin-top:10px;" class="smoothResize">';
+      $result .= '<table style="width:100%;margin-top:15px;" class="smoothResize">';
     }else{
       $result .='<table style="width:100%;">';
     }
@@ -1120,6 +1247,8 @@ static function isTheLeaveProject($id=null) {
           if(pq_strpos(getSessionValue('project'), ',') != null){
             $arrayProj = pq_explode(',', getSessionValue('project'));
             if(in_array($idPrj, $arrayProj))$checked='checked';
+          }else if($editFavoriteProject != '' and count($favProjItemList)>0 and in_array($idPrj, $favProjItemList)){
+            $checked='checked';
           }else{
             if (getSessionValue('project')==$idPrj) $checked='checked';
             else $checked='';
@@ -1134,7 +1263,9 @@ static function isTheLeaveProject($id=null) {
         	}
           $result .='<tr id="forSearchBar" style="height:25px">';
           if(!$drawCheckBox){
-            $result .='<td valign="top" width="20px"><div dojoType="dijit.form.CheckBox" type="checkbox" class="projectSelectorCheckbox" style="float:left;position:relative;left:'.$left.'px" id="checkBoxProj'.$idPrj.'" value="'.$idPrj.'" '.$checked.'>';
+            $result .='<td valign="top" width="20px">';
+            $result .='<div dojoType="dijit.form.CheckBox" type="checkbox" class="projectSelectorCheckbox" onchange="checkProjectToSelect();"';
+            $result .= 'style="float:left;position:relative;left:'.$left.'px" id="checkBoxProj'.$idPrj.'" value="'.$idPrj.'" '.$checked.'>';
             $result .='</div>';
             $result .='<input type="hidden" id="projectSelectorName'.$idPrj.'" name="projectSelectorName'.$idPrj.'" value="'.$prj->name.'"></td>';
           }
@@ -1148,31 +1279,32 @@ static function isTheLeaveProject($id=null) {
             if ($outMode!='pdf') $result .='<td valign="top" width="20px"><div style="'.$styleMargin.'" class="imageColorNewGuiNoSelection iconProject iconSize16"></div></td>';
             else $result .='<td valign="top" width="20px"><img src="../view/css/images/iconList16.png" style="width:16pxheight:16px" />&nbsp;</td>';
           }
-          $favProjItem = new FavoriteProjectItem();
-          $favProjItemList = array();
-          if(getSessionValue('favoriteProjectsArray')){
-            $favProjItemList = pq_explode(',', getSessionValue('favoriteProjectsArray'));
-          }
+          $displayFavoriteChecked = 'display:none';
           if(count($favProjItemList)>0 and in_array($idPrj, $favProjItemList)){
           	$mode='remove';
           	$color = 'color:var(--color-secondary);';
           	$class="menu__as__Fav";
+          	//$displayFavoriteChecked = '';
           }else{
             $color = 'color:black;';
           	$mode='add';
           	$class="menu__add__Fav";
           }
           $isFavoriteSelected = ($idFavoriteProjectList != '')?1:0;
-          $mouseover = "dojo.byId('divFavProject_$idPrj').style.display=''";
-          $mouseout = "dojo.byId('divFavProject_$idPrj').style.display='none'";
+          $mouseover = "";
+          $mouseout = "";
+//           if(!$idFavoriteProjectList){
+//             $mouseover = "highlightFavoriteProject($idPrj, 'mouseover');";
+//             $mouseout = "highlightFavoriteProject($idPrj, 'mouseout');";
+//           }
           if ($selectField==null) {
-            if ($noVAlignTop) $result .= '<td class="'.(($outMode=='html' or $outMode=='pdf')?'':'display').'"  NOWRAP><div style="float:left;width:'.(intval($displayWidth)-250).'px">' . (($outMode=='html' or $outMode=='pdf')?htmlEncode($prj->name):htmlDrawLink($prj)).'</div>';
-            else $result .= '<td valign="top" class="'.(($outMode=='html' or $outMode=='pdf')?'':'display').'"  NOWRAP><div style="float:left;width:'.(intval($displayWidth)-250).'px">' . (($outMode=='html' or $outMode=='pdf')?htmlEncode($prj->name):htmlDrawLink($prj)).'</div>'; 
+            if ($noVAlignTop) $result .= '<td class="classLinkName '.(($outMode=='html' or $outMode=='pdf')?'':'display').'"  NOWRAP><div style="float:left;width:'.(intval($displayWidth)-250).'px">' . (($outMode=='html' or $outMode=='pdf')?htmlEncode($prj->name):htmlDrawLink($prj)).'</div>';
+            else $result .= '<td valign="top" class="classLinkName '.(($outMode=='html' or $outMode=='pdf')?'':'display').'"  NOWRAP><div style="float:left;width:'.(intval($displayWidth)-250).'px">' . (($outMode=='html' or $outMode=='pdf')?htmlEncode($prj->name):htmlDrawLink($prj)).'</div>'; 
             
             $objStatus=new Status($prj->idStatus);
             $result .=  '<div class="colorNameData" style="float:right;width:150px;height:20px;">'.colorNameFormatter($objStatus->name."#split#".$objStatus->color).'</div>';
           } else if (! $reachLine) {
-            $result .= '<td style="#AAAAAA;" NOWRAP><div class="'.(($outMode=='html' or $outMode=='pdf')?'':'display').'" style="width: 100%;">' . htmlEncode($prj->name) . '</div>';
+            $result .= '<td style="#AAAAAA;" NOWRAP><div class="classLinkName '.(($outMode=='html' or $outMode=='pdf')?'':'display').'" style="width: 100%;">' . htmlEncode($prj->name) . '</div>';
           } else {
             $clickEvent=' onClick=\'setSelectedProject("' . htmlEncode($prj->id) . '", "' . htmlEncode($prj->name,'parameter') . '", "' . $selectField . '");\' ';
             if ($outMode=='html' or $outMode=='pdf') $clickEvent='';
@@ -1181,12 +1313,15 @@ static function isTheLeaveProject($id=null) {
             if(isNewGui()){
               $borderNone="border:none !important;";
             }
-            $funcuntionFav="event.stopPropagation();addRemoveFavProject('$idPrj', '$mode');";
-            $result .='<div id="labelProject_'.$idPrj.'" ' . $clickEvent . ' class="'.(($outMode=='html' or $outMode=='pdf')?'':'menuTree').'" style=" '.$borderNone.' width:100%;'.$color.'height:25px;margin-top:-6px;padding-top:5px" onmouseover="'.$mouseover.'" onmouseleave="'.$mouseout.'">';
+            $funcuntionFav="";
+//             $funcuntionFav="event.stopPropagation();addRemoveFavProject('$idPrj', '$mode');";
+            $result .='<div id="labelProject_'.$idPrj.'" ' . $clickEvent . ' class="classLinkName '.(($outMode=='html' or $outMode=='pdf')?'':'menuTree').'" style=" '.$borderNone.' width:100%;'.$color.'height:25px;margin-top:-6px;padding-top:5px" onmouseover="'.$mouseover.'" onmouseleave="'.$mouseout.'">';
             $result .='<table style="width:100%;">';
             $result .='<tr>';
             $result .='<td>'.htmlEncode($prj->name).'</td>';
-            $result.='<td style="width:30px;height:20px;"><div id="divFavProject_'.$idPrj.'" style="top:-5px;float:right;right:1px;display:none;" class="'.$class.'" onclick="'.$funcuntionFav.'" ></div></td>';
+            $result .='<td style="width:30px;height:20px;">';
+            if(!$idFavoriteProjectList)$result .='<div id="divFavProject_'.$idPrj.'" style="top:-5px;float:right;right:1px;'.$displayFavoriteChecked.'" class="'.$class.'" onclick="'.$funcuntionFav.'" ></div>';
+            $result .='</td>';
             $result .='</tr>';
             $result .='</table>';
             $result .='<input type="hidden" id="isFavoriteSelected" name="isFavoriteSelected" value="'.$isFavoriteSelected.'"/>';
@@ -1202,6 +1337,10 @@ static function isTheLeaveProject($id=null) {
       }
     }
     $result .='</table>';
+    if ($selectField!=null and ! $recursiveCall) {
+      $result .=' </div>';
+      $result .='</div>';
+    }
     return $result;
   }
 
@@ -1492,6 +1631,13 @@ static function isTheLeaveProject($id=null) {
      or $this->localToGlobalConversion!=$old->localToGlobalConversion 
         or $this->localCurrencyPosition!=$old->localCurrencyPosition) {
        $this->displachCurrencyToSubProjects();
+    }
+    $selectedProj = pq_explode(',', getSessionValue('project'));
+    if (count($selectedProj)>0 and $selectedProj[0]!='*'){
+      if (!$this->idProject or (!in_array($this->idProject, $selectedProj))){
+        $selectedProj[] = $this->id;
+        setSessionValue('project', implode(',', $selectedProj));
+      }
     }
     
     return $result; 

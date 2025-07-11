@@ -77,6 +77,7 @@ class Type extends SqlElement {
   public static $_cacheClassList=array();
   public static $_cacheRestrictedTypesClass;
   public static $_cacheListRestritedTypesForClass;
+  private static $_cacheColor=array();
   
 // MTY - LEAVE SYSTEM
   private $___dFieldsAttributes=array();
@@ -402,6 +403,16 @@ class Type extends SqlElement {
         }
         return parent::copy();
         
+    }
+    
+    public function getColor() {
+      if (isset(self::$_cacheColor[$this->id])) return self::$_cacheColor[$this->id];
+      $color="#FFFFFF";
+      if ($this->color) {
+        $color=$this->color;
+      }
+      self::$_cacheColor[$this->id]=$color;
+      return $color;
     }
 // MTY - LEAVE SYSTEM
 }?>

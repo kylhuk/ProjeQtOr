@@ -75,14 +75,14 @@ if(isNewGui()){
 //        }
        $badgeTab='';
        
-       echo 'title="'.i18n('skateholders').'<div id=\'startGuideEnvironmentalTabBadge\' class=\'startGuideFirstTabBadge\' >'.$badgeTab.'</div>"';
+       echo 'title="'.i18n('stakeholders').'<div id=\'startGuideEnvironmentalTabBadge\' class=\'startGuideFirstTabBadge\' >'.$badgeTab.'</div>"';
        echo 'style="overflow: hidden;" data-dojo-props="'.(($lastTab == 'startGuideEnvironmentalTab')?'selected:true':'').'">';
        echo '<script type="dojo/connect" event="onShow" args="evt">
               dijit.byId(\'startGuideTabContainer\').watch("selectedChildWidget", function(name, oldValue, newValue) {
                 saveDataToSession(\'startGuideTab\', newValue.id,true);
               });
             </script>';
-       echo '<div class="siteH2" align="left" style="width:100%;padding:25px 0px 10px 10px;color:#656565 !important"><b>'.i18n("startGuideActionMenu").' "'.i18n('skateholders').'"</b></div>';
+       echo '<div class="siteH2" align="left" style="width:100%;padding:25px 0px 10px 10px;color:#656565 !important"><b>'.i18n("startGuideActionMenu").' "'.i18n('stakeholders').'"</b></div>';
        echo '<div class="simple-grid">';
           $arrayItem=array('Client','Contact', 'Resource', 'User');
           $order = 1;

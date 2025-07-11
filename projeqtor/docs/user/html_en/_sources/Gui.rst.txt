@@ -48,14 +48,13 @@ ProjeQtOr interface is divided into several areas.
 
 
 
+The splitters allow resizing areas in the interface. Their position is saved and retrieved on each connection.
 
-.. note::
 
-   .. figure:: /images/GUI/GUI_SCR_Splitters.png
-      :scale: 25 %
-      :alt: Windows splitters
+.. figure:: /images/GUI/GUI_SCR_Splitters.png
+   :scale: 25 %
+   :alt: Windows splitters
       
-      The splitters allow resizing areas in the interface. Their position is saved and retrieved on each connection.
 
 
 
@@ -76,7 +75,7 @@ Top bar
    
    |two| :ref:`New tab<buttons-newtab>` 
    
-   |three|  :ref:`Project selector<project-selector>` 
+   |three|  :ref:`Project selector and favorites<project-selector>` 
    
    |four| :ref:`Instance name<name-topbar>` 
    
@@ -127,6 +126,18 @@ You can therefore have a different project selected in the selector on each tab,
 Project selector
 ****************
 
+.. topic:: Interface areas:
+
+   :ref:`Project selector parameters<projectselector-parameters>`
+   
+   :ref:`Format selector<projectselector-format>` 
+   
+   :ref:`Favorites project<favorites-projects>` 
+   
+   :ref:`Other<projectselector-other>` 
+   
+   
+   
 .. figure:: /images/GUI/GUI_ZONE_ProjectSelector.png
    :alt: Project Selector  
    
@@ -134,9 +145,14 @@ Project selector
    
 The selector allows you to select the project to work on by limiting the visibility of all screens to the items in the selected project, including sub-projects if any.
 
-When you create a new item, this sets the project scope automatically.
+When you create a new item, this sets the field of project automatically.
 
-
+.. figure:: /images/GUI/GUI_BOX_ListProjects.png
+   :alt: Project selector
+   
+   Project selector
+   
+   
 
 .. note:: 
 
@@ -149,8 +165,10 @@ When you create a new item, this sets the project scope automatically.
 
 
 
+.. _projectselector-parameters:
 
-.. rubric:: Project selector parameters
+Project selector parameters
+---------------------------
 
 Click on |Parameter| to display the project selector parameters dialog box.
    
@@ -169,6 +187,7 @@ Click on |Parameter| to display the project selector parameters dialog box.
 * Other
 
 
+.. _projectselector-format:
 
 Format selector
 ---------------
@@ -269,63 +288,52 @@ Some application settings can be refreshed using this button without having to d
 Favorites project
 -----------------
 
-You can create several favorites project list in the project's selector.
+You can create several favorites project list in the project's selector and in different ways.
 
-.. figure:: /images/GUI/GUI_ZONE_FavoritesSelection.png
-   :alt: Project selector favorites
-      
-   project selector favorites
+To create a favoris you can use the star |Star| and the |Favoris|
+
+
+Create a List - Drop-down menu
+==============================
+
    
+* Check the boxes of the projects you want to add to your favorites. 
    
-Click on the |Star| displayed to the right of the project name to select it and add it to your favorites list.
-
-You can only create a favorites list from the layout representing the WBS structure in the previous tab but the lists are compatible with all presentation modes
-
-.. seealso:: 
-
-   :ref:`Standard display mode<menu-display>`. 
-
-
-* Click on |Parameter| to to be able to save your list.
-
-* Name the liste of favoris 
+* Name the liste of favoris and click on |Favoris|
 
 * Click on |Save| to save your list
 
-      
-.. figure:: /images/GUI/GUI_ZONE_FavoritesList.png
-   :alt: Favorites list in project selector
-      
-   Favorites list in project selector
-      
+* Your list is displayed 
+
+* Click on |Undo| to clear the last selections and the name entered
+
+
+
+.. tip:: 
          
-* When a project favorites list is selected it is highlighted in the secondary color of your session.
-* When the list of projects is limited to favorites, we also display recursively, the visible parents of favorite projects and the visible subprojects of favorite projects whether they are favorites or not.
-
-
-
-.. figure:: /images/GUI/GUI_BOX_SelectorFavs.png
-   :alt: Example display for project selector favorites
-      
-   Example display for project selector favorites   
+   * When you select a subproject as a favorite, you automatically see its parent. Even if it has not been selected.
+   
+   * On favorite 1, the parent is selected. The subprojects are displayed.
+   
+   * On favorite 3, one of the subprojects is selected. The parent is displayed.
+   
+   .. image:: /images/GUI/GUI_ZONE_ListName_favorites.png
+         
+   .. image:: /images/GUI/GUI_ZONE_FavorisRecursif.png
+         
    
    
 
-When a favorites list is enabled, "all projects", is replaced with **All favorite projects**. 
+* Click on |Edit| to edit your favorites. 
 
-You can limit your list of favorites or display them in their entirety by clicking on this option. 
+* The list of all projects is displayed again and the projects in the list to be edited are in secondary color.
 
-This will be the display default.
+* You can add projects by checking the boxes
 
-Update your favorites list
-==========================
+* Click on |Save| to save the updated list.
 
-* Select the projects to add to your list by checking the corresponding boxes.
-* Click on the |Parameter| to access the favorites management tab.
-* Enter the name of an existing list.
-* Click on the turn current selection into favorite button.
-
-
+ 
+.. _projectselector-other:
 
 Other
 -----
@@ -1083,6 +1091,7 @@ The filters
 
 The filters popup offers different levels of filters. Simple filters, permanent or not, advanced filters with the possibility of adding many criteria.
 
+
 .. figure:: /images/GUI/GUI_BOX_Filters.png
    :alt: Filters
       
@@ -1208,7 +1217,7 @@ With this feature you display at the top of the list box the sum of the category
 The advanced filters
 ====================
     
-Click on the button to display the advanced filters window.
+Click on ``edit`` to open the advanced filters window.
       
 .. figure:: /images/GUI/GUI_BOX_AdvancedFilters.png
    :alt: Advanced filters
@@ -1218,32 +1227,47 @@ Click on the button to display the advanced filters window.
       
 .. rubric:: Active filter
       
-Define the clauses of filter or sort in “Add a filter or sort clause”.
+* Define the clauses of filter or sort in “Add a filter or sort clause”.
          
-Select the name of the field, the operator and the value to the clause.
+* Select the name of the field, the operator and the value to the clause.
+
+* You can open |ParentheseOpen|. 
+
+* The button changes if a group is open with |ParentheseClos| and/or based on criteria.
+
+
+.. figure:: /images/GUI/GUI_BOX_FilterCreation.png
+   :alt: creating a filter
+   
+   creating a filter
          
 * Click on |Add| to add additional criteria.
                
-* Name the filter to save and click on |Save| for later use.
-           
+* Name the filter to save.
+
 * Choose a particular layout in the recorded layout's list to apply the filter. The chosen layout will be displayed with the filter applied directly. 
-            
-* Click on |Search| to filter the filter list.
-      
-* Click on OK button to apply the filter.
-         
-* Click on Cancel button to revert to previous filter.
+
+* Click on |Save| for later use.
+
+* The filter is stored immediately in the saved filters. 
+
+   - Click on |Star| to select the filter that will be applied by default to each connection.
+   - Click on |Share| to shared the filter with your collaborators.
+   - Click on |Trash| to delete the filter.
+
+* You can select the filter from the list or click on ``apply`` to activate the filter. 
+
+* Click on ``Cancel`` to return to the item screen..
                
-* Click on Clear button to reset the active filter.
+* Click on ```Reset`` to cancel the creation of the current filter.
                
                         
 .. rubric:: Logical operator
             
-Possibility to select the logical operator OR between the criteria of a filter instead of AND.
-         
-Applies logical operator with preceeding criteria (by default AND). 
-                    
-Be careful, operator AND is applies before OR. 
+Ability to select the logical AND operator and the logical OR operator in the criteria.
+
+The logical AND operator is applied by default.
+
                     
                     
 .. rubric:: Dynamic value
@@ -1314,7 +1338,7 @@ The identifier and the name of the selected element are mandatory fields. They c
    
 The display of columns can be defined by and for the user or it can be applied by default for a particular user.
    
-* Use the switches to select or deselect the columns to display.
+* Use the checkboxes to select or deselect the columns to display.
       
 * Click on OK button to apply changes.
    
@@ -1323,8 +1347,17 @@ The display of columns can be defined by and for the user or it can be applied b
 * Click on " To Manage" button to save column layouts.
       
 The applied definition will be automatically retrieved at the next connection.
-        
 
+In the item list, you can add an "Attachments" column, which will display an icon:
+
+* if the item contains attached files
+* if the item contains notes
+* if the item contains linked items
+        
+.. figure:: /images/GUI/GUI_ZONE_ColumnsAttachments.png
+   :alt: Column attachments
+   
+   Column attachments
 
 
 

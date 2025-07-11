@@ -270,19 +270,26 @@
                 <input id="multipleUpdateValueDate" name="multipleUpdateValueDate" value=""  dojoType="dijit.form.DateTextBox" constraints="{datePattern:browserLocaleDateFormatJs}"  style="width:100px;display:none;" />
                 <input id="multipleUpdateValueTime" name="multipleUpdateValueTime" value=""  dojoType="dijit.form.TimeTextBox"   style="width:75px;display:none;margin-top:15px;" />
                 <input id="multipleUpdateColorButtonInput" name="multipleUpdateColorButtonInput" value=""  dojoType="dijit.form.TextBox"   style="width:75px;display:none;margin-top:15px;" />
-                <div id="multipleUpdateColorButton" dojoType="dijit.form.DropDownButton" style="position:relative;<?php echo (isNewGui())?'border:0 !important;width:60px;':'width:40px';?>;display:none;"
-                        title="<?php echo i18n('selectColor');?>"showlabel="false" iconClass="colorSelector" class="dropDownNoBorder">
+                <input type="color" id="multipleUpdateColorButton" name="multipleUpdateColorButton" onChange="dojo.byId('multipleUpdateColorButtonInput').value = this.value;formChanged()" value="" style="width:32px;height:32px; display:none; border-radius: 5px 5px 5px 5px; cursor: pointer; border-color: gray;"/> 
+             
+                 <!-- 
+                 old input, palette color, dosent use now,
+                 for rework need change id "multipleUpdateColorButton2" to "multipleUpdateColorButton"  and in projeqtorDialog.js 
+                 where "dojo.style(dojo.byId('multipleUpdateColorButton')," to " dojo.style(dijit.byId('multipleUpdateColorButton').domNode," 
+                 -->
+                 <div id="multipleUpdateColorButton2" dojoType="dijit.form.DropDownButton" style="position:relative;<?php echo (isNewGui())?'border:0 !important;width:60px;':'width:40px';?>;display:none;"
+                 title="<?php echo i18n('selectColor');?>"showlabel="false" iconClass="colorSelector" class="dropDownNoBorder">
                   <div dojoType="dijit.ColorPalette" style="<?php echo (isNewGui())?'border:0;':'';?>">
-                          <script type="dojo/method" event="onChange" >
-                            var fld=dojo.byId("multipleUpdateColorButton");
-                            fld.style.color=this.value;
-                            fld.style.backgroundColor=this.value;
-                            fld.value=this.value;
-                            dijit.byId('multipleUpdateColorButtonInput').set('value',this.value);
-                          </script>
+                    <script type="dojo/method" event="onChange" >
+                      var fld=dojo.byId("multipleUpdateColorButton");
+                      fld.style.color=this.value;
+                      fld.style.backgroundColor=this.value;
+                      fld.value=this.value;
+                      dijit.byId('multipleUpdateColorButtonInput').set('value',this.value);
+                    </script>
                   </div>
                 </div>
-               
+                
               </div>
              </td>
             </tr>

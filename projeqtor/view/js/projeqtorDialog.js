@@ -137,9 +137,9 @@ function loadDialog(dialogDiv, callBack, autoShow, params, clearOnHide, closable
    params="";
   }
   showWait();
+  var url='../tool/dynamicDialog.php?dialog='+dialogDiv+'&isIE='+((dojo.isIE)?dojo.isIE:'')+params+addTokenIndexToUrl();
   dojo.xhrPost({
-   url : '../tool/dynamicDialog.php?dialog=' + dialogDiv + '&isIE='
-       + ((dojo.isIE) ? dojo.isIE : '') + params+addTokenIndexToUrl(),
+   url : url,
    form : formName,
    handleAs : "text",
    load : function(data) {
@@ -591,7 +591,6 @@ function hideMsg(id,value){
 // =============================================================================
 
 function showPrint(page, context, comboName, outMode, orientation, attach) {
-  //console.log(page);
   showWait();
   quitConfirmed=true;
   noDisconnect=true;
@@ -4125,18 +4124,50 @@ function filterProjects() {
   }
 }
 
-function refreshProjectSelectorList(skipRefreshPlanningList) {
+function validateSearchProject(){
+  if(event.keyCode != '13')return;
+  var input = dojo.byId('projectFilterInput');
+  var filter = input.value.toLowerCase();
+  var projectTr = document.querySelectorAll("tr[id^='forSearchBar']");
+  if (projectTr.length === 0)return;
+  for (var i = 0; i < projectTr.length; i++) {
+      var project = projectTr[i];
+      if (project.innerText.toLowerCase().indexOf(filter) > -1) {
+        dojo.query('.projectSelectorCheckbox .dijitCheckBoxInput', project).forEach(function(checkbox){
+          dijit.byId(checkbox.id).set('checked', true);
+        });
+      }
+  }
+  selectedMultiProject();
+}
+
+function refreshProjectSelectorList(skipRefreshPlanningList, openDropDown, hideParam) {
   if (skipRefreshPlanningList==null || skipRefreshPlanningList==undefined) skipRefreshPlanningList=false;
+  if (openDropDown==null || openDropDown==undefined) openDropDown=false;
+  if (hideParam==null || hideParam==undefined) hideParam=true;
   dojo.xhrPost({
     url : "../tool/refreshVisibleProjectsList.php"+addTokenIndexToUrl('?'),
     load : function() {
-      loadContent('../view/menuProjectSelector.php', 'projectSelectorDiv');
+      var callback = function(){
+        if(openDropDown){
+          dijit.byId('selectedProject').openDropDown();
+        }
+      };
+      loadContent('../view/menuProjectSelector.php', 'projectSelectorDiv', null,null,null,null,null,callback);
       if (dijit.byId('idProjectPlan')) {
-        if (! skipRefreshPlanningList) refreshList('planning', null, null, dijit.byId('idProjectPlan').get('value'), 'idProjectPlan', false);
+        if (! skipRefreshPlanningList){
+		  var projectPlanValue = dijit.byId('idProjectPlan').get('value');
+	      var objectIdValue = dojo.byId('objectId').value;
+		  if (projectPlanValue.length > 0 && objectIdValue) {
+			projectPlanValue.push(objectIdValue);
+			saveDataToSession('projectSelected',dijit.byId('idProjectPlan').get('value'),true);
+		  }
+		  refreshList('planning', null, null, dijit.byId('idProjectPlan').get('value'), 'idProjectPlan', false);
+		}
       }
     }
   });
-  if (dijit.byId('dialogProjectSelectorParameters')) {
+  if (hideParam && dijit.byId('dialogProjectSelectorParameters')) {
     dijit.byId('dialogProjectSelectorParameters').hide();
   }
 }
@@ -5775,7 +5806,7 @@ function multipleUpadteSelectAtribute(value) {
         dojo.byId('dataTypeSelected').value=dataType;
         if (dataType == "bool") {
           filterType="bool";
-          dojo.style(dijit.byId('multipleUpdateColorButton').domNode, {
+          dojo.style(dojo.byId('multipleUpdateColorButton'), {
             display : 'none'
           });
           dojo.style(dijit.byId('newMultipleUpdateValue').domNode, {
@@ -5812,7 +5843,7 @@ function multipleUpadteSelectAtribute(value) {
           });
         }else if(dataType == "color"){
           filterType="color";
-          dojo.style(dijit.byId('multipleUpdateColorButton').domNode, {
+          dojo.style(dojo.byId('multipleUpdateColorButton'), {
             display : 'block'
           });
           dojo.style(dijit.byId('newMultipleUpdateValue').domNode, {
@@ -5849,7 +5880,7 @@ function multipleUpadteSelectAtribute(value) {
           });
         } else if (dataType == "decimal" || dataType=="numeric") {
           filterType=dataType;
-          dojo.style(dijit.byId('multipleUpdateColorButton').domNode, {
+          dojo.style(dojo.byId('multipleUpdateColorButton'), {
             display : 'none'
           });
           dojo.style(dijit.byId('newMultipleUpdateValue').domNode, {
@@ -5976,7 +6007,7 @@ function multipleUpadteSelectAtribute(value) {
                 });
           }
           dojo.removeAttr('multipleUpdateValueList','multiple');
-          dojo.style(dijit.byId('multipleUpdateColorButton').domNode, {
+          dojo.style(dojo.byId('multipleUpdateColorButton'), {
             display : 'none'
           });
           dojo.style(dijit.byId('newMultipleUpdateValue').domNode, {
@@ -6020,7 +6051,7 @@ function multipleUpadteSelectAtribute(value) {
           });
         } else if (dataType == "date" || dataType=="datetime" || dataType=="time") {
           filterType="date";
-          dojo.style(dijit.byId('multipleUpdateColorButton').domNode, {
+          dojo.style(dojo.byId('multipleUpdateColorButton'), {
             display : 'none'
           });
           dojo.style(dijit.byId('newMultipleUpdateValue').domNode, {
@@ -6071,7 +6102,7 @@ function multipleUpadteSelectAtribute(value) {
             dojo.byId('multipleUpdateOperateur').insertAdjacentElement('afterbegin',spanVal);
           }
           dojo.byId('multipleUpdateOperateur').visibility = 'hidden';
-          dojo.style(dijit.byId('multipleUpdateColorButton').domNode, {
+          dojo.style(dojo.byId('multipleUpdateColorButton'), {
             display : 'none'
           });
           dojo.style(dijit.byId('newMultipleUpdateValue').domNode, {
@@ -6102,7 +6133,7 @@ function multipleUpadteSelectAtribute(value) {
           });
         }else {
           filterType="text";
-          dojo.style(dijit.byId('multipleUpdateColorButton').domNode, {
+          dojo.style(dojo.byId('multipleUpdateColorButton'), {
             display : 'none'
           });
           dojo.style(dijit.byId('newMultipleUpdateValue').domNode, {
@@ -6139,7 +6170,7 @@ function multipleUpadteSelectAtribute(value) {
         }
       },
       onError : function(err) {
-        dojo.style(dijit.byId('multipleUpdateColorButton').domNode, {
+        dojo.style(dojo.byId('multipleUpdateColorButton'), {
           display : 'none'
         });
         dojo.byId('multipleUpdateOperateur').visibility = 'hidden';
@@ -6182,7 +6213,7 @@ function multipleUpadteSelectAtribute(value) {
     
   } else {
     dojo.byId('multipleUpdateOperateur').visibility = 'hidden';
-    dojo.style(dijit.byId('multipleUpdateColorButton').domNode, {
+    dojo.style(dojo.byId('multipleUpdateColorButton'), {
       display : 'none'
     });
     dojo.style(dijit.byId('newMultipleUpdateValue').domNode, {

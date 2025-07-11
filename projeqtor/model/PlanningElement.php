@@ -428,7 +428,6 @@ class PlanningElement extends SqlElement {
         $this->idProject=$refObj->idProject;
       }
     }
-    
     if (! $this->idProject and $this->refType=='Project') {
     	$this->idProject=$this->refId;
     }
@@ -1674,6 +1673,12 @@ class PlanningElement extends SqlElement {
         $result.='<br/>' . i18n('errorIdleWithLeftWork');
       }
     }
+    // Set default duration
+    $pmName='id'.$this->refType.'PlanningMode';
+    if (! $this->validatedDuration and property_exists($this,$pmName) and PlanningMode::isFixedDuration($this->$pmName)) {  
+      $pm=new PlanningMode($this->$pmName);
+      if ($pm->defaultDuration) $this->validatedDuration=$pm->defaultDuration;
+    }
     $stat=array('initial','validated','planned','real');
     foreach ($stat as $st) {
       $start=$st.'StartDate';
@@ -1948,26 +1953,29 @@ class PlanningElement extends SqlElement {
       $returnValue .= '<input type="hidden" id="lastPlanStatus" value="OK" />';
       return $returnValue;
     }
-    
     $dest=new PlanningElement($destId);
-    if ($dest->topRefType!=$this->topRefType
-    or $dest->topRefId!=$this->topRefId) {    // Change parent
+    $destTopRefType = ($dest->refType == 'Project' and $mode == 'after')?$dest->refType:$dest->topRefType;
+    $destTopRefType = ($dest->refType == 'Project' and $this->refType == 'Project')?$dest->topRefType:$destTopRefType;
+    $destTopRefId = ($dest->refType == 'Project' and $mode == 'after')?$dest->refId:$dest->topRefId;
+    $destTopRefId = ($dest->refType == 'Project' and $this->refType == 'Project')?$dest->topRefId:$destTopRefId;
+    if ($destTopRefType!=$this->topRefType
+    or $destTopRefId!=$this->topRefId) {    // Change parent
       $objectClass=$this->refType;
       $objectId=$this->refId;
       $task=new $objectClass($objectId);     // Object to move
-      if ($dest->topRefType=="Project") {    // Move directly under project
-      	$task->idProject=$dest->topRefId;
+      if ($destTopRefType=="Project") {    // Move directly under project
+      	$task->idProject=$destTopRefId;
       	if (property_exists($task, 'idActivity')) {
       		$task->idActivity=null;
       	}
       	$changeParent="project";
       	$status="OK";
-      } else if ($dest->topRefType=="Activity" and property_exists($task, 'idActivity')) {  // Move under (new) activity
+      } else if ($destTopRefType=="Activity" and property_exists($task, 'idActivity')) {  // Move under (new) activity
       	$task->idProject=$dest->idProject;   // Move to same project
       	$task->idActivity=$dest->topRefId;   // Move under same activity
       	$changeParent='activity';
       	$status="OK";
-      } else if (! $dest->topRefType and $objectClass=='Project') { // Moving a project to root
+      } else if (! $destTopRefType and $objectClass=='Project') { // Moving a project to root
       	$task->idProject=null;
       	$changeParent='root';
       	$status="OK";
@@ -1991,8 +1999,8 @@ class PlanningElement extends SqlElement {
       $peName=get_class($task).'PlanningElement';
       if ($peName=='PeriodicMeetingPlanningElement') $peName='MeetingPlanningElement';
       $oldParentId=$task->$peName->topId;
-      $task->$peName->topRefType=$dest->topRefType;
-      $task->$peName->topRefId=$dest->topRefId;
+      $task->$peName->topRefType=$destTopRefType;
+      $task->$peName->topRefId=$destTopRefId;
       $task->$peName->topId=$dest->topId;
     	$resultTask=$task->save();
     	if (pq_stripos($resultTask,'id="lastOperationStatus" value="OK"')>0 ) {
@@ -2048,7 +2056,6 @@ class PlanningElement extends SqlElement {
       $returnValue=i18n('moveDone');
       $status="OK";
     } 
-      
     $returnValue .= '<input type="hidden" id="lastOperation" value="move" />';
     $returnValue .= '<input type="hidden" id="lastOperationStatus" value="' . $status . '" />';
     $returnValue .= '<input type="hidden" id="lastPlanStatus" value="OK" />'; // Must send OK to refresh planning (and revert move) 
@@ -2177,6 +2184,14 @@ class PlanningElement extends SqlElement {
   
   public function renumberWbs($force=false,$orderByPriority=false) {
     if (PlanningElement::$_noDispatch and !$force) return;
+    // Before reorderring, ensure Administrative projects are placed at first position
+    $pe=new PlanningElement();$peTable=$pe->getDatabaseTableName();
+    $p=new Project();$pTable=$p->getDatabaseTableName();
+    $t=new Type();$tTable=$t->getDatabaseTableName();
+    $selectProjId="select p.id from $pTable p left join $tTable t on p.idProjectType=t.id where t.code='ADM'";
+    $queryAdmPe="update $peTable pe set priority=0 where pe.refType='Project' and pe.refId in ($selectProjId)";
+    if ($orderByPriority) SqlDirectElement::execute($queryAdmPe);
+    
     $countChangedWbs = 0;
   	if ($this->id) {
   		$where="topRefType='" . $this->refType . "' and topRefId=" . Sql::fmtId($this->refId) ;

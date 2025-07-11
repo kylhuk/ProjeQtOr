@@ -92,7 +92,7 @@ class ImputationLine {
    */
   function __destruct() {}
 
-  static function getLines($resourceId, $rangeType, $rangeValue, $showIdle, $showPlanned=true, $hideDone=false, $hideNotHandled=false, $displayOnlyCurrentWeekMeetings=false, $hidePausedItem=true) {
+  static function getLines($resourceId, $rangeType, $rangeValue, $showIdle, $showPlanned=true, $hideDone=false, $hideNotHandled=false, $displayOnlyCurrentWeekMeetings=false, $hidePausedItem=true,$displayProjectColorImputation=false, $displayActivityColorImputation=false) {
     SqlElement::$_cachedQuery['Assignment']=array();
     SqlElement::$_cachedQuery['PlanningElement']=array();
     SqlElement::$_cachedQuery['WorkElement']=array();
@@ -666,7 +666,7 @@ class ImputationLine {
     }
   }
 
-  static function drawLines($resourceId, $rangeType, $rangeValue, $showIdle, $showPlanned=true, $print=false, $hideDone=false, $hideNotHandled=false, $displayOnlyCurrentWeekMeetings=false, $currentWeek=0, $currentYear=0, $showId=false, $hidePausedItem=true, $hideOffDays=false) {
+  static function drawLines($resourceId, $rangeType, $rangeValue, $showIdle, $showPlanned=true, $print=false, $hideDone=false, $hideNotHandled=false, $displayOnlyCurrentWeekMeetings=false, $currentWeek=0, $currentYear=0, $showId=false, $hidePausedItem=true, $hideOffDays=false,$displayProjectColorImputation=false, $displayActivityColorImputation=false) {
     SqlElement::$_cachedQuery['Resource']=array();
     SqlElement::$_cachedQuery['ResourceAll']=array();
     SqlElement::$_cachedQuery['Project']=array();
@@ -752,12 +752,14 @@ class ImputationLine {
     }
 
     $colSum=array();
+    $isPlannedWork = array();
 //     $lastWeekPeriod=null;
 //     $lastMonthPeriod=null;
     $lockedDays=array();
     $curDate=$startDate;
     for ($i=1; $i<=$nbDays; $i++) {
       $colSum[$i]=0;
+      $isPlannedWork[$i] = false;
 //       $weekPeriodCrit=getWeekNumberFromDate($curDate);
 //       $monthPeriodCrit=pq_substr($curDate, 0,4).pq_substr($curDate, 5,2);
 //       if ($lastWeekPeriod==null or $lastWeekPeriod->periodValue!=$weekPeriodCrit) {
@@ -778,7 +780,7 @@ class ImputationLine {
       $width=preg_replace('/[^0-9]/', '', pq_nvl($width)); // only allow digits
       $width=($width)-155-30;
     }
-    $tab=ImputationLine::getLines($resourceId, $rangeType, $rangeValue, $showIdle, $showPlanned, $hideDone, $hideNotHandled, $displayOnlyCurrentWeekMeetings, $hidePausedItem);
+    $tab=ImputationLine::getLines($resourceId, $rangeType, $rangeValue, $showIdle, $showPlanned, $hideDone, $hideNotHandled, $displayOnlyCurrentWeekMeetings, $hidePausedItem,$displayProjectColorImputation,$displayActivityColorImputation);
     $jsonTab = json_encode($tab);
     if($projectNoteStartedBeforValidatedDate){
       $projPlanEl=new ProjectPlanningElement();
@@ -1142,7 +1144,21 @@ class ImputationLine {
           $style = 'style=display:none;';
         }
         echo '<tr '.$style.' id="line_'.$nbLine.'"class="ganttTask'.$rowType.'">';
-        echo '  <TD class="ganttName" style="width:'.($iconWidth+1).'px;min-width:'.($iconWidth+1).'px;max-width:'.($iconWidth+1).'px;">'.(($line->fromPool==1)?formatIcon('Team', 16,i18n('fromResourceTeam')):'').'</TD>';
+        $divStyleColorProject = '';
+        if ($line->refType == 'Project' and $displayProjectColorImputation){
+          $projectForColor = new Project($line->refId);
+          $colorProject = $projectForColor->getColor();
+          if ($colorProject) {
+            $divStyleColorProject = 'color:#000000;background:'.$colorProject.';height:15px;float:left;border-radius:3px';
+          }
+        }else if ($line->refType == 'Activity' and $displayActivityColorImputation){
+          $activityForColor = new Activity($line->refId);
+          $colorActivity = $activityForColor->getColor();
+          if ($colorActivity) {
+            $divStyleColorProject = 'color:#000000;background:'.$colorActivity.';height:15px;float:left;border-radius:3px';
+          }
+        }
+        echo '  <TD class="ganttName" style="width:'.($iconWidth+1).'px;min-width:'.($iconWidth+1).'px;max-width:'.($iconWidth+1).'px;"><div style="width:15px;'.$divStyleColorProject.'"></div>'.(($line->fromPool==1)?formatIcon('Team', 16,i18n('fromResourceTeam')):'').'</TD>';
         echo '<td class="ganttName" style="width:'.$iconWidth.'px;min-width:'.$iconWidth.'px;max-width:'.$iconWidth.'px;">';
         if (!$print) {
           echo '<input type="hidden" id="wbs_'.$nbLine.'" '.' value="'.htmlEncode($line->wbsSortable).'"/>';
@@ -1458,6 +1474,12 @@ class ImputationLine {
                   $colorClass = "";
                 }
               }
+              if ($manuPlan and isset($line->arrayPlannedWork[$i]->work) and  $line->arrayPlannedWork[$i]->work!="" and $valWork) $isPlannedWork[$i]=true;
+              if ($isPlannedWork[$i]) {
+                $wk = new Work;
+                $plannedWorkIsValidaded = $wk->getSqlElementsFromCriteria(array('workDate'=>$curDate,'idResource'=>$resourceId));
+                if ($plannedWorkIsValidaded) $isPlannedWork[$i] = false;
+              }
               echo ' style="width: '.($inputWidth-10).'px; text-align: center;'.$colorStyle.';'.(($manuPlan and isset($line->arrayPlannedWork[$i]->work) and  $line->arrayPlannedWork[$i]->work!="")?"color:#8080DD;font-style:italic":"color:black;ont-style:normal").';" ';
               echo ' trim="true" maxlength="4" class="input imputation '.$colorClass.'" ';
               echo ' id="workValue_'.$nbLine.'_'.$i.'"';
@@ -1478,7 +1500,7 @@ class ImputationLine {
               // echo '</script>';
               echo $keyDownEventScript;
               echo '<script type="dojo/method" event="onChange" args="evt">';
-              echo '  dispatchWorkValueChange("'.$nbLine.'","'.$i.'","'.$curDate.'");';
+              echo '  dispatchWorkValueChange("'.$nbLine.'","'.$i.'","'.$curDate.'","'.$isPlannedWork[$i].'");';
               echo '</script>';
               echo '</div>';
               echo '</div>';
@@ -1669,8 +1691,10 @@ class ImputationLine {
           echo ' class="imputationBlockedCapacity imputation"';
         } else if (round($colSum[$i], 2)> round($convertCapacity,2)) {
           echo ' class="imputationInvalidCapacity imputation"';
-        } else if (round($colSum[$i], 2)<round($convertCapacity,2)) {
+        } else if (round($colSum[$i], 2)<round($convertCapacity,2) and (!$isPlannedWork[$i] or $colSum[$i]==0)) {
           echo ' class="displayTransparent imputation"';
+        } else if ($isPlannedWork[$i]){
+          echo ' class="imputationPlannedWorkCapacity imputation"';
         } else {
           echo ' class="imputationValidCapacity imputation"';
         }

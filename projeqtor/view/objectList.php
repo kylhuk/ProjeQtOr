@@ -1965,7 +1965,7 @@ $listStatus = $object->getExistingStatus();
     }
     if(dojo.byId('searchFromObject')){
       dojo.byId('searchFromObject').style.display = '';
-      if(className === 'Project'){
+      if(0 && className === 'Project'){ // PBER #10182
         dojo.byId('searchFromObject').setAttribute('onClick', 'noRefresh=true;gotoElement(\''+className+'\', \''+objectId+'\' ,false, false,\'planning\',false)');
       }else{
         dojo.byId('searchFromObject').setAttribute('onClick','directSelectProject(\''+className+'\', \''+objectId+'\' ,true, true)');

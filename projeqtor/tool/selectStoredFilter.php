@@ -75,7 +75,7 @@ if (is_array($filter->_FilterCriteriaArray)) {
     //Old
     //$filterArray[]=array("disp"=>$arrayDisp,"sql"=>$arraySql);
   	//New
-  	$filterArray[]=array("disp"=>$arrayDisp,"sql"=>$arraySql,"isDynamic"=>$filterCriteria->isDynamic,"orOperator"=>$filterCriteria->orOperator);
+  	$filterArray[]=array("disp"=>$arrayDisp,"sql"=>$arraySql,"isDynamic"=>$filterCriteria->isDynamic,"orOperator"=>$filterCriteria->orOperator,"isGroup"=>$filterCriteria->isGroup,"indentLevel"=>$filterCriteria->indentLevel);
   	//END CHANGE qCazelles - Dynamic filter - Ticket #78
   }
 }

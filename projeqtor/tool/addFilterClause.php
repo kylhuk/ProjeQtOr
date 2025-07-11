@@ -84,7 +84,6 @@ if (array_key_exists('filterValueList',$_REQUEST)) {
 } else {
   $filterValueList=array();
 }
-
 $FilterCompareAttribute=RequestHandler::getValue('FilterCompareAttribute');
 
 if (! array_key_exists('filterValueDate',$_REQUEST)) {
@@ -124,13 +123,15 @@ if (! array_key_exists('filterCompareParameter', $_REQUEST)) {
 else {
   $filterCompareParameter=true;
 }
+$isGroup=RequestHandler::getValue('isGroup');
+$indentLevel=RequestHandler::getValue('indentLevel');
 //END ADD qCazelles - Dynamic filter - Ticket #78
 
 if (! array_key_exists('filterObjectClass',$_REQUEST)) {
   throwError('filterObjectClass parameter not found in REQUEST');
 }
 $filterObjectClass=$_REQUEST['filterObjectClass'];
-$objectClass=($filterObjectClass=='Planning' or $filterObjectClass=='GlobalPlanning' or $filterObjectClass=='VersionsPlanning' or $filterObjectClass=='ResourcePlanning')?'Activity':$filterObjectClass;
+$objectClass=($filterObjectClass=='Planning' or $filterObjectClass=='GlobalPlanning' or $filterObjectClass=='VersionsPlanning' or $filterObjectClass=='ResourcePlanning' or $filterObjectClass=='PlanningWorkPlan')?'Activity':$filterObjectClass;
 $objectClass=(pq_substr($objectClass,0,7)=='Report_')?pq_substr($objectClass,7):$objectClass;
 Security::checkValidClass($objectClass);
 
@@ -283,7 +284,7 @@ if ($idFilterAttribute and $idFilterOperator) {
         $arrayDisp["value"].="'".Sql::fmtStr(i18n($situation->name))."'";
         $arraySql["value"].="'".Sql::fmtStr($situation->name)."'";
       }else{
-        if ($idFilterAttribute=='idResourceSelect') $idFilterAttribute='idResourceAll';
+        if ($idFilterAttribute=='idResourceSelect' or $idFilterAttribute=='idContact') $idFilterAttribute='idResourceAll';
         $arrayDisp["value"].="'" . Sql::fmtStr(SqlList::getNameFromId(Sql::fmtStr(pq_substr(($foreignKey)?$foreignKey:$idFilterAttribute,2)),$val)) . "'";
         $arraySql["value"].=Security::checkValidId($val);
       }
@@ -417,7 +418,19 @@ if ($idFilterAttribute and $idFilterOperator) {
   //Old
   //$filterArray[]=array("disp"=>$arrayDisp,"sql"=>$arraySql);
   //New
-  $filterArray[]=array("disp"=>$arrayDisp,"sql"=>$arraySql,"isDynamic"=>($filterDynamicParameter ? "1" : "0"),"orOperator"=>$orOperator);
+  $index=RequestHandler::getNumeric('filterEditId');
+  $updateFilter=RequestHandler::getBoolean('updateFilter');
+  $replaceIdFilterClause=RequestHandler::getValue('replaceFilterClause');
+  if ($index!==null && $updateFilter) {
+    $isGroupUpdate = (isset($filterArray[$index])) ? $filterArray[$index]['isGroup'] : $isGroup;
+    $indentLevelUpdate = (isset($filterArray[$index])) ? $filterArray[$index]['indentLevel'] : $indentLevel;
+    $filterArray[$index]=array("disp"=>$arrayDisp,"sql"=>$arraySql,"isDynamic"=>($filterDynamicParameter ? "1" : "0"),"orOperator"=>$orOperator,"isGroup"=>$isGroupUpdate,"indentLevel"=>$indentLevelUpdate);
+  }else if ($replaceIdFilterClause!='') {
+    $isGroup=(isset($filterArray[$replaceIdFilterClause]) && $filterArray[$replaceIdFilterClause]['isGroup'] == 1)? 0 : 2;
+    $filterArray[$replaceIdFilterClause]=array("disp"=>$arrayDisp,"sql"=>$arraySql,"isDynamic"=>($filterDynamicParameter ? "1" : "0"),"orOperator"=>$orOperator,"isGroup"=>$isGroup,"indentLevel"=>0);
+  }else{
+    $filterArray[]=array("disp"=>$arrayDisp,"sql"=>$arraySql,"isDynamic"=>($filterDynamicParameter ? "1" : "0"),"orOperator"=>$orOperator,"isGroup"=>$isGroup,"indentLevel"=>$indentLevel);
+  }
   //END CHANGE qCazelles - Dynamic filter - Ticket #78
   if ($idFilterAttribute=='idle' and $filterValueCheckbox) {
     $arrayDisp["attribute"]=i18n('labelShowIdle');
@@ -442,6 +455,7 @@ if (! $comboDetail) {
 } else {
   $user->_arrayFiltersDetail[$filterObjectClass . "FilterName"]="";	
 }
+
 htmlDisplayFilterCriteria($filterArray,$name,$idLayout, $filterObjectClass); 
 
 // save user (for filter saving)

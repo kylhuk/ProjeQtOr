@@ -8,15 +8,31 @@
  * :license: BSD, see LICENSE for details.
  *
  */
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
 
+ /* ------------------------------- IMPORT CSS -------------------------------------- */
 @import url("basic.css");
-
+/* ----------------------------------------------------------------------------------- */
 
  /* ------------------------------- IMPORT FONT -------------------------------------- */
-@import url('https://fonts.googleapis.com/css?family=Oswald:700&display=swap');
-@import url('https://fonts.googleapis.com/css?family=Titillium+Web&display=swap');
-@import url('https://fonts.googleapis.com/css?family=Roboto&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Poppins:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800;1,900&display=swap');
 /* ----------------------------------------------------------------------------------- */
+
+
+
+
+
+
 
 
 
@@ -27,49 +43,53 @@
 a {
     color: #e97B2c;
     text-decoration: none;
+    margin: unset;
     }
     
 a:visited {
     color: #b25716;
     text-decoration: none;
+    margin: unset;
 }
 
 a:hover {
     text-decoration: underline;
+    margin: unset;
     }
 
 /* ------------------------------- MISE EN PAGE --------------------------------- */
 /* --------------------------------- Titres ------------------------------------- */
 
+/*
 div.body h1,
 div.body h2,
 div.body h3,
 div.body h4,
 div.body h5,
 div.body h6 {
-    font-family: 'Roboto', sans-serif;
+    font-family: 'Poppins', sans-serif;
     text-transform: uppercase;
-    font-weight: bolder;
-    letter-spacing: 1.5px;
-    margin: 30px 0px 10px -5px;
+    letter-spacing: 1px;
     clear: both;
+	margin: unset;
 }
 
 div.body h1 { 
 	font-size: 30pt; 
 	color: #000000;
-    padding: 4px 0 3px 10px;	
+	font-weight: 700;
+	margin: unset;
 	}
 
 div.body h2 { 
-    font-size: 20pt; 
+    font-size: 24pt; 
     color: #ffffff;
-    background-color: #303050; 
+    background-color: #5D5CA8; 
     padding: 4px 0 3px 10px;
     }
     
 div.body h3 {
-    font-size: 16pt; 
+    font-size: 18pt; 
     color: #ffffff;
     background-color: #3e3e68;
     padding: 4px 0 3px 10px;
@@ -84,7 +104,7 @@ div.body h4 {
 	}
 	
 div.body h5 { 
-	font-size: 13pt; 
+	font-size: 12.5pt; 
 	Color: #a2a2a2;
 	border-bottom: 1px solid #67669e;
 	margin: 30px 0px 10px 0px; 
@@ -98,11 +118,62 @@ div.body h5 {
 	border-bottom: #cccccc;
 	margin: 30px 0px 10px 50px; 
 	 
-	 }*/
+}*/
+
+div.body h1 { font-size: 30pt; font-family: 'Poppins', sans-serif; }
+div.body h2 { font-size: 24pt; font-family: 'Poppins', sans-serif; }
+div.body h3 { font-size: 18pt; font-family: 'Poppins', sans-serif; }
+div.body h4 { font-size: 14pt; font-family: 'Poppins', sans-serif; }
+div.body h5 { font-size: 11pt; font-family: 'Poppins', sans-serif; }
+
+
+div.body h1 {
+    text-transform: uppercase;
+	color: #5D5CA8;
+}
+
+div.body h2 {
+  background-color: #5D5CA8;
+  border-left: 6px solid #F29F05; /* orange ProjeQtOr */
+  padding-left: 10px;
+  color: #ffffff;
+  margin-top: 40px;
+}
   
-/* Ancres des titres */
+div.body h3 {
+  background-color: #5D5CA8;
+  font-weight: 600;
+  padding-left: 10px;
+  color: #ffffff;
+  margin-top: 80px;
+}
+
+
+div.body h4 {
+  background-color: transparent;
+  border-left: 8px solid #8887c6;
+  padding-left: 10px;
+  font-style: italic;
+  color: #3e3e68;
+  margin-top: 40px;
+}
+
+
+div.body h5 {
+  color: #888;
+  border-bottom: 1px dotted #aaa;
+  padding-left: 10px;
+  text-transform: none;
+  font-style: italic;
+  margin-top: 40px;
+}
+
+
+  
+/* Ancres des titres*/
 a.headerlink {
     visibility: hidden;
+    font-size: 13pt;
 }
 
 
@@ -121,7 +192,7 @@ div.body p.caption {
 
 .rubric {
     color: #8a8a8a;
-    font-family:'Roboto', sans-serif;
+    font-family:'Poppins', sans-serif;
     font-weight: bold;
     border-bottom: 1px solid #6f6f6f;
 	margin: 30px 0px 10px 0px; 
@@ -264,29 +335,45 @@ span.highlighted {
 /* ------------------------- CONTAINERS & TOPICS ------------------------------ */
 
 
+
 .topic {
-	background-color: #e5e5fd;
-	border: 1px dashed #c0c0c0;
-    line-height: 1.1em;	
-    padding: 20px;
-    margin: 50px 0px 50px 0;
-	border-radius: 15px; 
+	background-color: #F3F2FF; /* violet très clair */
+	border-left: 6px solid #5D5CA8;
+	border-radius: 12px;
+	padding: 20px 25px;
+	margin-top: 25px;
+	box-shadow: 0 4px 12px rgba(93, 92, 168, 0.2);
+	transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.topic:hover {
+	transform: translateY(-4px);
+	box-shadow: 0 6px 18px rgba(93, 92, 168, 0.3);
 }
 
 .topic-title {
-    font-weight: bolder;
-    line-height: 1.1em;
-    text-transform: uppercase;
-    margin-left: 15px;
+	font-size: 1.2em;
+	font-weight: bold;
+	color: #5D5CA8;
+	margin-bottom: 10px;
+	position: relative;
+	padding-left: 0px;
+	text-transform: uppercase;
+	letter-spacing: 1px;
 }
+
+
+
+
+
+
 
 
 .container {
 	margin: 10px 5px 10px 5px;
     padding: 10px;
-    background-color: #ffffff;
+    background-color: #5D5CA8;
     font-size: 85%;
-    border: 2px dashed #b1acc4;
     border-radius: 15px;
     line-height: 1.1em;
     float: left;
@@ -294,6 +381,63 @@ span.highlighted {
     /*display: block;*/
 	box-shadow: 1px 1px 5px #aaa;
 }
+
+.evolution-card {
+  background-color: #f9f9fb;
+  border: 1px solid #ddd;
+  border-left: 5px solid #5D5CA8;
+  border-radius: 8px;
+  padding: 1em 1.5em;
+  margin-bottom: 1em;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+  font-size: 0.95rem;
+  line-height: 1.5;
+}
+
+.evolution-card strong {
+  display: block;
+  font-size: 1.05rem;
+  color: #333;
+  margin-bottom: 0.3em;
+}
+
+.tiles-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 0.6em 3.5em; /* ⬅️ vertical horizontal */
+  margin: 1.5em 0;
+}
+
+.evolution-tile {
+  background-color: #f4f4fc;
+  border-left: 5px solid #5D5CA8;
+  border-radius: 12px;
+  padding: 1em 1.5em;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+  font-size: 0.95rem;
+  line-height: 1.4;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.evolution-tile:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+}
+
+.evolution-tile a {
+  display: inline-block;
+  margin-top: 0.5em;
+  font-weight: bold;
+  color: #333;
+  text-decoration: underline dotted;
+  text-underline-offset: 4px;  /* ⬅️ éloigne le soulignement */
+}
+
+
+
+
+
+
 
 
 

@@ -240,6 +240,11 @@
             } else {
               url+="&objectId=";
             }
+            if (typeof top.directAccessIndex=='undefined' || top.directAccessIndex==undefined || ! top.directAccessIndex) { directAccessIndexParam=''; } 
+            else { directAccessIndexParam=top.directAccessIndex; }
+            if (directAccessIndexParam!='') {
+              url+="&sourceTab="+directAccessIndexParam;
+            }
             dojo.byId("menuBarNewtabButton").href=url;
           </script>
         </button>

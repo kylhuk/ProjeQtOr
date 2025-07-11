@@ -52,7 +52,7 @@ echo '<div id="dndPlanningColumnSelector" jsId="dndPlanningColumnSelector" dojot
                 withhandles="true" class="container">';
 foreach ($columnsAll as $order=>$col) {
     if ( ($resourcePlanning and ($col=='ValidatedWork' or $col=='Resource' or pq_substr($col,-4)=='Cost') )
-        or ($portfolioPlanning and ($col=='Resource' or $col=='IdPlanningMode') )
+        or ($portfolioPlanning and ($col=='Resource' or $col=='IdPlanningMode'  or $col=='RespInitial' or $col=='IdResource') )
         or ($versionPlanning and (pq_substr($col,-4)=='Cost'))) {
         // nothing
 	} else if ( ! SqlElement::isVisibleField($col) ) {
@@ -105,7 +105,13 @@ foreach ($columnsAll as $order=>$col) {
           $project = new Project();
           $colName = $project->getColCaption($colName);
           echo $colName . "</label>";
-        }else{
+        }else if ($planningType == 'portfolio' and $col=='IdContact'){
+          echo i18n('colBillContact') . "</label>";
+  	    }else if ($planningType == 'portfolio' and $col=='IdUser'){
+  	      echo i18n('colCreator') . "</label>";
+  	    }else if ($planningType == 'portfolio' and $col=='Responsible'){
+  	      echo i18n('colManager') . "</label>";
+  	    }else{
           echo i18n('col' . $col) . "</label>";
         }
   	  }
@@ -154,7 +160,13 @@ foreach ($columnsAll as $order=>$col) {
           $project = new Project();
           $colName = $project->getColCaption($colName);
           echo $colName . "</label>";
-        }else{
+        }else if ($planningType == 'portfolio' and $col=='IdContact'){
+          echo i18n('colBillContact') . "</label>";
+  	    }else if ($planningType == 'portfolio' and $col=='IdUser'){
+  	      echo i18n('colCreator') . "</label>";
+  	    }else if ($planningType == 'portfolio' and $col=='Responsible'){
+  	      echo i18n('colManager') . "</label>";
+  	    }else{
           echo i18n('col' . $col) . "</label>";
         }
   	  }

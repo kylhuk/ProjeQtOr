@@ -31,7 +31,7 @@ require_once "../tool/projeqtor.php";
 $showOnlyNotes=Parameter::getUserParameter('showOnlyNotes');
 $selectedAuthor=Parameter::getUserParameter('activityStreamAuthorFilter');
 if ($selectedAuthor==' ') $selectedAuthor=null;
-$height=($showOnlyNotes=='YES' and $selectedAuthor)?"156":"126";
+$height=($showOnlyNotes=='YES' and $selectedAuthor)?"186":"156";
   
 
 

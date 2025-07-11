@@ -50,7 +50,7 @@ if (! RequestHandler::isCodeSet('filterObjectClass')) {
   $filterObjectClass=RequestHandler::getValue('filterObjectClass');
 }
 if (!isset($objectClass) or !$objectClass) $objectClass=$filterObjectClass;
-if ($objectClass=='Planning' or $objectClass=='GlobalPlanning' or $objectClass=='VersionsPlanning' or $objectClass=='ResourcePlanning'){
+if ($objectClass=='Planning' or $objectClass=='GlobalPlanning' or $objectClass=='VersionsPlanning' or $objectClass=='ResourcePlanning' or $objectClass=='PlanningWorkPlan'){
   $objectClass='Activity';
   $dontDisplay=true;
 }
@@ -88,7 +88,6 @@ if($displayQuickFilter){
   if(isNewGui())include "../tool/displayQuickFilterList.php";
   $context = "directFilterList";
 }
-
 htmlDisplayStoredFilter($filterList,$filterObjectClass,$currentFilter, $context, $comboDetail);
 
 ?>

@@ -313,6 +313,7 @@ if (array_key_exists('refresh', $_REQUEST)) {
   exit();
 }
 ?>
+
 <div <?php echo ($print)?'x':'';?>
 	dojoType="dijit.layout.BorderContainer">
   <?php
@@ -752,7 +753,7 @@ function drawTableFromObject($obj, $included=false, $parentReadOnly=false, $pare
   foreach ($obj as $col=>$val) {
     $varSet[$col]='set';
   }
-  
+  $lineStarted=false;
   // Loop on each property of the object
   foreach ($obj->getFieldsList() as $col) {
     if (! property_exists($obj, $col)) continue;
@@ -949,6 +950,7 @@ function drawTableFromObject($obj, $included=false, $parentReadOnly=false, $pare
       // }
       echo '</table><table id="'.$col.'" class="detail internalTable">';
       echo '<tr class="detail">';
+      $lineStarted=true;
       echo '<td class="detail"></td>'; // Empty label, to have column header in front of columns
                                        // $internalTableBorderTitle=($print)?'border:1px solid #A0A0A0;':'';
       $internalTableBorderTitle=($print)?'padding-top:5px;text-decoration: underline;padding-bottom:2px;':'';
@@ -1245,7 +1247,7 @@ function drawTableFromObject($obj, $included=false, $parentReadOnly=false, $pare
       }
       //if (!$nobr and ((!$hide and !$invisible) or !$print)) { /// PBER #9517  
       //if (! ($nobr or ( ($hide or $invisible) and $print) ) ) {
-      if (! $nobr){
+      if (! $nobr and $lineStarted){
         echo "</td></tr>";
       }
     } else if (pq_substr($col, 0, 5)=='_Link' and !$comboDetail) { // Display links to other objects
@@ -1652,6 +1654,7 @@ function drawTableFromObject($obj, $included=false, $parentReadOnly=false, $pare
       if ($internalTable==0) {
         if (!is_object($val) and !is_array($val) and !$hide and !$nobr_before) {
           echo '<tr class="detail'.((!$nobr)?' generalRowClass '.$col.'Class':'').'" style="'.((!$nobr)?$specificStyle:'').'">';
+          $lineStarted=true;
           if ($dataLength>4000 and getEditorType()!='text') {
             // Will have to add label
             echo '<td colspan="2" style="position:relative">';
@@ -1712,6 +1715,7 @@ function drawTableFromObject($obj, $included=false, $parentReadOnly=false, $pare
         if ($internalTable%$internalTableCols==0) {
           echo '</td></tr>'.$cr;
           echo '<tr class="detail">';
+          $lineStarted=true;
           if (isset($internalTableRowsCaptions[$internalTableCurrentRow]) and $internalTableRowsCaptions[$internalTableCurrentRow] and $arrTab['rows'][$internalTableCurrentRow]>0) {
             echo '<td class="labelPadding '.$internalTableSpecial.'" style="text-align:right;width:'.$labelStyleWidth.';">';
             // ADD BY Marc TABARY - 2017-03-10 - NO ':' IF LABEL IS EMPTY
@@ -1755,7 +1759,8 @@ function drawTableFromObject($obj, $included=false, $parentReadOnly=false, $pare
         }
       }
       if (isNewGui()) $fieldWidth-=10; 
-      if (pq_substr($col, 0, 2)=='id' and $dataType=='int' and pq_strlen($col)>2 and pq_substr($col, 2, 1)==pq_strtoupper(pq_substr($col, 2, 1))) {
+      //if (pq_substr($col, 0, 2)=='id' and $dataType=='int' and pq_strlen($col)>2 and pq_substr($col, 2, 1)==pq_strtoupper(pq_substr($col, 2, 1))) {
+      if (isForeignKey($col, $obj)) {
         $fieldWidth=$largeWidth;
       }
       if (pq_strpos($obj->getFieldAttributes($col), 'Width')!==false) {
@@ -1800,7 +1805,7 @@ function drawTableFromObject($obj, $included=false, $parentReadOnly=false, $pare
       } else if (pq_strpos($obj->getFieldAttributes($col), 'size1/2')!==false) {
         $fieldWidth=$fieldWidth/2-2;
       } else if (($nobr_before or $nobr) and $fieldWidth>$mediumWidth) {
-        $fieldWidth=$fieldWidth/2-2;
+        $fieldWidth=($nobr_before and $nobr)?intval($fieldWidth/3-3):intval($fieldWidth/2-2);
       }
       if (pq_strpos($obj->getFieldAttributes($col), 'size50')!==false) {
         $fieldWidth=$fieldWidth+50;
@@ -2255,63 +2260,59 @@ function drawTableFromObject($obj, $included=false, $parentReadOnly=false, $pare
         echo '</table>';
         echo '<input type="hidden" '.$name.' value="'.htmlEncode($val).'"  />';
       } else if (($col=='color' or (pq_substr($col,0,5)=='color' and pq_strlen($col)>5 and pq_strtoupper(pq_substr($col,5,1))==pq_substr($col,5,1) ) ) and $dataType=='varchar' and $dataLength==7) {
+        //remi
         // Draw a color selector ============================================== COLOR
         echo '<table class="generalColClass '.$col.'Class" style="'.$specificStyleWithoutCustom.'"><tr><td class="detail">';
         // BEGIN - ADD BY TABARY - TOOLTIP
-        echo htmlDisplayTooltip($toolTip, $fieldId, $print, $outMode);
+//         echo htmlDisplayTooltip($toolTip, $fieldId, $print, $outMode);
         // END - ADD BY TABARY - TOOLTIP
         if ($included) {
           $nameColor=$classObj.'_'.$col;
         } else {
           $nameColor=$col;
         }
-        echo '<input xdojoType="dijit.form.TextBox" class="colorDisplay" type="text" readonly tabindex="-1" ';
-        echo $name;
-        echo $attributes;
-        echo '  value="'.htmlEncode($val).'" ';
-        if (isNewGui()) echo '  style="border-radius:5px; height:24px; border: 1px solid #cccccc;width: 24px; ';
-        else echo '  style="border-radius:10px; height:20px; border: 0;width: '.$smallWidth.'px; ';
-        echo ' color: '.$val.'; ';
-        if ($val) {
-          echo ' background-color: '.$val.';';
-        } else {
-          echo ' background-color: transparent;';
-        }
-        echo '" />';
-        // echo $colScript;
-        // echo '</div>';
-        echo '</td><td class="detail">';
+        $colorWidth = 32;
+        $border=intval($colorWidth/15);
+                                                                      // !! $name = "name=".$namecolor."; !!
+        //true input val save
+        echo '<input type="hidden" '.$name.' value="'.$val.'" />';
         if (!$readOnly) {
+        $valPicker = ($val)?$val:'#fefefe';
+        //input view
+        echo '<input type="color" id="detailColorPicker" name="detailColorPicker" onChange="dojo.byId('.$nameColor.').value = this.value;formChanged()" value="'.$valPicker.'" style="width:'.$colorWidth.'px;height:'.$colorWidth.'px; border-radius: 5px 5px 5px 5px; cursor: pointer; border-color: gray;"/>'; 
+        echo '</td><td class="detail">';
+        //the picker table ! display none !
           echo '<div id="'.'colorButton'.$nameColor.'" dojoType="dijit.form.DropDownButton"  ';
-          // echo ' style="width: 100px; background-color: ' . $val . ';"';
-          if (isNewGui()) echo ' showlabel="false" iconClass="colorSelector" style="position:relative; height:24px;width:40px;top:-3px">';
+          if (isNewGui()) echo ' showlabel="false" iconClass="colorSelector" style="position:relative; height:25px;width:47px;top:0px;display:none;">';
           else echo ' showlabel="false" iconClass="colorSelector" style="position:relative;top:-2px;height:19px">';
           echo '  <span>'.i18n('selectColor').'</span>';
           echo '  <div dojoType="dijit.ColorPalette" id="colorPicker'.$nameColor.'" >';
           echo '    <script type="dojo/method" event="onChange" >';
-          echo '      var fld=dojo.byId("'.$nameColor.'");';
-          echo '      fld.style.color=this.value;';
-          echo '      fld.style.backgroundColor=this.value;';
-          echo '      fld.value=this.value;';
+          echo '      var fldView=dojo.byId("detailColorPicker");';
+          echo '      var fldValue=dojo.byId("'.$nameColor.'");';
+          echo '      fldView.value=this.value;';
+          echo '      fldValue.value=this.value;';
           echo '      formChanged();';
           echo '    </script>';
           echo '  </div>';
           echo '</div>';
         }
-        echo '</td><td>';
+         echo '</td><td>';
         if (!$readOnly) {
+          //reset color
           echo '<button id="resetColor'.$nameColor.'" dojoType="dijit.form.Button" showlabel="true" class="roundedVisibleButton" style="min-width:80px;max-width:150px;margin:0px 5px;';
           echo ' title="'.i18n('helpResetColor').'" >';
           echo '<span>'.i18n('resetColor').'</span>';
           echo '<script type="dojo/connect" event="onClick" args="evt">';
           echo '      var fld=dojo.byId("'.$nameColor.'");';
-          echo '      fld.style.color="transparent";';
-          echo '      fld.style.backgroundColor="transparent";';
           echo '      fld.value="";';
+          echo '      var fld=dojo.byId("detailColorPicker");';
+          echo '      fld.value="#fefefe";';
           echo '      formChanged();';
           echo '</script>';
           echo '</button>';
         }
+//         echo '</td></tr></table>';
         echo '</td></tr></table>';
       } else if ($col=='durationSla') {
         // Draw a color selector ============================================== SLA as a duration
@@ -2552,7 +2553,7 @@ function drawTableFromObject($obj, $included=false, $parentReadOnly=false, $pare
           }else if ($col=='idContactContract' and get_class($obj)=='ClientContract') {
              $idMenu='menuClientContract';
              $comboClass='Contact';
-          }else if ($col=='idContact') {
+          }else if ($col=='idContact' and Parameter::getGlobalParameter('requestorLimitToContact')!="YES") {
             //$idMenu='menuClientContract';
             $comboClass='Affectable';
           }else if ($col=='idSituation') {
@@ -2953,7 +2954,7 @@ function drawTableFromObject($obj, $included=false, $parentReadOnly=false, $pare
           }
           //echo ' labelType="html" spanLabel=true  ';
           echo '  style="width: '.($fieldWidth).'px;'.$specificStyle.'"';
-          if ($col=='idBusinessFeature' or $col=='idProject' or $col=='idSkill') echo 'data-dojo-props="queryExpr: \'*${0}*\', autoComplete:false"';
+          if ($col=='idBusinessFeature' or $col=='idProject' or $col=='idSkill' or $col=='idOrganization') echo 'data-dojo-props="queryExpr: \'*${0}*\', autoComplete:false"';
           echo $name;
           // ADD BY Marc TABARY - 2017-02-24 - ORGANIZATION MANAGER
 //           if (get_class($obj)=='Resource' and $col=='idOrganization' and $val) {
@@ -2996,7 +2997,9 @@ function drawTableFromObject($obj, $included=false, $parentReadOnly=false, $pare
             $next=htmlDrawOptionForReference($col, $val, $obj,true, $critFld, $critVal);
           }else {
             if ($col=='idResource' and $classObj=='Assignment') $col='idResourceAll';
-            if ($col=='idContact') $col='idAffectable';
+            if (Parameter::getGlobalParameter('requestorLimitToContact')!="YES"){
+              if ($col=='idContact') $col='idAffectable';
+            }
             $next=htmlDrawOptionForReference($col, $val, $obj, $isRequired, $critFld, $critVal);
           }
           if ($col=='idProduct' and !$obj->id and $obj->isAttributeSetToField($col, 'required')) $obj->idProduct=$next;
@@ -3693,6 +3696,9 @@ function drawTableFromObject($obj, $included=false, $parentReadOnly=false, $pare
         }
       }
     }
+    if (! $hide and ! $nobr) {
+      $lineStarted=false;
+    }
   }
 
   if( $classObj=='ActivityPlanningElement' and ($validatedWorkReadOnly or $validatedCostReadOnly)){
@@ -3921,21 +3927,30 @@ function drawDocumentVersionFromObject($list, $obj, $refresh=false) {
   rsort($list);
   foreach ($list as $version) {
     echo '<tr>';
-    if (!$print) {
-      echo '<td class="assignData" style="text-align:center; white-space: nowrap;vertical-align:top;">';
-      //damian
-      $canDownload = false;
-      if ($obj->locked){
-        $forbidDownload = Parameter::getGlobalParameter('lockDocumentDownload');
-        if(($forbidDownload == "YES" and $obj->idLocker == $user->id) or $forbidDownload == "NO" or $forbidDownload == ""){
-          $canDownload = true;
-        }
-      }else {
+    $canDownload = false;
+    if ($obj->locked){
+      $forbidDownload = Parameter::getGlobalParameter('lockDocumentDownload');
+      if(($forbidDownload == "YES" and $obj->idLocker == $user->id) or $forbidDownload == "NO" or $forbidDownload == ""){
         $canDownload = true;
       }
-      if (!$print and $canDownload) {
-        echo '<a href="../tool/download.php?class=DocumentVersion&id='.htmlEncode($version->id).Security::addTokenIndexToUrl().'"';
-        echo ' target="printFrame" title="'.i18n('helpDownload')."\n".(($preserveFileName=='YES')?$version->fileName:$version->fullName).'">'.formatSmallButton('Download').'</a>';
+    }else {
+      $canDownload = true;
+    }
+    if (!$print) {
+      echo '<td class="assignData" style="text-align:center; white-space: nowrap;vertical-align:top;">';
+      //damian    
+      if (!$print and $canDownload and $version->fileName!='noFileNameAdmitted') {
+        //echo '<a href="../tool/download.php?class=DocumentVersion&id='.htmlEncode($version->id).Security::addTokenIndexToUrl().'"';
+        //echo ' target="printFrame" title="'.i18n('helpDownload')."\n".(($preserveFileName=='YES')?$version->fileName:$version->fullName).'">'.formatSmallButton('Download').'</a>';
+        if ( ! file_exists($version->getUploadFileName()) ) {
+          echo '<span class="" title="'.i18n('errorNotFoundAttachment')."\n".$version->getUploadFileName().'">';
+          echo formatSmallButton('Mark',false,false).'</span>';
+        } else {
+          echo '<a onClick="dojo.byId(\'printFrame\').src=\'../tool/download.php?class=DocumentVersion&id='.htmlEncode($version->id).'\';" ';
+          echo ' title="'.i18n('helpDownload')."\n".(($preserveFileName=='YES')?$version->fileName:$version->fullName).'">'.formatSmallButton('Download').'</a>';
+        }
+      }else if (!$print and $version->fileName=='noFileNameAdmitted'){
+        echo '<span style="width:20px;display: inline-block;"></span>';
       }
       if ($canUpdate and !$print and (!$obj->idle or $obj->idDocumentVersion==$version->id)) {
         echo '  <a onClick="editDocumentVersion('."'".htmlEncode($version->id)."'".",'".htmlEncode($version->version)."'".",'".htmlEncode($version->revision)."'".",'".htmlEncode($version->draft)."'".",'".htmlEncode($version->versionDate)."'".",'".htmlEncode($version->idStatus)."'".",'".$version->isRef."'".",'".$typeEvo."'".",'".htmlEncode($version->name,'protectQuotes')."'".",'".htmlEncode($version->name,'protectQuotes')."'".",'".htmlEncode($version->name,'protectQuotes')."'".');" '.'title="'.i18n('editDocumentVersion').'" >'.formatSmallButton('Edit').'</a> ';
@@ -3970,10 +3985,10 @@ function drawDocumentVersionFromObject($list, $obj, $refresh=false) {
       }
       echo '<img src="'.$img.'" '.' title="'.htmlEncode($version->fileName).'" style="float:left;cursor:pointer"'.' onClick="showImage(\'DocumentVersion\',\''.htmlEncode($version->id).'\',\''.htmlEncode($version->fileName, 'protectQuotes').'\');" />';
     } else {
-      echo htmlGetMimeType($version->mimeType, $version->fileName, ($canDownload)?$version->id:null, 'DocumentVersion');
+      if ($version->fileName!='noFileNameAdmitted') echo htmlGetMimeType($version->mimeType, $version->fileName, ($canDownload)?$version->id:null, 'DocumentVersion');
     }
     echo '</td><td>';
-    echo htmlEncode($version->fileName, 'print');
+    if ($version->fileName!='noFileNameAdmitted') echo htmlEncode($version->fileName, 'print');
     if ($version->description and !$print) {
       echo formatCommentThumb($version->description);
     }
@@ -4430,7 +4445,6 @@ function drawHistoryFromObjects($refresh=false) {
  */
 function drawObjectLinkedByIdToObject($obj, $objLinkedByIdObject='', $refresh=false) {
   global $cr, $print, $outMode, $comboDetail, $displayWidth, $printWidth;
-  
   if ($comboDetail) {
     return;
   }
@@ -4445,7 +4459,6 @@ function drawObjectLinkedByIdToObject($obj, $objLinkedByIdObject='', $refresh=fa
   $theClassName='_'.$objLinkedByIdObject;
   // Get the visible list of linked Object
   $listVisibleLinkedObj=getUserVisibleObjectsList($objLinkedByIdObject);
-  
 //MTY - LEAVE SYSTEM 
   if ($obj->idle==1) {
     $canUpdate=false;
@@ -4469,6 +4482,14 @@ function drawObjectLinkedByIdToObject($obj, $objLinkedByIdObject='', $refresh=fa
     $objects=$obj->$theClassName;
   } else {
     $objects=array();
+  }
+  if (get_class($obj) =='Organization'){
+    $listContact = SqlList::getListWithCrit("Affectable", array("idOrganization"=>$obj->id, "isContact"=>1, "isResource"=>0));
+    $objectsContact=array();
+    foreach ($listContact as $id => $name){
+      $contact = new Contact($id);
+      $objectsContact[] = $contact;
+    }
   }
   if (!$refresh and !$print) echo '<tr><td colspan="2">';
   echo '<input type="hidden" id="objectIdle" value="'.htmlEncode($obj->idle).'" />';
@@ -4526,7 +4547,11 @@ function drawObjectLinkedByIdToObject($obj, $objLinkedByIdObject='', $refresh=fa
       $classSub=get_class($theObj);
       if ($classSub=='ResourceAll') $classSub=($theObj->isResourceTeam)?'ResourceTeam':'Resource';
       if (!$print and securityCheckDisplayMenu(null, $classSub) and securityGetAccessRightYesNo('menu'.$classSub, 'read', '')=="YES") {
-        $goto=' onClick="gotoElement(\''.$classSub.'\',\''.htmlEncode($theObj->id).'\');" ';
+        if($theObj->isMaterial == "1"){
+          $goto=' onClick="gotoElement(\'ResourceMaterial\',\''.htmlEncode($theObj->id).'\');" ';
+        }else{
+          $goto=' onClick="gotoElement(\''.$classSub.'\',\''.htmlEncode($theObj->id).'\');" ';
+        }
       }
       
       echo '<td class="assignData '.((isNewGui() and isset($goto) and $goto!='')?'classLinkName':'').'" style="width:5%" '.$goto.'>#'.htmlEncode($theObj->id).'</td>';
@@ -4548,6 +4573,31 @@ function drawObjectLinkedByIdToObject($obj, $objLinkedByIdObject='', $refresh=fa
     
     echo '</tr>';
   }
+  
+  foreach ($objectsContact as $theObj) {
+    $nbObjects++;
+    echo '<tr>';
+    if (!$print) {
+      echo '<td class="assignData smallButtonsGroup">';
+      if (!$print and $canUpdate) {
+        if ($theObj->idle==0) {
+          if ($objLinkedByIdObject=='Resource') $objLinkedByIdObject='Affectable';
+            echo ' <a onClick="removeLinkObjectFromObject(\''.get_class($obj).'\',\''.$objLinkedByIdObject.'\',\''.htmlEncode($theObj->id).'\',\''.htmlEncode($theObj->name).'\');" title="'.i18n('removeLinkObject').'" > '.formatSmallButton('Remove').'</a>';
+        } 
+      }
+      echo '</td>';
+    }
+    $classSub=get_class($theObj);
+    if ($classSub=='ResourceAll') $classSub=($theObj->isResourceTeam)?'ResourceTeam':'Resource';
+    if (!$print and securityCheckDisplayMenu(null, $classSub) and securityGetAccessRightYesNo('menu'.$classSub, 'read', '')=="YES") {
+      $goto=' onClick="gotoElement(\''.$classSub.'\',\''.htmlEncode($theObj->id).'\');" ';
+    }
+    echo '<td class="assignData '.((isNewGui() and isset($goto) and $goto!='')?'classLinkName':'').'" style="width:5%" '.$goto.'>#'.htmlEncode($theObj->id).'</td>';
+    echo '<td '.$goto.' class="assignData hyperlink '.((isNewGui() and isset($goto) and $goto!='')?'classLinkName':'').'" style="width:'.(($print)?'85':'80').'%">'.htmlEncode($theObj->name).'</td>';
+    echo '<td class="assignData dijitButtonText" style="width:'.(($print)?'10':'10').'%">'.htmlDisplayCheckbox($theObj->idle).'</td>';
+    echo '</tr>';
+  }
+
   if (!$print) {
     echo '</table>';
   }
@@ -4700,12 +4750,8 @@ function drawNotesFromObject($obj, $refresh=false) {
   	$noteDiscussionMode = Parameter::getGlobalParameter('globalNoteDiscussionMode');
   }
   
-  
   if($noteDiscussionMode == 'YES'){
-    $result = array();
-    $notes=array_reverse($notes,true);
-    sortNotes($notes, $result, null);
-    $notes = $result;
+    $notes = sortNotesRecentBranchFirst($notes);
   }
   foreach ($notes as $note) {
     //florent
@@ -5435,7 +5481,7 @@ function drawLinksFromObject($list, $obj, $classLink, $refresh=false) {
       if (property_exists($linkObj, $idType)) $type= new Type($linkObj->$idType);
       if (property_exists($linkObj, 'idResource')) $res = new Resource ($linkObj->idResource);
       if (property_exists($linkObj, 'idTargetProductVersion')) $productVersion = new ProductVersion($linkObj->idTargetProductVersion);
-      echo '<td class="linkData '.((isNewGui() and isset($goto) and $goto!='')?'classLinkName':'').'" '.$goto.'  onmouseenter="showTooltip(this, ' . htmlEncode(json_encode($projectDep)) . ', ' . htmlEncode($objectInfo) . ', ' . htmlEncode(json_encode($res)) . ', ' . htmlEncode(json_encode($productVersion)) . ', ' . htmlEncode(json_encode($type)) . ', ' . htmlEncode(json_encode($planningMode)) . ')" onmouseleave="hideTooltip(this)" onfocusout="hideTooltip(this)" style="width:'.(($classLink)?'65':'55').'%">';
+      echo '<td class="linkData '.((isNewGui() and isset($goto) and $goto!='')?'classLinkName':'').'" '.$goto.'   onmouseout="hideTooltip(this)" onmouseenter="showTooltip(this, ' . htmlEncode(json_encode($projectDep)) . ', ' . htmlEncode($objectInfo) . ', ' . htmlEncode(json_encode($res)) . ', ' . htmlEncode(json_encode($productVersion)) . ', ' . htmlEncode(json_encode($type)) . ', ' . htmlEncode(json_encode($planningMode)) . ')" onmouseleave="hideTooltip(this)" onfocusout="hideTooltip(this)" style="width:'.(($classLink)?'65':'55').'%">';
       
       echo formatCommentThumb($link->comment);
       echo (get_class($linkObj)=='DocumentVersion')?htmlEncode($linkObj->fullName):htmlEncode($linkObj->name);
@@ -5443,11 +5489,17 @@ function drawLinksFromObject($list, $obj, $classLink, $refresh=false) {
       echo formatUserThumb($userId, $userName, 'Creator');
       echo formatDateThumb($creationDate, null);
 
-      if ($link->idSynchronizationItem){
-        echo "<span style='position:relative;float:right;padding-right:3px;'>
-              <div title='" . i18n('linkSynchronized') . "' class='iconSize22 iconRefresh imageColorNewGui'></div>
-            </span>";
-        echo '</td>';
+          if(!$print){
+        //remi #9938
+        if ($link->idSynchronizationItem){
+          echo "<span style='position:relative;float:right;padding-right:3px;'>
+                <div title='" . i18n('linkSynchronized') . "' class='iconSize22 iconRefresh imageColorNewGui'></div>
+              </span>";
+        }
+      }else{
+        if ($link->idSynchronizationItem){
+          echo "<span style='margin-left:340px;'>".formatIcon('Refresh', 16)."</span>";   
+        }
       }
       
       $idStatus='idStatus';
@@ -5471,7 +5523,11 @@ function drawLinksFromObject($list, $obj, $classLink, $refresh=false) {
           $objR=get_class($linkObj);
           $objResp=new $objR($linkObj->id);
           //echo '<td class="dependencyData"  style="width:10%">'.formatLetterThumb($objResp->idResource, 22).'</td>';
-          echo '<td class="dependencyData"  style="width:10%;text-align:center;"><span style="display:inline-block;">'.formatUserThumb($objResp->idResource, SqlList::getNameFromId('Affectable', $objResp->idResource), 'Responsible').'</span></td>';
+          if(!$print){
+           echo '<td class="dependencyData"  style="width:10%;text-align:center;"><span style="display:inline-block;">'.formatUserThumb($objResp->idResource, SqlList::getNameFromId('Affectable', $objResp->idResource), 'Responsible').'</span></td>';
+          }else{
+            echo '<td class="dependencyData"  style="width:10%;text-align:center;"><span style="display:inline-block;">'.SqlList::getNameFromId('Affectable', $objResp->idResource).'</span></td>';
+          }
         } else {
           echo '<td class="dependencyData"  style="width:10%">&nbsp;</td>';
         }
@@ -6899,7 +6955,7 @@ function drawDependenciesFromObject($list, $obj, $depType, $refresh=false) {
     if($projectDepId != $projectObjId){
       echo '<div style="margin-right:10px;" title="'.$projectNameDep.'">'.formatIcon("Project", 16, $projectNameDep).'</div>';
     }
-    echo '<div class="dependencyName" onmouseenter="showTooltip(this, ' . htmlEncode(json_encode($projectDep)) . ', ' . htmlEncode($objectInfo) . ', ' . htmlEncode(json_encode($res)) . ', ' . htmlEncode(json_encode($productVersion)) . ', ' . htmlEncode(json_encode($type)) . ', ' . htmlEncode(json_encode($planningMode)) . ')" onmouseleave="hideTooltip(this)" style="justify-self:start;" onfocusout="hideTooltip(this)">'.htmlEncode($depObj->name).'</div>';
+    echo '<div class="dependencyName"  onmouseout="hideTooltip(this)" onmouseenter="showTooltip(this, ' . htmlEncode(json_encode($projectDep)) . ', ' . htmlEncode($objectInfo) . ', ' . htmlEncode(json_encode($res)) . ', ' . htmlEncode(json_encode($productVersion)) . ', ' . htmlEncode(json_encode($type)) . ', ' . htmlEncode(json_encode($planningMode)) . ')" onmouseleave="hideTooltip(this)" style="justify-self:start;" onfocusout="hideTooltip(this)">'.htmlEncode($depObj->name).'</div>';
 
     //KEVIN TICKET #2038
     $titleType=(pq_substr($dep->dependencyType, 0, 1)=='E')?i18n('colEnd'):i18n('colStart');
@@ -7220,7 +7276,7 @@ function drawAssignmentsFromObject($list, $obj, $refresh=false, $comboDetailAssi
     echo '</td>';
     if ($assignment->notPlannedWork>0) {
       echo '<td>';
-      echo '&nbsp;<span style="float:right;background-color:#FFAAAA; color:#696969; border:1px solid #A9A9A9;" title="'.i18n("colNotPlannedWork").'">&nbsp;'.Work::displayWorkWithUnit($assignment->notPlannedWork).'&nbsp;</span>';
+      echo '&nbsp;<span style="float:right;background-color:#9933CC; color:#FFFFFF; border:1px solid #A9A9A9;" title="'.i18n("colNotPlannedWork").'">&nbsp;'.Work::displayWorkWithUnit($assignment->notPlannedWork).'&nbsp;</span>';
       echo '</td>';
     }
     if ($assignment->comment and !$print) {
@@ -8488,10 +8544,15 @@ function drawWorkUnitCatalogPhase($catalogUO,$listWorkUnitCatalogPhase,$object,$
     $canCreate=false;
     $canDelete=false;
   }
+  if ($objectClass == "WorkCommand"){
+    $complexityValues = new ComplexityValues();
+    $compValues = SqlElement::getSingleSqlElementFromCriteria('ComplexityValues', array("idComplexity"=>$object->idComplexity,"idWorkUnit"=>$object->idWorkUnit));
+  }
   $sumRatioPct =0;
   $sumRatioQt=0;
   $sumRatioAmount=0;
   $sumRatioAmountLocal=0;
+  $sumCharge = 0;
   echo '<table style="width:100%">';
   echo '<tr><td colspan=2 style="width:100%;"><table style="height:100%;width:100%;">';
   echo '<tr>';
@@ -8502,13 +8563,14 @@ function drawWorkUnitCatalogPhase($catalogUO,$listWorkUnitCatalogPhase,$object,$
     }
     echo '</td>';
   }
-  echo '<td class="assignHeader" style="width:60%;">'.i18n('colWorkUnitCatalogPhases').'</td>';
+  echo '<td class="assignHeader" style="width:50%;">'.i18n('colWorkUnitCatalogPhases').'</td>';
   echo '<td class="assignHeader" style="width:10%">'.i18n('percent').'</td>';
   
   if ($objectClass == "WorkCommand"){
     echo '<td class="assignHeader" style="width:10%">'.i18n('colShortQuantity').'</td>';
     $extraLocalClass=($object->hasCurrency())?' localLabelClass ':'';
-    echo '<td class="assignHeader '.$extraLocalClass.'" style="width:25%">'.i18n('colAmount').'</td>';
+    echo '<td class="assignHeader '.$extraLocalClass.'" style="width:10%">'.i18n('colAmount').'</td>';
+    echo '<td class="assignHeader style="width:10%">'.i18n('charge').' ('.Work::displayShortWorkUnit().')</td>';
   }
 
   echo'</tr>';
@@ -8536,9 +8598,11 @@ function drawWorkUnitCatalogPhase($catalogUO,$listWorkUnitCatalogPhase,$object,$
       $amountDisplay=htmlDisplayLocalCurrency($object->idProject,$commandAmount,$commandAmountLocal);
       echo '  <td class="assignData" style="'.$idleClass.'text-align: center;">'.($val->ratioPct * $object->commandQuantity) / 100 .'</td>';
       echo '  <td class="assignData" style="'.$idleClass.'text-align: center;">' .$amountDisplay. '</td>';
+      echo '  <td class="assignData" style="'.$idleClass.'text-align: center;">' .work::displayWorkWithUnit((($val->ratioPct * $object->commandQuantity) / 100) * $compValues->charge). '</td>';
       $sumRatioQt += (($val->ratioPct * $object->commandQuantity) / 100 );
       $sumRatioAmount += $commandAmount;
       $sumRatioAmountLocal += $commandAmountLocal;
+      $sumCharge += (($val->ratioPct * $object->commandQuantity) / 100) * $compValues->charge;
     }
     
     echo'</tr>';
@@ -8554,6 +8618,7 @@ function drawWorkUnitCatalogPhase($catalogUO,$listWorkUnitCatalogPhase,$object,$
     if ($objectClass == "WorkCommand"){
       echo '<td class="assignData" style="text-align: center; background-color:' . ($sumRatioPct > 100 ? '#ffaaaa' : '#FFFFFF') . ';"><strong> ' .$sumRatioQt. ' </strong></td>';
       echo '<td class="assignData" style="text-align: center; background-color:' . ($sumRatioPct > 100 ? '#ffaaaa' : '#FFFFFF') . ';"><strong> ' .htmlDisplayLocalCurrency($object->idProject,$sumRatioAmount,$sumRatioAmountLocal). '</strong></td>';
+      echo '<td class="assignData" style="text-align: center; background-color:' . ($sumRatioPct > 100 ? '#ffaaaa' : '#FFFFFF') . ';"><strong> ' .work::displayWorkWithUnit($sumCharge). '</strong></td>';   
     } 
   }
   
@@ -9167,7 +9232,7 @@ function displayWorkCommandRow($workCom, $canUpdate, $canDelete, $obj, $isMother
         echo '<a onClick="removeWorkCommand(\''.$workCom->id.'\');" title="'.i18n('removeWorkCommand').'" > '.formatSmallButton('Remove').'</a>';
     }
     echo '</td>';
-    $indentation = $isIndented ? '&nbsp;&nbsp;' : '';
+    $indentation = $isIndented ? 'padding-left:15px' : '';
     $fontWeight = $isMother ? 'font-weight:bold;' : '';
     if ($sumChildrenQuantity != null ){
       if ($sumChildrenQuantity < $workCom->commandQuantity) $backgroundColorQuantity = 'background-color: rgb(255, 217, 170)';
@@ -9181,20 +9246,20 @@ function displayWorkCommandRow($workCom, $canUpdate, $canDelete, $obj, $isMother
       else $backgroundColorAmount = '';
     }else $backgroundColorAmount = '';
     
-    echo '<td class="assignData" style="'.$fontWeight.'">'.$indentation.'#'.$workCom->id.'</td>';
+    echo '<td class="assignData" style="text-align:center;'.$fontWeight.'">'.'#'.$workCom->id.'</td>';
     if ($isMother){
-      echo '<td class="assignData" style="'. $fontWeight .'">' . $workCom->name . '</td>';
+      echo '<td class="assignData" style="'. $fontWeight .'">' . $workCom->name . '<br><span style="color:gray;font-size:88%">'.SqlList::getNameFromId('WorkUnit', $workCom->idWorkUnit).' - '.SqlList::getNameFromId('Complexity', $workCom->idComplexity).'</span></td>';
     }else{
-      echo '<td class="assignData">'.$indentation. $workCom->name.'</td>';
+      echo '<td class="assignData" style="'.$indentation.'">'.$workCom->name.'<br><span style="color:gray;font-size:88%">'.SqlList::getNameFromId('WorkUnit', $workCom->idWorkUnit).' - '.SqlList::getNameFromId('Complexity', $workCom->idComplexity).'</span></td>';
     }
-    echo '<td style="text-align:center;'.$fontWeight.'; '.$backgroundColorQuantity.'" class="assignData">'.htmlDisplayNumericWithoutTrailingZeros($workCom->commandQuantity).'</td>';
-    echo '<td style="text-align:right;'.$fontWeight.'; '.$backgroundColorAmount.'" class="assignData'.$locClass.'">'.htmlDisplayLocalCurrency($proj,$workCom->commandAmount,$workCom->commandAmountLocal).'</td>';
-    echo '<td style="text-align:center;'.$fontWeight.'" class="assignData">'.htmlDisplayNumericWithoutTrailingZeros($workCom->doneQuantity).'</td>';
-    echo '<td style="text-align:right;'.$fontWeight.'" class="assignData'.$locClass.'">'.htmlDisplayLocalCurrency($proj,$workCom->doneAmount,$workCom->doneAmountLocal).'</td>';
-    echo '<td style="text-align:center;'.$fontWeight.'" class="assignData">'.htmlDisplayNumericWithoutTrailingZeros($workCom->acceptedQuantity).'</td>';
-    echo '<td style="text-align:right;'.$fontWeight.'" class="assignData'.$locClass.'">'.htmlDisplayLocalCurrency($proj,$workCom->acceptedAmount,$workCom->acceptedAmountLocal).'</td>';
-    echo '<td style="text-align:center;'.$fontWeight.'" class="assignData">'.htmlDisplayNumericWithoutTrailingZeros($workCom->billedQuantity).'</td>';
-    echo '<td style="text-align:right;'.$fontWeight.'" class="assignData'.$locClass.'">'.htmlDisplayLocalCurrency($proj,$workCom->billedAmount,$workCom->billedAmountLocal).'</td>';
+    echo '<td style="vertical-align: middle;text-align:center;'.$fontWeight.'; '.$backgroundColorQuantity.'" class="assignData">'.htmlDisplayNumericWithoutTrailingZeros($workCom->commandQuantity).'</td>';
+    echo '<td style="vertical-align: middle;text-align:right;'.$fontWeight.'; '.$backgroundColorAmount.'" class="assignData'.$locClass.'">'.htmlDisplayLocalCurrency($proj,$workCom->commandAmount,$workCom->commandAmountLocal).'</td>';
+    echo '<td style="vertical-align: middle;text-align:center;'.$fontWeight.'" class="assignData">'.htmlDisplayNumericWithoutTrailingZeros($workCom->doneQuantity).'</td>';
+    echo '<td style="vertical-align: middle;text-align:right;'.$fontWeight.'" class="assignData'.$locClass.'">'.htmlDisplayLocalCurrency($proj,$workCom->doneAmount,$workCom->doneAmountLocal).'</td>';
+    echo '<td style="vertical-align: middle;text-align:center;'.$fontWeight.'" class="assignData">'.htmlDisplayNumericWithoutTrailingZeros($workCom->acceptedQuantity).'</td>';
+    echo '<td style="vertical-align: middle;text-align:right;'.$fontWeight.'" class="assignData'.$locClass.'">'.htmlDisplayLocalCurrency($proj,$workCom->acceptedAmount,$workCom->acceptedAmountLocal).'</td>';
+    echo '<td style="vertical-align: middle;text-align:center;'.$fontWeight.'" class="assignData">'.htmlDisplayNumericWithoutTrailingZeros($workCom->billedQuantity).'</td>';
+    echo '<td style="vertical-align: middle;text-align:right;'.$fontWeight.'" class="assignData'.$locClass.'">'.htmlDisplayLocalCurrency($proj,$workCom->billedAmount,$workCom->billedAmountLocal).'</td>';
     echo '</tr>';
 }
 

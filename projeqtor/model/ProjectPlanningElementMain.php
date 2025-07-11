@@ -423,7 +423,7 @@ class ProjectPlanningElementMain extends PlanningElement {
   	$this->totalLeftCost=$this->leftCost+$this->expenseLeftAmount+$this->reserveAmount;
   	$this->totalPlannedCost=$this->plannedCost+$this->expensePlannedAmount+$this->reserveAmount;
   	$this->totalRealCost=$this->realCost+$this->expenseRealAmount;
-  	$this->totalValidatedCost=$this->validatedCost+$this->expenseValidatedAmount;
+  	$this->totalValidatedCost=(float)$this->validatedCost+(float)$this->expenseValidatedAmount;
   	$this->totalAssignedCostLocal=$this->assignedCostLocal+$this->expenseAssignedAmountLocal;
   	$this->totalLeftCostLocal=$this->leftCostLocal+$this->expenseLeftAmountLocal+$this->reserveAmountLocal;
   	$this->totalPlannedCostLocal=$this->plannedCostLocal+$this->expensePlannedAmountLocal+$this->reserveAmountLocal;

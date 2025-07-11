@@ -1148,7 +1148,6 @@ function kanbanListSelect($user,$name,$type,$idKanban) {
 
 function kanbanParameterList($idKanban){
   global $typeKanbanC, $type;
-  
   $seeWork=Parameter::getUserParameter("kanbanSeeWork".Parameter::getUserParameter("kanbanIdKanban"));
   $seeWork=($seeWork=='on' or $seeWork=='1')?true:false;
   if($seeWork && PlanningElement::getWorkVisibiliy(getSessionUser()->idProfile)=="ALL")$seeWork=true; else $seeWork=false;
@@ -1186,6 +1185,15 @@ function kanbanParameterList($idKanban){
   
   $hidedeType = Parameter::getUserParameter("kanbanHideType");
   $hidedeType = ($hidedeType=='on' or $hidedeType=='')?true:false;
+  
+  $hideProjectName = Parameter::getUserParameter("kanbanHideProjectName");
+  $hideProjectName = ($hideProjectName=='on' or $hideProjectName=='')?true:false;
+  
+  $modeColorTitle = Parameter::getUserParameter( "kanbanModeColorTitle" . Parameter::getUserParameter("kanbanIdKanban") );
+  $modeColorTitle = (!$modeColorTitle)? 'noColor' : $modeColorTitle;
+  
+  $hideColorTitle = Parameter::getUserParameter("kanbanHideColorTitle");
+  $hideColorTitle = ($hideColorTitle=='on')?true:false;
   
   echo '<table style="width:100%;">';
   echo '  <tr>';
@@ -1335,6 +1343,63 @@ function kanbanParameterList($idKanban){
         echo '    </td>';
         echo '    <td style="padding-left:5px;" class="checkboxLabel"><span onclick="invertSwitchValue(\'kanbanHideType\');">'.pq_ucfirst(i18n("labelKanbanHideType")).'</span></td>';
         echo '  </tr>';
+        
+        echo '  <tr>';
+        echo '    <td style="padding-top:2px;">';
+        echo '      <div id="kanbanHideColorTitle" name="kanbanHideColorTitle" class="colorSwitch" data-dojo-type="dojox/mobile/Switch" '.(($hideColorTitle)?'value="on"':'value="off"').' leftLabel="" rightLabel="" style="width:25px;">';
+        echo '        <script type="dojo/method" event="onStateChanged" >';
+        echo '          saveDataToSession("kanbanHideColorTitle",this.value,true);';
+        echo '          kanbanHideColorTitle()';
+        echo '        </script>';
+        echo '      </div>';
+        echo '    </td>';
+        echo '      <td colspan="2" style="padding-left:5px;"><span class="checkboxLabel" onclick="invertSwitchValue(\'kanbanHideColorTitle\');">'.pq_ucfirst(i18n("labelKanbanHideColorTitle")).'</span>';
+        echo '        <select id="kanbanModeColorTitle" name="kanbanModeColorTitle" class="comboButton" dojoType="dijit.form.FilteringSelect" style="width:75px;" value="'.$modeColorTitle.'">'; 
+        $arrOpt=array(
+            "noColor"=>" ",
+            "colorProject"=>'Replan',
+            "colorItem"=>'sectionActivity',
+            "colorType"=>'colType',
+            "colorPriority"=>'colPriority',
+            "colorUrgency"=>"colUrgency");
+        foreach ($arrOpt as $key=>$val){
+          if ($key == 'noColor') {
+            $label = '&nbsp;';
+          } else {
+            $label = ucfirst(i18n($val));
+          }
+          if ($key == 'colorItem' && $typeKanbanC != 'Activity') continue;
+          if ($key == 'colorUrgency' && ($typeKanbanC == 'Activity' || $typeKanbanC == 'Action')) continue;
+          if ($key == 'colorPriority' && $typeKanbanC == 'Activity') continue;
+          if ($key == 'colorType' && ($typeKanbanC == 'Action' || $typeKanbanC == 'Ticket' || $typeKanbanC == 'Requirement')) continue;
+          echo '        <option value="'.$key.'">'.$label.'</option>';
+        }
+        echo '        <script type="dojo/method" event="onChange" >';
+        echo '          saveDataToSession("kanbanModeColorTitle",this.value,true);';
+        echo '          if (this.value == "noColor") {';
+        echo '            dijit.byId("kanbanHideColorTitle").set("value", "off");';
+        echo '          } else {';
+        echo '            dijit.byId("kanbanHideColorTitle").set("value", "on");';
+        echo '          }';
+        echo '          kanbanModeColorTitle()';
+        echo '        </script>';
+        echo '        </select>';
+        echo '      </td>';
+        echo '  </tr>';
+        
+        if ($fullWidthElement){
+          echo '  <tr>';
+          echo '    <td style="padding-top:2px;">';
+          echo '      <div id="kanbanHideProjectName" name="kanbanHideProjectName" class="colorSwitch" data-dojo-type="dojox/mobile/Switch" '.(($hideProjectName)?'value="on"':'value="off"').' leftLabel="" rightLabel="" style="width:25px;">';
+          echo '        <script type="dojo/method" event="onStateChanged" >';
+          echo '          saveDataToSession("kanbanHideProjectName",this.value,true);';
+          echo '          kanbanHideProjectName()';
+          echo '        </script>';
+          echo '      </div>';
+          echo '    </td>';
+          echo '    <td style="padding-left:5px;" class="checkboxLabel"><span onclick="invertSwitchValue(\'kanbanHideProjectName\');">'.pq_ucfirst(i18n("labelKanbanHideProjectName")).'</span></td>';
+          echo '  </tr>';     
+        }   
         echo '</table>';
   echo '    </td>';
   echo '  </tr>';

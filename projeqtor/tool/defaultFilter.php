@@ -40,13 +40,15 @@ if (! array_key_exists('filterObjectClass',$_REQUEST)) {
 }
 $filterObjectClass=$_REQUEST['filterObjectClass'];
 if (!isset($objectClass) or !$objectClass) $objectClass=$filterObjectClass;
-if ($objectClass=='Planning'  or $objectClass=='GlobalPlanning' or $objectClass=='VersionsPlanning' or $objectClass=='ResourcePlanning') $objectClass='Activity';
+if ($objectClass=='Planning'  or $objectClass=='GlobalPlanning' or $objectClass=='VersionsPlanning' or $objectClass=='ResourcePlanning' or $objectClass=='PlanningWorkPlan') $objectClass='Activity';
 else if (pq_substr($objectClass,0,7)=='Report_') $objectClass=pq_substr($objectClass,7);
 Security::checkValidClass($objectClass);
 $name="";
 if (array_key_exists('filterName',$_REQUEST)) {
   $name=$_REQUEST['filterName'];
 }
+$removeDefaultFilter=RequestHandler::getBoolean('removeDefaultFilter');
+
 
 Sql::beginTransaction();
 echo '<table width="100%"><tr><td align="center">';
@@ -57,7 +59,7 @@ $crit['parameterCode']="Filter" . $filterObjectClass;
 $param=SqlElement::getSingleSqlElementFromCriteria('Parameter',$crit);
 echo "<div id='saveFilterResult' style='z-index:9;position: absolute;left:50%;width:100%;margin-left:-50%;top:20px' >";
 echo '<table width="100%"><tr><td align="center" >';
-if ($name) {
+if ($name and !$removeDefaultFilter) {
   $critFilter=array("refType"=>$objectClass, "name"=>$name, "idUser"=>$user->id);
   $filter=SqlElement::getSingleSqlElementFromCriteria("Filter", $critFilter);
   if (! $filter->id) {
@@ -78,6 +80,6 @@ Sql::commitTransaction();
 $flt=new Filter();
 $crit=array('idUser'=> $user->id, 'refType'=>$objectClass );
 $orderByFilter = "sortOrder ASC";
-$filterList=$flt->getSqlElementsFromCriteria($crit,false,null,$orderByFilter);;
+$filterList=$flt->getSqlElementsFromCriteria($crit,false,null,$orderByFilter);
 htmlDisplayStoredFilter($filterList,$filterObjectClass);
 ?>

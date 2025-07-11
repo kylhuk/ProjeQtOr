@@ -26,41 +26,29 @@
 require_once "../tool/projeqtor.php";
 
 ?>
-<table style="<?php if (isNewGui()) echo 'width:780px';?>">
+<table style="">
     <tr>
-     <td class="section"><?php echo i18n("sectionStoredFilters");?></td>
-    </tr>
-    <?php if (isNewGui()) {?><tr><td><div style="height:6px"></div></td></tr><?php }?>
-    <tr>
-      <td>
-        <div id='listStoredFilters' dojoType="dijit.layout.ContentPane" region="center" ><div style="height:250px">loading...</div></div>
-      </td>
-    </tr>
-    <tr><td>&nbsp;</td></tr>
-    <tr>
-      <td>
-        <div id='listSharedFilters' dojoType="dijit.layout.ContentPane" region="center"></div>
-      </td>
-    </tr>
-    <tr><td>&nbsp;</td></tr>
-</table>
-<table style="<?php if (isNewGui()) echo 'width:780px';?>">
-    <tr>
-     <td class="section"><?php echo i18n("sectionActiveFilter");?></td>
-    </tr>
-    <tr>
-      <td style="margin: 2px;"> 
-        <div id='listFilterClauses' dojoType="dijit.layout.ContentPane" region="center" style="overflow-x: hidden; max-height:40vh; overflow-y:auto;"></div>
-         
+      <td style=""> 
+               
         <form id='dialogFilterForm' name='dialogFilterForm' onSubmit="return false;">
          <input type="hidden" id="filterObjectClass" name="filterObjectClass" />
          <input type="hidden" id="filterClauseId" name="filterClauseId" />
-         <input type="hidden" id="filterDataType" name="filterDataType" />
+         <input type="hidden" id="filterDataType" name="filterDataType" />         
          <input type="hidden" id="filterName" name="filterName" />
          <input type="hidden" id="filterLayout" name="filterLayout" />
-         <table width="100%" style="border: 1px solid grey;">
-           <tr><td colspan="5" class="filterHeader"><?php echo i18n("addFilterClauseTitle");?></td></tr>
-           <tr style="vertical-align: top; height:60px;">
+         <input type="hidden" id="filterEditId" name="filterEditId" />
+         
+         <input type="hidden" id="isGroup" name="isGroup" value="0" />
+         <input type="hidden" id="indentLevel" name="indentLevel" value="0" />
+         
+         
+         <table width="100%" style="">
+           <tr>
+            <td colspan="5" class="titleFilterCriteria"><?php echo i18n("addFilterClauseTitle");?></td>
+           </tr>
+           <tr class='' style='border-top:solid 1px;color:var(--color-medium);'></tr>
+           <tr class='' style='height: 8px;'></tr>
+           <tr style="vertical-align: top;height:auto;">
              <?php //ADD qCazelles - Dynamic filter - Ticket #78?>
            	 <td style="width:<?php echo (isNewGui())?'67':'80';?>px;" title="<?php echo i18n('helpOrInput');?>" >
            	  <div id="filterLogicalOperator" style="width: <?php echo (isNewGui())?'65':'80';?>px;display: none; overflow-x:hidden; overflow-y:auto">
@@ -71,9 +59,24 @@ require_once "../tool/projeqtor.php";
            	 		<!-- BOITE DE DIALOGUE A METTRE SUR LE OR -->						<!-- TODO TODO TODO -->
            	 		<option value="0" selected><?php echo i18n('AND');?></option> <!-- TRANSLATION qCazelles -->
            	 		<option value="1"><?php echo i18n('OR');?></option>			  <!-- TRANSLATION qCazelles -->
+           	 		<script type="dojo/method" event="onChange">
+                      const opVal = this.value;
+                      const operatorDiv = document.getElementById("operatorFilterAndOrJs");
+                      if (operatorDiv) {
+                        operatorDiv.style.backgroundColor = (opVal === "1") ? "#e97c2d" : "#10c621";
+                        operatorDiv.innerHTML = i18n(opVal === "1" ? 'OR' : 'AND');
+                      }
+                    </script>
            	 	</select>
-           	 	</div>
+           	  </div>
            	 </td>
+
+               <td style="padding: 0px 5px 0px 0px">
+                 <button class="mediumTextButton" style="width: auto !important; display: flex;align-items: center;justify-content: center;height:23px;position:relative;top:5px;" title="<?php echo i18n('openGroupFilter') ?>" data-state="open" dojoType="dijit.form.Button" id="dialogFilterOpenClose" name="dialogFilterOpenClose" onClick="openCloseGroup();">
+                   <?php echo i18n("openGroup");?>
+                 </button>
+               </td>
+
              <?php //END ADD qCazelles - Dynamic filter - Ticket #78?>
              <td style="width: <?php echo (isNewGui())?'197':'210';?>px;" >
                <div dojoType="dojo.data.ItemFileReadStore" jsId="attributeStore" url="../tool/jsonList.php?listType=empty<?php echo Security::addTokenIndexToUrl(); ?>" searchAttr="name" >
@@ -111,9 +114,12 @@ require_once "../tool/projeqtor.php";
                     value="off" 
                     leftLabel="" rightLabel="" style="width:10px;position:relative; left:0px;top:2px;z-index:99;" >
   		              <script type="dojo/method" event="onStateChanged" >
+                        lastDynamicSwitchManualChange = new Date().getTime();
   		                dijit.byId("filterDynamicParameter").set("checked",(this.value=="on")?true:false);
+
                       if (this.value=="on") {
-                           dojo.byId('filterCompareParameterPane').style.display='none';
+                        dojo.byId('filterCompareParameterPane').style.display='none';
+                        dijit.byId('filterValueList').set("value", []); 
                       } else { 
                         var dataTpe=dojo.byId('filterDataType').value;
                         if (dataTpe=="date" || dataType=="decimal") {
@@ -162,9 +168,10 @@ require_once "../tool/projeqtor.php";
                <input id="filterValue" name="filterValue" value=""  
                  dojoType="dijit.form.TextBox" 
                  style="width:<?php echo (isNewGui())?'180':'320';?>px" />
-               <select id="filterValueList" name="filterValueList[]" value=""  
+               <select id="filterValueList" name="filterValueList[]" value=""  onChange="var dw = dijit.byId('filterDynamicParameterSwitch'); var now = new Date().getTime(); if (dw && dw.get('value') === 'on' && now - lastDynamicSwitchManualChange > 300) {dw.set('value', 'off');}"
                  dojoType="dijit.form.MultiSelect" multiple
-                 style="<?php echo (isNewGui())?'width:350px;font-size:10pt;padding:30px 0px 0px 0px;color:#555555;':'width:325px;';?>height:150px;" size="10" class="selectList"></select>
+                 style="<?php echo (isNewGui())?'width:350px;font-size:10pt;padding:30px 0px 0px 0px;color:#555555;':'width:325px;';?>height:150px;" size="10" class="selectList">
+               </select>
                <?php if (isNewGui()) {?>
                  <div id="filterValueListHideTop" style="position:absolute;top:1px;left:1px;width:330px;height:25px;background:#ffffff;z-index:15;display:none" ></div>
                <?php }?>
@@ -203,7 +210,7 @@ require_once "../tool/projeqtor.php";
                   </script>              
                </select>
                <?php // #6012 ?>
-               
+              
              </td>
              <td style="position:relative;width:25px; text-align: center;vertical-align:<?php echo (isNewGui())?'top':'middle';?>;" align="center"> 
                <table>
@@ -214,11 +221,14 @@ require_once "../tool/projeqtor.php";
                             iconClass="iconSearch22 iconSearch iconSize22 imageColorNewGui">
                       <script type="dojo/connect" event="onClick" args="evt">
                         var objectName = dijit.byId('showDetailInFilter').get('value');
+                        var paramRequestorLimitToContact='<?php echo Parameter::getGlobalParameter('requestorLimitToContact');?>';
+                        if (! paramRequestorLimitToContact) paramRequestorLimitToContact='NO';
                         if( objectName ){
                           var objectClass=objectName[0].substr(2);
                           if (objectName[0].indexOf('__id')>=0) {
                             objectClass=objectName[0].substr(objectName[0].indexOf('__id')+4);
-                          }  
+                          }
+                          if (objectClass =='Contact' && paramRequestorLimitToContact!='YES') objectClass = 'Affectable';
                           if (objectClass=='TargetProductVersion' || objectClass=='OriginalProductVersion') objectClass='ProductVersion';
                           if (objectClass=='ResourceSelect') objectClass='ResourceAllNoMaterial';
                           dijit.byId('filterValueList').reset();
@@ -230,41 +240,65 @@ require_once "../tool/projeqtor.php";
                  </tr>
                  <tr>
                    <td>
-                     <a src="css/images/smallButtonAdd.png" class="imageColorNewGui" style="<?php echo (isNewGui())?'z-index:100;position:relative;right:6px;top:7px;':'margin-top:3px;';?>" onClick="addfilterClause();" title="<?php echo i18n('addFilterClause');?>" class="smallButton">
-                     <?php echo (isNewGui())?formatMediumButton('Add'):formatSmallButton('Add');?>
+                     <a id="buttonSaveFieldEdition" src="css/images/smallButtonSave.png" style="display:none;padding:0 0 10px 8px;<?php echo (isNewGui())?'z-index:100;position:relative;right:6px;top:7px;':'margin-top:3px;';?>" onClick="addfilterClause(null,true);" title="<?php echo i18n('saveEditFilterClause');?>" >
+                     <?php echo (isNewGui())?formatMediumButton('Save'):formatSmallButton('Save');?>
                      </a> 
+                     <a src="css/images/smallButtonAdd.png" style="<?php echo (isNewGui())?'z-index:100;position:relative;right:6px;top:7px;padding-left:8px;':'margin-top:3px;';?>" onClick="addfilterClause();" title="<?php echo i18n('addFilterClause');?>">
+                     <?php echo (isNewGui())?formatMediumButton('Add'):formatSmallButton('Add');?>
+                     </a>
+
                    </td>
                   </tr>
                </table> 
-             </td>
-             
-           </tr>
+             </td>     
+           </tr>        
          </table>
         </form>
+        
+        <div id='listFilterClauses' dojoType="dijit.layout.ContentPane" region="center" style="overflow-x: hidden; max-height:25vh; overflow-y:auto;padding-top: 17px; "></div>
+        
       </td>
     </tr>
     <?php if (isNewGui()) {?><tr><td><div style="height:6px"></div></td></tr><?php }?>
     <tr style="height:32px">
-      <td align="center">
-        <table><tr><td>
-        <span id="filterDefaultButtonDiv">
-          <button class="mediumTextButton" dojoType="dijit.form.Button" onclick="defaultFilter();">
-            <?php echo i18n("buttonDefault");?>
-          </button>
-        </span>
-        </td><td>
-        <button class="mediumTextButton" dojoType="dijit.form.Button" onclick="clearFilter();">
-          <?php echo i18n("buttonClear");?>
-        </button>
-        </td><td>
-        <button class="mediumTextButton" dojoType="dijit.form.Button" type="button" onclick="cancelFilter();">
-          <?php echo i18n("buttonCancel");?>
-        </button>
-        </td><td>
-        <button class="mediumTextButton" dojoType="dijit.form.Button" type="submit" id="dialogFilterSubmit" onclick="protectDblClick(this);selectFilter(true);validateLayoutListColumn((dojo.byId('divKanbanContainer'))?'kanban':null);return false;">
-          <?php echo i18n("buttonOK");?>
-        </button>
-        </td></tr></table>
+      <td style="padding-right: 8px;">
+        <table style="width: 100%;">
+          <tr>
+            <td style="padding-right: 8px;">
+                <div style="display: flex; gap: 10px;justify-content: flex-end;width: 100%;padding:13px 0px 2px 0px;">
+                  <button class="mediumTextButton" style=" width: auto !important;" dojoType="dijit.form.Button" onclick="clearFilter();">
+                    <?php echo i18n("reset");?>
+                  </button>
+                  <button class="mediumTextButton" dojoType="dijit.form.Button" type="button" onclick="cancelFilter();">
+                    <?php echo i18n("buttonCancel");?>
+                  </button>
+                  <button class="mediumTextButton" dojoType="dijit.form.Button" type="submit" id="dialogFilterSubmit"
+                    onclick="if (!validateFilterParentheses())return false;protectDblClick(this);selectFilter(true);validateLayoutListColumn((dojo.byId('divKanbanContainer'))?'kanban':null);return false;">
+                    <?php echo i18n("buttonApply");?>
+                  </button>
+
+              </div>
+            </td>
+          </tr>
+        </table>
+        <div id='filterNameLayoutDiv' dojoType="dijit.layout.ContentPane" region="center" style="display:flex; justify-content: space-evenly; align-items:center;vertical-align:middle; font-size:100%; height:35px; margin:10px 6px; background-color:#f0f0f0; border-radius:10px; padding:5px;overflow:hidden; width:98%;"></div>
       </td>
     </tr>
   </table>
+  
+  <table style="">
+    <?php if (isNewGui()) {?><tr><td><div style="height:6px"></div></td></tr><?php }?>
+    <div style="display:flex; gap:10px; width:100%; height:auto;padding-top: 2px;">
+      <div id="listStoredFilters" 
+           dojoType="dijit.layout.ContentPane" 
+           style="flex:1; min-width:360px;padding:5px;">
+        <div style="height:250px;">loading...</div>
+      </div>
+      <div id="listSharedFilters" 
+           dojoType="dijit.layout.ContentPane" 
+           style="flex:1; min-width:360px; padding:5px;">
+      </div>
+    </div>
+    
+    <tr><td style="height: 4px;"></td></tr>
+</table>

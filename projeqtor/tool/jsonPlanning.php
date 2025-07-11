@@ -756,14 +756,14 @@
             $line['iconClass']='OnRealTime';
           }
         }
-        
+
         if($portfolio){
           foreach ($listProjectFields as $field){
             $dataType = $proj->getDataType($field);
             $dataLength = $proj->getDataLength($field);
             $lowField = pq_strtolower($field);
             if(pq_substr($field, 0, 1) == '_')continue;
-            if($field == 'isUnderConstruction' or $field == 'idProjectType' or $field == 'fixPlanning' or $field == 'idQuality' or $field == 'idHealth' or $field == 'idTrend' or $field == 'idOverallProgress')continue;
+            if($field == 'isUnderConstruction' or $field == 'idProjectType' or $field == 'fixPlanning' or $field == 'idQuality' or $field == 'idHealth' or $field == 'idTrend' or $field == 'idOverallProgress' or $field == 'IdResource')continue;
             if($dataType == 'undefined' or (($dataType == 'varchar' or $dataType == 'mediumtext') and $dataLength > 200))continue;
             if(!isset($line[$lowField]))continue; 
             if(pq_substr($field,0,4) != 'idle' and isForeignKey(lcfirst($field)) ){
@@ -942,8 +942,31 @@
             echo ',"respinitial":""';
           }
         }else{
-          echo ',"responsible":""';
-          echo ',"respinitial":""';
+          if (isset($line['idresource']) and $line['idresource'] ) {
+            $resp=$line['idresource'];
+          }else { // Must always retreive responsible to display value in column, even if not displayed
+            $resp="";
+            $classRefType=($line['reftype']=='Fixed' or $line['reftype']=='Construction' or $line['reftype']=='Replan')?'Project':$line['reftype'];
+            if (isset($arrayObj[$line['reftype']])) {
+              $objElt=$arrayObj[$line['reftype']];
+            } else {
+              $objElt=new $classRefType();
+              if (! property_exists($objElt,'idResource')) {
+                $objElt=null;
+              }
+            }
+            if ($objElt) {
+              $resp=SqlList::getFieldFromId($classRefType, $line['refid'], 'idResource');
+            }
+          }
+          if($resp){
+            $responsible = SqlList::getNameFromId('Affectable', $resp);
+            if($responsible) echo ',"responsible":"' . strip_tags($responsible). '"';
+            echo ',"respinitial":""';
+          }else{
+            echo ',"responsible":""';
+            echo ',"respinitial":""';
+          }
         }
         
         if (is_numeric($idPe) and floatval($idPe)==$idPe) {
@@ -988,6 +1011,7 @@
           $ParamDefaultTypeColor=Parameter::getGlobalParameter('showColorTypeActivity');
         }
         if (!$line['color'] and ($ParamDefaultTypeColor=="YES") and $line['reftype']=='Activity') {
+          $ref=$line['reftype'];
           $item=new $ref($line['refid'],true); // TODO Remove
           $colorType=SqlList::getFieldFromId('ActivityType', $item->idActivityType, 'color');
           if ($colorType) $line['color']=$colorType;
@@ -1305,7 +1329,6 @@
           $line["responsible"]= '';
           $line["respinitial"]= '';
         }
-        
         $resultArray[]=$line;
         if ($maxDate=='' or $maxDate<$pEnd) {$maxDate=$pEnd;}
         //if ($minDate=='' or $minDate>$pStart) {$minDate=$pStart;}

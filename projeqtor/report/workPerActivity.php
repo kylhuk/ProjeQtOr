@@ -163,7 +163,10 @@
           $lstSubProject=$proj->getRecursiveSubProjectsFlatList(false,true);
           $where="workDate between '$startDate' and '$endDate' and idProject in (".implode(",", array_flip($lstSubProject)).")" ;
         }else{
-          $where="workDate between '$startDate' and '$endDate' and refType='".$refType."' and refId=".$refId;
+//          $where="workDate between '$startDate' and '$endDate' and refType='".$refType."' and refId=".$refId;
+          $listSub=Activity::getRecursiveSubActivitiesFlatList($line['refid']);
+          $critId=($listSub)?$line['refid'].','.$listSub:$line['refid'];
+          $where="workDate between '$startDate' and '$endDate' and refType='".$line['reftype']."' and refId in ($critId)";
         }
         $realWorkPeriod=$work->sumSqlElementsFromCriteria('work', null,$where);
       }

@@ -59,7 +59,7 @@ if($element=='SubTask'){
     if($name!=null)$subTask->name=(htmlentities($name));
     if($priority!=null)$subTask->idPriority=(intval($priority)!=0)?intval($priority):null;
     if($resource!=null)$subTask->idResource=(intval($resource)!=0)?intval($resource):null;
-    $subTask->dueDate=($dueDate !='null')?$dueDate:' ';
+    if (RequestHandler::getValue('dueDate')) $subTask->dueDate=($dueDate !='null')?$dueDate:' ';
     if($sortOrder!=null)$subTask->sortOrder=intval($sortOrder);
     if($operation=='update' and $status!=null){
       switch ($status){

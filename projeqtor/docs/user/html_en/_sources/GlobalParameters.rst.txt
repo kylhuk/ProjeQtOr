@@ -924,6 +924,10 @@ If no, the document take the reference formatted name.
 .. rubric:: Forbid download of locked document
    
 Forbid document download if yes is checked.
+
+.. rubric:: Add version of document without uploading a file
+   
+Possibility to add a new version without file.
       
 .. _format_reference_bill:
     

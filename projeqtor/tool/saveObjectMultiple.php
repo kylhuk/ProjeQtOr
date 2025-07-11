@@ -129,7 +129,6 @@ foreach ($selectList as $id) {
         echo '<td><span class="messageWARNING" >' . i18n($className) . " #" . htmlEncode($item->id) . ' '.i18n('colLocked'). '</span></td>';
 		continue;
 	}
-
 	if(property_exists($item, $field) and pq_trim(pq_strpos($field, 'Element_'))==""){
 	  if($isLongText!="true"){
 	    if($field=="idActivity" and property_exists($className, "idProject") and $item->idProject!=$idProjAct){
@@ -171,6 +170,10 @@ foreach ($selectList as $id) {
 	     $item->$subElement->$fieldElment=$newValue;
 	   }else{
 	     $item->$fieldElment=$newValue;
+	     if ($fieldElment=='paused' and $newValue==0 and property_exists($item, 'fixPlanning')) {
+	       $item->fixPlanning=$newValue;
+	     }
+	     
 	   }
 	}elseif ($field=="Note" and property_exists($item,'_Note')){
 	   $note=true;

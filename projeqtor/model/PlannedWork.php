@@ -521,7 +521,11 @@ class PlannedWork extends GeneralWork {
       }
       //-- Take into accound predecessors
       $precList=$plan->_predecessorListWithParent;
-      $plan->inheritedStartDate=null;
+      if ($profile=='CDUR' and $plan->inheritedStartDate and ! $plan->validatedStartDate and $plan->realWork==0 and ($plan->assignedWork>0 or$plan->leftWork>0)) {
+         // Do not change inheritedEndDate
+      } else {
+        $plan->inheritedStartDate=null;
+      }
       foreach ($precList as $precId=>$precValArray) { // $precValArray = array(dependency delay,dependency type)
         $precVal=$precValArray['delay'];
         $precTyp=$precValArray['type'];
@@ -1018,6 +1022,7 @@ class PlannedWork extends GeneralWork {
                 $regulTh=round($ass->leftWork/$delaiTh,10);
             	}
             	$delai=0; 
+            	$changeStartDate=true;
             	for($tmpDate=$currentDate; $tmpDate<=$endPlan;$tmpDate=addDaysToDate($tmpDate, 1)) {
             		if (isOffDay($tmpDate,$r->idCalendarDefinition)) continue;
             		if (isset($ress['real'][$keyElt][$tmpDate])) continue;
@@ -1053,8 +1058,10 @@ class PlannedWork extends GeneralWork {
             		} else {
             			$delai+=floor($tempCapacity/$regulTh*10)/10;
             		}
+            		if ($tempCapacity==0 and $changeStartDate) $currentDate=addDaysToDate($tmpDate, 1);
+            		else $changeStartDate=false;
             	}
-              if ($delai and $delai>0) { 
+              if ($delai and $delai>0) {
                 //$regul=round(($ass->leftWork/$delai)+0.000005,5);   
                 $regul=round(($ass->leftWork/$delai),5);
                 $regulDone=0;
@@ -2041,14 +2048,36 @@ class PlannedWork extends GeneralWork {
       }
     }
     if ($withCriticalPath==1) {
+      $projectCriticalPath=[];
       if ($allProjects) {
         $proj=new Project(' ',true);
-        $projectIdArray=array_keys($proj->getRecursiveSubProjectsFlatList(true, false));
+        $projectCriticalPath=array_keys($proj->getRecursiveSubProjectsFlatList(true, false));
+      } else {
+        $arrTmp=[];
+        foreach($projectIdArray as $idP) {
+          $proj=new Project($idP,true);
+          $sub=$proj->getRecursiveSubProjectsFlatList(true, true);
+          $arrTmp=array_merge_preserve_keys($arrTmp,$sub);
+        }
+        $projectCriticalPath=array_keys($arrTmp);
       }
-      foreach ($projectIdArray as $idP) {
-        $fullListPlan=self::calculateCriticalPath($idP,$fullListPlan);
+      $paramMethod=Parameter::getGlobalParameter("criticalPathNewMethod");
+      $criticalPathMethod=($paramMethod===1 or $paramMethod===true or $paramMethod==='true')?"new":"old";
+      if (Tool::afterVersion(Sql::getDbVersion(),"V12.1.9")) $criticalPathMethod="new";
+      foreach ($projectCriticalPath as $idP) {
+        if ($criticalPathMethod=='old') {
+          $startTime=microtime(true);
+          $fullListPlan=self::calculateCriticalPath($idP,$fullListPlan);
+          $duration=(round(microtime(true)-$startTime, 3));
+        } else {
+          $startTime=microtime(true);
+          self::calculateCriticalPathOptimized($idP,$fullListPlan);
+          $duration=(round(microtime(true)-$startTime, 3));
+          if ($duration==0) $duration=(round(microtime(true)-$startTime, 4));
+        }
       }
     }
+    $datesForActivityExpense = array();
     $arrayProj=array();
     foreach ($fullListPlan as $pe) {
       if (property_exists($pe, 'fixPlanning') and $pe->fixPlanning) continue;
@@ -2075,6 +2104,22 @@ class PlannedWork extends GeneralWork {
       }
    	  if ($pe->refType=='Milestone' and method_exists($pe, "updateMilestonableItems")) {
    	    $pe->updateMilestonableItems();
+   	  }
+   	  if ($pe->refType=='Activity'){
+   	    if(!isset($datesForActivityExpense[$pe->refId])){
+   	      $datesForActivityExpense[$pe->refId]=array();
+   	    }
+        $datesForActivityExpense[$pe->refId]['plannedStartDate']=$pe->plannedStartDate;
+        $datesForActivityExpense[$pe->refId]['plannedEndDate']=$pe->plannedEndDate;
+        $daysDiff = round(dayDiffDates($pe->plannedStartDate, $pe->plannedEndDate)/2);
+        $medianDate = addDaysToDate($pe->plannedStartDate, $daysDiff);
+// Option not provided: if the automatically calculated date falls on a public holiday, take the first working day following.
+//         if(isOffDay($medianDate)){
+//           while(isOffDay($medianDate)){
+//             $medianDate = addDaysToDate($medianDate, 1);
+//           }
+//         }
+        $datesForActivityExpense[$pe->refId]['plannedMedianDate']=$medianDate;
    	  }
     }
     foreach ($arrayProj as $idP) {
@@ -2133,6 +2178,30 @@ class PlannedWork extends GeneralWork {
     	$result=i18n('planDone', array($duration));
     	$result .= '<input type="hidden" id="lastPlanStatus" value="OK" />';
     }
+    
+    // Activity Expense : update target date (planned) from Planning of Activity
+    if(count($datesForActivityExpense) > 0){
+      $idActivityExpenseType = SqlList::getIdFromName('Type', 'Expense activity');
+      $activityExpense = new ActivityExpense();
+      $where = "idle = 0 and idActivity in ".transformListIntoInClause($datesForActivityExpense);
+      $activityExpenseList = $activityExpense->getSqlElementsFromCriteria(null, null, $where);
+      foreach ($activityExpenseList as $actExp){
+        $paymentDateMode = new PaymentDateMode($actExp->idPaymentDateMode);
+        switch ($paymentDateMode->name){
+          case "paymentStartDateMode" :
+            $actExp->expensePlannedDate = $datesForActivityExpense[$actExp->idActivity]['plannedStartDate'];
+            break;
+          case "paymentMedianDateMode" :
+            $actExp->expensePlannedDate = $datesForActivityExpense[$actExp->idActivity]['plannedMedianDate'];
+            break;
+          case "paymentEndDateMode" :
+            $actExp->expensePlannedDate = $datesForActivityExpense[$actExp->idActivity]['plannedEndDate'];
+            break;
+        }
+        $actExp->save();
+      }
+    }
+    
     // Moved transaction at end of procedure (out of script plan.php) to minimize lock possibilities
     $status = getLastOperationStatus ( $result );
     // Save PlanningHistory
@@ -2146,7 +2215,6 @@ class PlannedWork extends GeneralWork {
     $PlHist->result=$status;
     $PlHist->resultDescription=$result;
     $resPlHist=$PlHist->save();
-    
     if ($status == "OK" or $status=="NO_CHANGE" or $status=="INCOMPLETE") {
       Sql::commitTransaction ();
     } else {
@@ -2327,6 +2395,142 @@ class PlannedWork extends GeneralWork {
     
       }
     }
+  }
+  
+  // =============================================================================================================================
+  // Calculate Critical Path
+  // Version optimize - Proposal from ChatGPT
+  public static function calculateCriticalPathOptimized($projectId, &$fullListPlan) {
+    $peProj=null;
+    $today=date('Y-m-d');
+    $tasks=[];
+    foreach($fullListPlan as $id=>$pe) {
+      if ($pe->realEndDate) continue; // do not include ended tasks
+      if ($pe->plannedEndDate<$today) continue; // do not include expected ended tasks
+      if ($pe->idle or $pe->cancelled) continue; // do not include idle and cancelled tasks
+      if ($pe->paused) continue; // do not include paused tasks / paused cannot be on the critical path
+      if ($pe->refType=='Project' and $pe->refId==$projectId) $peProj=$pe;
+      else if ( ($pe->refType!='Project' or $pe->refId!=$projectId)  and $pe->idProject==$projectId) {
+        //$pe->_predecessorForCriticalPath = $pe->_directPredecessorList;
+        //$pe->_predecessorForCriticalPath = $pe->_predecessorListWithParent;
+        $pe->_predecessorForCriticalPath=Self::getPredecessors($id,$fullListPlan);
+        $tasks[$id]=$pe;
+        $fullListPlan[$id]->isOnCriticalPath=0;
+      }
+    }
+    if (!$tasks) return [];
+    
+    $graph = [];
+    $indegree = [];
+    $delay = [];
+    
+    foreach ($tasks as $id => $pe) {
+      $graph[$id]=[];
+      $indegree[$id] = 0;
+    }
+    
+    // Graphe des dépendances
+    foreach ($tasks as $id => $pe) {
+      $dependencies = $pe->_predecessorForCriticalPath; 
+      foreach ($dependencies as $predId=>$dep) {
+        if ($dep['type']=='E-S') $delay[$predId.$id] = $dep['delay'];
+        else continue;
+        if (isset($graph[$predId])) {
+          $graph[$predId][] = $id;
+          $indegree[$id]++;
+        }
+      }
+    }
+    
+    // Tri topologique (Kahn)
+    $queue = [];
+    foreach ($indegree as $id => $deg) {
+      if ($deg == 0) $queue[] = $id;
+    }
+    
+    $sorted = [];
+    while (!empty($queue)) {
+      $current = array_shift($queue);
+      $sorted[] = $current;
+      foreach ($graph[$current] as $next) {
+        $indegree[$next]--;
+        if ($indegree[$next] == 0) $queue[] = $next;
+      }
+    }
+    
+    if (count($sorted) < count($tasks)) {
+      errorLog("Infinite dependency loop detected on Project #$projectId");
+      return [];
+    }
+    
+    // Forward pass
+    $ES = []; $EF = [];
+    foreach ($sorted as $id) {
+      $es = 0;
+      $dependencies = $tasks[$id]->_predecessorForCriticalPath; 
+      foreach ($dependencies as $predId=>$dep) {
+        if (isset($EF[$predId])) {
+          $es = max($es, $EF[$predId]+$dep['delay']);
+        }
+        if (isset($tasks[$predId]) and $tasks[$id]->refType!='Milestone' and $tasks[$predId]->refType=='Milestone') $es-=1;
+      }
+      $ES[$id] = $es;
+      $duration=(float)$tasks[$id]->plannedDuration;
+      if ($duration==0 and $tasks[$id]->refType=='Milestone') $duration=1; // Cas of milestones
+      if ($tasks[$id]->plannedStartDate<$today or ($tasks[$id]->realStartDate and $tasks[$id]->realStartDate<$today)) {
+        $duration=workDayDiffDates($today, $tasks[$id]->plannedEndDate,$projectId);
+      }
+      $EF[$id] = $es + $duration;
+    }
+    
+    // Backward pass
+    $LF = []; $LS = [];
+    $projectEnd = max($EF);
+    //if ($peProj) $projectEnd = (float)$peProj->plannedDuration;
+    $reversed = array_reverse($sorted);
+    foreach ($reversed as $id) {
+      $lf = $projectEnd;
+      foreach ($graph[$id] as $succId) {
+        if (isset($LS[$succId])) {
+          $lf = min($lf, $LS[$succId] - $delay[$id.$succId]??0);
+        }
+        if (isset($tasks[$succId]) and $tasks[$id]->refType=='Milestone' and $tasks[$succId]->refType!='Milestone') $lf+=1;
+      }
+      if (empty($graph[$id])) $lf = $projectEnd;
+      $LF[$id] = $lf;
+      $duration=(float)$tasks[$id]->plannedDuration;
+      if ($duration==0 and $tasks[$id]->refType=='Milestone') $duration+=1; // Cas of milestones
+      if ($tasks[$id]->plannedStartDate<$today or ($tasks[$id]->realStartDate and $tasks[$id]->realStartDate<$today)) {
+        $duration=workDayDiffDates($today, $tasks[$id]->plannedEndDate,$projectId);
+      }
+      $LS[$id] = $lf - $duration;
+    }
+    
+//  debugTraceLog(" "); foreach($ES as $id=>$val) { debugTraceLog($tasks[$id]->refName." | E ".$ES[$id]."-".$EF[$id]." | L ".$LS[$id]."-".$LF[$id]); }
+    // Tâches critiques = celles avec float 0
+    $criticalPath = [];
+    foreach ($tasks as $id => $pe) {
+      $float = $LS[$id] - $ES[$id];
+      if (round($float, 2) <= 0.01) {
+        $fullListPlan[$id]->isOnCriticalPath=1;
+        $criticalPath[] = $id;
+      }
+    }
+    return $criticalPath;
+  }
+  private static function getPredecessors($id,&$fullListPlan) {
+    $pe=$fullListPlan[$id];
+    $predList=[];
+    foreach($pe->_predecessorListWithParent as $idPred=>$dep) {
+      if ($dep['type']=='E-S') {
+        $predList[$idPred]=$dep;
+      } else if ($dep['type']=='S-S') {
+        $predList=array_merge_preserve_keys($predList,self::getPredecessors($idPred,$fullListPlan));
+      } else if ($dep['type']=='E-E') {
+        // continue;
+      }
+    }
+    return $predList;
   }
   
   // Calculate Critical Path : after planning is calculated, re-claculate reversed from end
@@ -2650,7 +2854,7 @@ class PlannedWork extends GeneralWork {
           $projPrio=500;
         }
       }
-      if (pq_trim($projPrio)) $projPrio=500;
+      if (! pq_trim($projPrio)) $projPrio=500;
       if (! $elt->leftWork or $elt->leftWork==0) {$prio=0;}
       $critDate=$str99;
       if ($pm=='CDUR' and $expectedStartDate) {

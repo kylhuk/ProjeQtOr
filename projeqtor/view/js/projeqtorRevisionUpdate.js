@@ -191,7 +191,7 @@ function downloadRevisionUpdate(confirmed, lockConfirm) {
   } else {
     showWait();
     dojo.xhrGet({
-      url : "../tool/subscriptionDownloadUpdate.php?lockConfirm="+lockConfirm,
+      url : "../tool/subscriptionDownloadUpdate.php?lockConfirm="+lockConfirm+addTokenIndexToUrl(),
       load : function(data) {
         if(data.length > 1){
           hideWait();
@@ -462,7 +462,7 @@ function meetingDownload(){
   if(dojo.byId('containerDownloader')!=null){
   alreadyStart=true;
   dojo.xhrGet({
-    url : "../tool/installAutoDownloadProgress.php",
+    url : "../tool/installAutoDownloadProgress.php"+addTokenIndexToUrl('?'),
     load : function(data) {
       if(data!='empty' && dojo.byId('containerDownloader')!=null){
         finalText='';

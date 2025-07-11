@@ -3,87 +3,57 @@
 .. image:: /images/GUI/INDEX_ZONE_CouvManuel.png
 
 
-ProjeQtOr is an open source project management software that combines in one tool all the functionalities needed to organize your projects. It is simple, easy to use and covers a maximum of project management features.
-
-Its particularity, in addition to its completeness, is to be oriented towards quality. 
-
-This means you can record all the events of your projects and thus simplify compliance with leading standards in quality management, be they ISO, CMMI, ITIL or other.
-
-    
-What's new in version 12.1?
+###########################
+What's new in version 12.2?
 ###########################
 
-Find in this manual, every 3 months, the latest features integrated into ProjeQtOr.
-
-We offer you a small overview of the major developments and you will find the full list of developments covered in the update here_.  
-
+you will find the full list of developments covered in the update here_.
+  
 .. _here: https://www.projeqtor.org/en/product-en/downloads/change-history-en
 
 
-.. container::  
+.. raw:: html
 
-   **Improvement: tabs management**
+   <div class="tiles-grid">
+
+.. container:: evolution-tile
+
+   **Improvment of Favorite Lists**
    
-   |TabBIG|
-      
-   Different tabs use different sessions data
-      
-   Oening new tab does not block any more
+   |StarBIG|  
    
-   :ref:`buttons-newtab`
-     
-
-
-
-
-.. container::  
-
-   **screen Planning / Work Plan**
+   Manage your favorites directly in the project selector.  
    
-   |PlanningBIG|
-      
-   New screen Planning and Dynamic work plan
-   
-   Shows the Work Plan of the resources
-
-   :ref:`Planning-DynamicWorkPlan`
-
-
-.. container::  
-
-   **Automatic Import through email**
+   :ref:`Learn more <favorites-projects>`
    
    
-   |eMailBIG|
-      
- 
-   Defined input imap mailbox to import files
+
+.. container:: evolution-tile
+
+   **Ease of inline edition**
    
-   Send an email to defined mailbox with file attached to import the data
+   |EditBIG|  
    
-   User sending email must be known in the system and his rights are applied for import
+   Use keyboard keys to edit lines faster.  
    
-   :ref:`import-mailbox`
-
-
-.. container::  
-
-   **improvement in cache management**
+   :ref:`Discover more <Details-online>`
    
-   |PurgeBIG|
-      
-   JavaScript files are cached with their name and last update date.
-
-   If the browser doesn't cache, it will use outdated JavaScript files.
-
-   There's no need to clear the browser cache when updating JavaScript.
+   
    
 
+.. container:: evolution-tile
 
+   **Ease of Filters management**
+   
+   |FiltersBIG|
+   
+   New system, new design, new possibilities. 
+    
+   :ref:`Check it out <filters>`
 
+.. raw:: html
 
-
-
+   </div>
 
 
 

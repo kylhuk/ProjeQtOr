@@ -44,6 +44,7 @@ class HtmlExtension extends AbstractExtension
             new Html\I(),
             new Html\Ins(),
             new Html\Label(),
+            new Html\Nostyle(),
             new Html\S(),
             new Html\Samp(),
             new Html\Small(),

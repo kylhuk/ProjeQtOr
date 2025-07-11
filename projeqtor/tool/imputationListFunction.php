@@ -28,7 +28,7 @@ function drawDisplayFieldImputation() {
 }
 
 function drawOptionsDisplaySwitchImputation() {
- global $displayOnlyCurrentWeekMeetings,$hideDone,$showPlanned,$hideNotHandled,$displayHandledGlobal,$showId,$hidePausedItem,$limitResourceByProj;
+ global $displayOnlyCurrentWeekMeetings,$hideDone,$showPlanned,$hideNotHandled,$displayHandledGlobal,$showId,$hidePausedItem,$limitResourceByProj,$displayProjectColorImputation,$displayActivityColorImputation;
 ?>
   <table style="margin-left:20px;margin-top:10px;" width="100%">
     <tr title="<?php echo pq_ucfirst(i18n('meetingWeekOnly'));?>">
@@ -129,7 +129,7 @@ function drawOptionsDisplaySwitchImputation() {
     
     <tr title="<?php echo pq_ucfirst(i18n('labelLimitResourceByProject'));?>">
       <td style="padding-top:6px;">
-        <div   id=""limitResByProj"" name=""limitResByProj"" class="colorSwitch" data-dojo-type="dojox/mobile/Switch"
+        <div   id="limitResByProj" name="limitResByProj" class="colorSwitch" data-dojo-type="dojox/mobile/Switch"
                 <?php if ($limitResourceByProj=='on') {echo 'value="on"'; }else{echo 'value="off"';} ?>   
                  leftLabel="" rightLabel="" style="width:25px;" >
             <script type="dojo/method" event="onStateChanged" >
@@ -139,8 +139,31 @@ function drawOptionsDisplaySwitchImputation() {
   		    </div>&nbsp;
       </td>
       <td class="checkboxLabel"> <?php echo i18n("resourceProjectSelected");?></td>
-    </tr>	
+    </tr>
+    
+    <tr title="<?php echo pq_ucfirst(i18n('displayProjectColorTimesheet'));?>">
+      <td style="padding-top:6px;">
+        <div   id="listDisplayProjectColorImputation" name="listDisplayProjectColorImputation" class="colorSwitch" data-dojo-type="dojox/mobile/Switch"
+                <?php if ($displayProjectColorImputation==1) {echo 'value="on"'; }else{echo 'value="off"';} ?>  
+                 leftLabel="" rightLabel="" style="width:25px;" >
+            <script type="dojo/method" event="onStateChanged" >
+                return refreshImputationList();
+  		      </script>
+  		    </div>&nbsp;
+      </td>
+      <td class="checkboxLabel"> <?php echo i18n("labelDisplayProjectColorTimesheet");?></td>
  
+      <tr title="<?php echo pq_ucfirst(i18n('displayActivityColorTimesheet'));?>">
+      <td style="padding-top:6px;">
+        <div   id="listDisplayActivityColorImputation" name="listDisplayActivityColorImputation" class="colorSwitch" data-dojo-type="dojox/mobile/Switch"
+                <?php if ($displayActivityColorImputation==1) {echo 'value="on"'; }else{echo 'value="off"';} ?>  
+                 leftLabel="" rightLabel="" style="width:25px;" >
+            <script type="dojo/method" event="onStateChanged" >
+                return refreshImputationList();
+  		      </script>
+  		    </div>&nbsp;
+      </td>
+      <td class="checkboxLabel"> <?php echo i18n("labelDisplayActivityColorTimesheet");?></td>
    </table>
 <?php 
 }

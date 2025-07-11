@@ -53,9 +53,9 @@ function cronPlanningDifferential(){
   if (count($arrayProj)>0) {
     //Sql::beginTransaction(); #3601 : management of transaction in now included in PlannedWork::plan()
     if($modeSurbookingDifferential=="YES"){
-    $result=PlannedWork::plan($arrayProj, $startDatePlan, false, true);
+    $result=PlannedWork::plan($arrayProj, $startDatePlan, 1, true);
     }else{
-    $result=PlannedWork::plan($arrayProj, $startDatePlan, false);
+    $result=PlannedWork::plan($arrayProj, $startDatePlan, 1);
     }
     $status = getLastOperationStatus ( $result );
     //if ($status == "OK" or $status=="NO_CHANGE" or $status=="INCOMPLETE") {
@@ -90,7 +90,7 @@ function cronPlanningComplete(){
   traceLog(i18n("sectionAutomaticPlanning").' : '.$mode." - ".i18n('colStart')." - ".i18n('projects').' : '.i18n('all'));
   //Sql::beginTransaction(); #3601 : management of transaction in now included in PlannedWork::plan()
   $modeSurbookingComplete = ($modeSurbookingComplete=="YES")?true:false;
-  $result=PlannedWork::plan(array(' '), $startDatePlan, false, $modeSurbookingComplete);
+  $result=PlannedWork::plan(array(' '), $startDatePlan, 1, $modeSurbookingComplete);
   $status = getLastOperationStatus ( $result );
   //if ($status == "OK" or $status=="NO_CHANGE" or $status=="INCOMPLETE") {
   //  Sql::commitTransaction ();

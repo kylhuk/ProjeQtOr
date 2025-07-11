@@ -88,6 +88,10 @@ if (sessionValueExists('userParamatersArray')) {
 }
 
 if (isset($_REQUEST['saveUserParam']) && $_REQUEST['saveUserParam']=='true') {
-	Parameter::storeUserParameter($id, $value);
+  if (in_array($id, ['kanbanModeColorTitle'])) {
+    $kanbanId = Parameter::getUserParameter("kanbanIdKanban");
+    $id .= $kanbanId;
+  }
+  Parameter::storeUserParameter($id, $value);
 }
 ?>
